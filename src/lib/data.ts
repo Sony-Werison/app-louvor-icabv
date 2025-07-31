@@ -1,6 +1,6 @@
 import type { Member, Song, MonthlySchedule, ScheduleColumn } from '@/types';
 import { Tv, Sun, Moon, BookUser } from 'lucide-react';
-import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths } from 'date-fns';
+import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, startOfWeek, endOfWeek, previousSaturday, isSaturday } from 'date-fns';
 
 export const members: Member[] = [
   { id: '1', name: 'João Silva', avatar: 'https://i.pravatar.cc/150?u=joao', role: 'Líder de Louvor, Vocal', email: 'joao.silva@example.com', phone: '(11) 98765-4321' },
@@ -46,31 +46,31 @@ export const scheduleColumns: ScheduleColumn[] = [
     { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true },
 ];
 
-const generateWeekendDates = (date: Date): Date[] => {
+const getSaturdays = (date: Date): Date[] => {
     const start = startOfMonth(date);
     const end = endOfMonth(date);
     const days = eachDayOfInterval({ start, end });
-    return days.filter(day => getDay(day) === 6 || getDay(day) === 0); // 6 = Saturday, 0 = Sunday
+    return days.filter(day => getDay(day) === 6); // 6 = Saturday
 };
-
 
 const generateInitialSchedules = (): MonthlySchedule[] => {
     const today = new Date();
-    const currentMonthWeekend = generateWeekendDates(today);
-    const nextMonthWeekend = generateWeekendDates(addMonths(today, 1));
+    const currentMonthSaturdays = getSaturdays(today);
+    const nextMonthSaturdays = getSaturdays(addMonths(today, 1));
 
-    const allWeekendDates = [...currentMonthWeekend, ...nextMonthWeekend];
+    const allSaturdays = [...currentMonthSaturdays, ...nextMonthSaturdays];
+    
+    // Ensure the current week's saturday is included for preview
+    const mostRecentSaturday = isSaturday(today) ? today : previousSaturday(today);
+    if (!allSaturdays.some(d => d.getTime() === mostRecentSaturday.getTime())) {
+      allSaturdays.unshift(mostRecentSaturday);
+    }
     
     const preachers = members.filter(m => m.role === 'Preletor');
     const leaders = members.filter(m => m.role.includes('Líder') || m.role.includes('Vocal'));
     const musicians = members.filter(m => !m.role.includes('Preletor'));
 
-    return allWeekendDates.map((date, index) => {
-        // Skip Sundays for assignment generation as we link them to Saturdays
-        if (getDay(date) === 0) {
-            return { date, assignments: {} };
-        }
-
+    return allSaturdays.map((date, index) => {
         const leaderMorning = leaders[index % leaders.length];
         const leaderNight = leaders[(index + 1) % leaders.length];
         const preacherMorning = preachers[index % preachers.length];
@@ -88,7 +88,7 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
                 'multimedia': [multimedia1.id, multimedia2.id],
             }
         }
-    }).filter(s => s.assignments); // Filter out empty sunday assignments
+    });
 };
 
 
