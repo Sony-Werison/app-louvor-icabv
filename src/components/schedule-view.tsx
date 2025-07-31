@@ -56,10 +56,9 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
           {schedules.map((schedule) => {
             const leader = getMemberById(schedule.leaderId);
             const playlistSongs = schedule.playlist.map(getSongById).filter((s): s is Song => !!s);
-            const teamMembersByRole = Object.entries(schedule.team || {}).map(([role, memberIds]) => {
-                const membersInRole = memberIds.map(id => getMemberById(id)).filter((m): m is Member => !!m);
-                return { role, members: membersInRole };
-            }).filter(r => r.members.length > 0);
+            const teamMembers = (schedule.team?.multimedia || [])
+              .map(id => getMemberById(id))
+              .filter((m): m is Member => !!m);
 
             return (
               <Card key={schedule.id} className="flex flex-col relative">
@@ -85,11 +84,11 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                     </div>
                   )}
 
-                  {teamMembersByRole.length > 0 && (
+                  {teamMembers.length > 0 && (
                       <div>
-                          <h3 className="font-semibold mb-3 flex items-center gap-2"><Users className="w-4 h-4"/>Equipe</h3>
+                          <h3 className="font-semibold mb-3 flex items-center gap-2"><Users className="w-4 h-4"/>Multimídia</h3>
                           <div className="flex flex-wrap gap-x-4 gap-y-2">
-                              {teamMembersByRole.flatMap(r => r.members.map(member => (
+                              {teamMembers.map(member => (
                                    <Tooltip key={member.id}>
                                       <TooltipTrigger>
                                           <Avatar className="h-8 w-8">
@@ -102,7 +101,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                                           <p className="text-muted-foreground">{member.role}</p>
                                       </TooltipContent>
                                   </Tooltip>
-                              )))}
+                              ))}
                           </div>
                       </div>
                   )}

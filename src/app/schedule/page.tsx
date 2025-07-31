@@ -23,8 +23,6 @@ const transformMonthlyToSchedule = (monthlySchedules: any[], songs: any[]): Sche
             date: dateManha,
             leaderId: assignments.dirigente_manha?.[0] || '',
             team: {
-                dirigente_manha: assignments.dirigente_manha || [],
-                pregacao_manha: assignments.pregacao_manha || [],
                 multimedia: assignments.multimedia || [],
             },
             playlist: songs.slice(0, 3).map(s => s.id) // Dummy playlist
@@ -40,8 +38,6 @@ const transformMonthlyToSchedule = (monthlySchedules: any[], songs: any[]): Sche
             date: dateNoite,
             leaderId: assignments.dirigente_noite?.[0] || '',
             team: {
-                dirigente_noite: assignments.dirigente_noite || [],
-                pregacao_noite: assignments.pregacao_noite || [],
                 multimedia: assignments.multimedia || [],
             },
             playlist: songs.slice(3, 6).map(s => s.id) // Dummy playlist
