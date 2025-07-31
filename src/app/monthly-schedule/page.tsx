@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { useSchedule } from '@/context/schedule-context';
@@ -8,12 +9,14 @@ import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ptBR } from 'date-fns/locale';
-import { addMonths, format } from 'date-fns';
+import { addMonths, format, startOfDay } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MonthlySchedulePage() {
     const { monthlySchedules, addSchedule, members, scheduleColumns } = useSchedule();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+    const { toast } = useToast();
 
     const navigateMonths = (amount: number) => {
         setCurrentMonth(prevMonth => addMonths(prevMonth, amount));
@@ -21,6 +24,19 @@ export default function MonthlySchedulePage() {
 
     const handleAddDate = (date: Date | undefined) => {
         if (date) {
+            const dateExists = monthlySchedules.some(
+                schedule => startOfDay(schedule.date).getTime() === startOfDay(date).getTime()
+            );
+
+            if (dateExists) {
+                toast({
+                    title: 'Data Duplicada',
+                    description: 'Esta data já existe na escala.',
+                    variant: 'destructive',
+                });
+                return;
+            }
+
             addSchedule(date);
             setIsCalendarOpen(false);
             setCurrentMonth(date);
