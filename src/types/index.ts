@@ -1,5 +1,7 @@
 
+
 export type MemberRole = 'Dirigente' | 'Pregador' | 'Multimídia';
+export type SongCategory = 'Hino' | 'Louvor' | 'Infantil';
 
 export type Member = {
   id: string;
@@ -15,6 +17,7 @@ export type Song = {
   title: string;
   artist: string;
   key: string;
+  category: SongCategory;
   youtubeUrl?: string;
   lyrics?: string;
   chords?: string;

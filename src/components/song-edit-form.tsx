@@ -1,19 +1,24 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import type { Song } from '@/types';
+import type { Song, SongCategory } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+
+const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
 
 const formSchema = z.object({
   title: z.string().min(2, { message: 'O título deve ter pelo menos 2 caracteres.' }),
   artist: z.string().min(2, { message: 'O nome do artista é obrigatório.' }),
   key: z.string().min(1, { message: 'O tom é obrigatório.' }),
+  category: z.enum(songCategories, { required_error: 'Selecione uma categoria.' }),
   lyrics: z.string().optional(),
   chords: z.string().optional(),
 });
@@ -31,6 +36,7 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
       title: song.title || '',
       artist: song.artist || '',
       key: song.key || '',
+      category: song.category || 'Louvor',
       lyrics: song.lyrics || '',
       chords: song.chords || '',
     },
@@ -48,12 +54,12 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="lg:col-span-2">
                     <FormLabel>Título</FormLabel>
                     <FormControl>
                       <Input {...field} />
@@ -84,6 +90,28 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem className="lg:col-span-2">
+                    <FormLabel>Categoria</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Selecione a categoria" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {songCategories.map(cat => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -1,7 +1,7 @@
 
-import type { Member, Song, MonthlySchedule, ScheduleColumn } from '@/types';
+import type { Member, Song, MonthlySchedule, ScheduleColumn, SongCategory } from '@/types';
 import { Tv, Sun, Moon, BookUser } from 'lucide-react';
-import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, startOfWeek, endOfWeek, previousSaturday, isSaturday } from 'date-fns';
+import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths } from 'date-fns';
 
 export const members: Member[] = [
   { id: '1', name: 'João Silva', avatar: 'https://i.pravatar.cc/150?u=joao', role: 'Dirigente', email: 'joao.silva@example.com', phone: '(11) 98765-4321' },
@@ -32,6 +32,7 @@ export const songs: Song[] = [
     title: 'Quão Grande É o Meu Deus', 
     artist: 'Soraya Moraes', 
     key: 'G',
+    category: 'Louvor',
     lyrics: `Com esplendor de um rei
 Em majestade e luz
 Faz a Terra se alegrar
@@ -87,6 +88,7 @@ Quão [D]grande é o meu [G]Deus`
     title: 'Oceans (Where Feet May Fail)', 
     artist: 'Hillsong United', 
     key: 'D',
+    category: 'Louvor',
     lyrics: `You call me out upon the waters
 The great unknown where feet may fail
 And there I find You in the mystery
@@ -125,14 +127,18 @@ And [G]keep my eyes a[D]bove the [A]waves
 When oceans [G]rise, my [D]soul will rest in [A]Your embrace
 For [G]I am [A]Yours and [Bm]You are mine`
   },
-  { id: 's3', title: 'Amazing Grace', artist: 'Chris Tomlin', key: 'G' },
-  { id: 's4', title: 'Te Agradeço', artist: 'Diante do Trono', key: 'A' },
-  { id: 's5', title: 'What a Beautiful Name', artist: 'Hillsong Worship', key: 'D' },
-  { id: 's6', title: 'Grandes Coisas', artist: 'Fernandinho', key: 'C' },
-  { id: 's7', title: 'Aquieta Minh\'alma', artist: 'Ministério Zoe', key: 'Em' },
-  { id: 's8', title: 'Reckless Love', artist: 'Cory Asbury', key: 'F#m' },
-  { id: 's9', title: '10,000 Reasons (Bless the Lord)', artist: 'Matt Redman', key: 'G' },
-  { id: 's10', title: 'Em Teus Braços', artist: 'Laura Souguellis', key: 'C' },
+  { id: 's3', title: 'Amazing Grace (My Chains Are Gone)', artist: 'Chris Tomlin', key: 'G', category: 'Hino' },
+  { id: 's4', title: 'Te Agradeço', artist: 'Diante do Trono', key: 'A', category: 'Louvor' },
+  { id: 's5', title: 'What a Beautiful Name', artist: 'Hillsong Worship', key: 'D', category: 'Louvor' },
+  { id: 's6', title: 'Grandes Coisas', artist: 'Fernandinho', key: 'C', category: 'Louvor' },
+  { id: 's7', title: 'Aquieta Minh\'alma', artist: 'Ministério Zoe', key: 'Em', category: 'Louvor' },
+  { id: 's8', title: 'Reckless Love', artist: 'Cory Asbury', key: 'F#m', category: 'Louvor' },
+  { id: 's9', title: '10,000 Reasons (Bless the Lord)', artist: 'Matt Redman', key: 'G', category: 'Louvor' },
+  { id: 's10', title: 'Em Teus Braços', artist: 'Laura Souguellis', key: 'C', category: 'Louvor' },
+  { id: 's11', title: 'A Benção', artist: 'Gateway Worship', key: 'B', category: 'Louvor' },
+  { id: 's12', title: 'Rude Cruz', artist: 'Harpa Cristã', key: 'A', category: 'Hino' },
+  { id: 's13', title: 'Três Palavrinhas', artist: 'Turma do Cristãozinho', key: 'C', category: 'Infantil' },
+  { id: 's14', title: 'Soldado de Cristo', artist: '3 Palavrinhas', key: 'G', category: 'Infantil' },
 ];
 
 export const scheduleColumns: ScheduleColumn[] = [
