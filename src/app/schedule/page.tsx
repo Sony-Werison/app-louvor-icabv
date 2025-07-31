@@ -1,10 +1,10 @@
-import { members, songs, monthlySchedules } from '@/lib/data';
+'use client';
+import { useSchedule } from '@/context/schedule-context';
 import { ScheduleView } from '@/components/schedule-view';
 import { startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
-import type { Schedule } from '@/types';
+import type { Schedule, MonthlySchedule } from '@/types';
 
-
-const transformMonthlyToSchedule = (monthlySchedules: any[], songs: any[]): Schedule[] => {
+const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: any[]): Schedule[] => {
     let schedules: Schedule[] = [];
     monthlySchedules.forEach(ms => {
         const saturday = new Date(ms.date);
@@ -12,36 +12,41 @@ const transformMonthlyToSchedule = (monthlySchedules: any[], songs: any[]): Sche
         
         const assignments = ms.assignments || {};
 
+        const team = {
+            multimedia: assignments.multimedia || [],
+        };
+        
         // Culto de Domingo - Manhã
         const dateManha = new Date(saturday);
         dateManha.setDate(dateManha.getDate() + 1); // Sunday
-        dateManha.setHours(10,0,0,0);
+        dateManha.setHours(10, 0, 0, 0);
 
-        schedules.push({
-            id: `s-manha-${saturday.getTime()}`,
-            name: 'Culto de Dom. - Manhã',
-            date: dateManha,
-            leaderId: assignments.dirigente_manha?.[0] || '',
-            team: {
-                multimedia: assignments.multimedia || [],
-            },
-            playlist: songs.slice(0, 3).map(s => s.id) // Dummy playlist
-        });
+        if (assignments.dirigente_manha && assignments.dirigente_manha[0]) {
+            schedules.push({
+                id: `s-manha-${saturday.getTime()}`,
+                name: 'Culto de Dom. - Manhã',
+                date: dateManha,
+                leaderId: assignments.dirigente_manha[0],
+                team: team,
+                playlist: songs.slice(0, 3).map(s => s.id) // Dummy playlist
+            });
+        }
 
         // Culto de Domingo - Noite
         const dateNoite = new Date(saturday);
         dateNoite.setDate(dateNoite.getDate() + 1); // Sunday
-        dateNoite.setHours(19,0,0,0);
-        schedules.push({
-            id: `s-noite-${saturday.getTime()}`,
-            name: 'Culto de Dom. - Noite',
-            date: dateNoite,
-            leaderId: assignments.dirigente_noite?.[0] || '',
-            team: {
-                multimedia: assignments.multimedia || [],
-            },
-            playlist: songs.slice(3, 6).map(s => s.id) // Dummy playlist
-        });
+        dateNoite.setHours(19, 0, 0, 0);
+
+        if (assignments.dirigente_noite && assignments.dirigente_noite[0]) {
+            schedules.push({
+                id: `s-noite-${saturday.getTime()}`,
+                name: 'Culto de Dom. - Noite',
+                date: dateNoite,
+                leaderId: assignments.dirigente_noite[0],
+                team: team,
+                playlist: songs.slice(3, 6).map(s => s.id) // Dummy playlist
+            });
+        }
     });
 
     return schedules;
@@ -49,10 +54,9 @@ const transformMonthlyToSchedule = (monthlySchedules: any[], songs: any[]): Sche
 
 
 export default function SchedulePage() {
-  const allMembers = members;
-  const allSongs = songs;
-
-  const allSchedules = transformMonthlyToSchedule(monthlySchedules, allSongs);
+  const { monthlySchedules, members, songs } = useSchedule();
+  
+  const allSchedules = transformMonthlyToSchedule(monthlySchedules, songs);
 
   const today = new Date();
   const startOfThisWeek = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
@@ -64,7 +68,7 @@ export default function SchedulePage() {
 
   return (
     <div className="p-4 md:p-8">
-      <ScheduleView initialSchedules={weeklySchedules} members={allMembers} songs={allSongs} />
+      <ScheduleView initialSchedules={weeklySchedules} members={members} songs={songs} />
     </div>
   );
 }

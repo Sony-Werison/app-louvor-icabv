@@ -22,69 +22,60 @@ import { format } from 'date-fns';
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { ptBR } from 'date-fns/locale';
+import { useSchedule } from '@/context/schedule-context';
 
 interface MonthlyScheduleViewProps {
   schedules: MonthlySchedule[];
   members: Member[];
   columns: ScheduleColumn[];
-  onSchedulesChange: (schedules: MonthlySchedule[]) => void;
 }
 
 export function MonthlyScheduleView({
   schedules,
   members,
   columns,
-  onSchedulesChange,
 }: MonthlyScheduleViewProps) {
+  const { updateSchedule, removeSchedule } = useSchedule();
+
   const handleMemberChange = (date: Date, columnId: string, memberId: string, index: number) => {
-    const newSchedules = schedules.map((schedule) => {
-      if (schedule.date.getTime() === date.getTime()) {
-        const newAssignments = { ...schedule.assignments };
-        const currentAssignment = newAssignments[columnId] ? [...newAssignments[columnId]] : [];
-        currentAssignment[index] = memberId;
-        newAssignments[columnId] = currentAssignment;
-        return { ...schedule, assignments: newAssignments };
-      }
-      return schedule;
-    });
-    onSchedulesChange(newSchedules);
+    const schedule = schedules.find((s) => s.date.getTime() === date.getTime());
+    if (!schedule) return;
+
+    const newAssignments = { ...schedule.assignments };
+    const currentAssignment = newAssignments[columnId] ? [...newAssignments[columnId]] : [];
+    currentAssignment[index] = memberId;
+    newAssignments[columnId] = currentAssignment;
+
+    updateSchedule(date, { assignments: newAssignments });
   };
 
   const handleClearAssignment = (date: Date, columnId: string, index: number) => {
-    const newSchedules = schedules.map((schedule) => {
-      if (schedule.date.getTime() === date.getTime()) {
-        const newAssignments = { ...schedule.assignments };
-        const currentAssignment = newAssignments[columnId] ? [...newAssignments[columnId]] : [];
-        currentAssignment[index] = null;
-        newAssignments[columnId] = currentAssignment;
-        return { ...schedule, assignments: newAssignments };
-      }
-      return schedule;
-    });
-    onSchedulesChange(newSchedules);
+    const schedule = schedules.find((s) => s.date.getTime() === date.getTime());
+    if (!schedule) return;
+    
+    const newAssignments = { ...schedule.assignments };
+    const currentAssignment = newAssignments[columnId] ? [...newAssignments[columnId]] : [];
+    currentAssignment[index] = null;
+    newAssignments[columnId] = currentAssignment;
+    updateSchedule(date, { assignments: newAssignments });
   };
 
   const handleRemoveDate = (date: Date) => {
-    const newSchedules = schedules.filter(schedule => schedule.date.getTime() !== date.getTime());
-    onSchedulesChange(newSchedules);
+    removeSchedule(date);
   };
 
   const handleDateChange = (oldDate: Date, newDate: Date | undefined) => {
      if (newDate) {
-        const newSchedules = schedules.map(s => 
-            s.date.getTime() === oldDate.getTime() ? { ...s, date: newDate } : s
-        );
-        onSchedulesChange(newSchedules);
+        updateSchedule(oldDate, { date: newDate });
      }
   }
 
   const getAssignedMemberIds = (date: Date, columnId: string): (string | null)[] => {
     const schedule = schedules.find(s => s.date.getTime() === date.getTime());
-    if (schedule) {
-      return schedule.assignments[columnId] || [];
-    }
-    return [];
+    return schedule?.assignments[columnId] || [];
   };
+  
+  const sortedSchedules = [...schedules].sort((a, b) => a.date.getTime() - b.date.getTime());
 
   return (
     <div className="rounded-lg border">
@@ -104,7 +95,7 @@ export function MonthlyScheduleView({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {schedules.map((schedule) => (
+          {sortedSchedules.map((schedule) => (
             <TableRow key={schedule.date.toISOString()}>
               <TableCell className="font-medium">
                 <Popover>

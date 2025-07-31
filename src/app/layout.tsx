@@ -5,6 +5,7 @@ import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from '@/compon
 import { AppNav } from '@/components/app-nav';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/header';
+import { ScheduleProvider } from '@/context/schedule-context';
 
 export const metadata: Metadata = {
   title: 'Louvor ICABV',
@@ -24,17 +25,19 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn('font-body antialiased', 'min-h-screen bg-background')}>
-        <SidebarProvider>
-          <Sidebar>
-            <AppNav />
-          </Sidebar>
-          <SidebarInset>
-            <Header>
-                <SidebarTrigger />
-            </Header>
-            <main>{children}</main>
-          </SidebarInset>
-        </SidebarProvider>
+        <ScheduleProvider>
+          <SidebarProvider>
+            <Sidebar>
+              <AppNav />
+            </Sidebar>
+            <SidebarInset>
+              <Header>
+                  <SidebarTrigger />
+              </Header>
+              <main>{children}</main>
+            </SidebarInset>
+          </SidebarProvider>
+        </ScheduleProvider>
         <Toaster />
       </body>
     </html>

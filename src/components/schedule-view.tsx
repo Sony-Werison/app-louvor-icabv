@@ -1,13 +1,14 @@
 'use client';
 
 import type { Schedule, Member, Song } from '@/types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
 import { ListMusic, Users, Calendar } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { useSchedule } from '@/context/schedule-context';
 
 interface ScheduleViewProps {
   initialSchedules: Schedule[];
@@ -19,13 +20,24 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const [schedules, setSchedules] = useState(initialSchedules);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
+  const { updateSchedulePlaylist } = useSchedule();
+  
+  useEffect(() => {
+    setSchedules(initialSchedules);
+  }, [initialSchedules]);
+
 
   const handlePlaylistSave = (scheduleId: string, newPlaylist: string[]) => {
-    setSchedules(currentSchedules =>
-      currentSchedules.map(s =>
-        s.id === scheduleId ? { ...s, playlist: newPlaylist } : s
-      )
+    // This function will now update the context/global state
+    // For now, it just updates local state for the dialog to close properly
+    const updatedSchedules = schedules.map(s =>
+      s.id === scheduleId ? { ...s, playlist: newPlaylist } : s
     );
+    setSchedules(updatedSchedules);
+
+    // Here you could call a function from context to persist the change
+    // e.g. updateSchedulePlaylist(scheduleId, newPlaylist);
+
     setIsPlaylistDialogOpen(false);
     setSelectedSchedule(null);
   };

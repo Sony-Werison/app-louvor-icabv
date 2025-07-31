@@ -1,60 +1,36 @@
 'use client';
 import { useState } from 'react';
-import { members, scheduleColumns as initialScheduleColumns } from '@/lib/data';
+import { useSchedule } from '@/context/schedule-context';
 import { MonthlyScheduleView } from '@/components/monthly-schedule-view';
-import type { MonthlySchedule, ScheduleColumn } from '@/types';
+import type { MonthlySchedule } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ptBR } from 'date-fns/locale';
-import { addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSaturday, format } from 'date-fns';
-
-const generateSchedulesForMonth = (month: Date, scheduleColumns: ScheduleColumn[]): MonthlySchedule[] => {
-    const start = startOfMonth(month);
-    const end = endOfMonth(month);
-    const allDaysInMonth = eachDayOfInterval({ start, end });
-    const saturdays = allDaysInMonth.filter(day => isSaturday(day));
-    
-    return saturdays.map(date => ({
-        date: date,
-        assignments: scheduleColumns.reduce((acc, col) => {
-            acc[col.id] = col.isMulti ? [null, null] : [null];
-            return acc;
-        }, {} as Record<string, (string | null)[]>),
-    }));
-}
-
+import { addMonths, format } from 'date-fns';
 
 export default function MonthlySchedulePage() {
+    const { monthlySchedules, addSchedule, members, scheduleColumns } = useSchedule();
     const [currentMonth, setCurrentMonth] = useState(new Date());
-    const [monthlySchedules, setMonthlySchedules] = useState<MonthlySchedule[]>(() => generateSchedulesForMonth(currentMonth, initialScheduleColumns));
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
     const navigateMonths = (amount: number) => {
-        const newMonth = addMonths(currentMonth, amount);
-        setCurrentMonth(newMonth);
-        setMonthlySchedules(generateSchedulesForMonth(newMonth, initialScheduleColumns));
-    };
-
-    const handleSchedulesChange = (schedules: MonthlySchedule[]) => {
-        const sortedSchedules = [...schedules].sort((a, b) => a.date.getTime() - b.date.getTime());
-        setMonthlySchedules(sortedSchedules);
+        setCurrentMonth(prevMonth => addMonths(prevMonth, amount));
     };
 
     const handleAddDate = (date: Date | undefined) => {
         if (date) {
-            const newSchedule: MonthlySchedule = {
-                date: date,
-                assignments: initialScheduleColumns.reduce((acc, col) => {
-                    acc[col.id] = col.isMulti ? [null, null] : [null];
-                    return acc;
-                }, {} as Record<string, (string | null)[]>),
-            };
-            handleSchedulesChange([...monthlySchedules, newSchedule]);
+            addSchedule(date);
             setIsCalendarOpen(false);
+            setCurrentMonth(date);
         }
     };
+    
+    const filteredSchedules = monthlySchedules.filter(
+        schedule => schedule.date.getMonth() === currentMonth.getMonth() &&
+                    schedule.date.getFullYear() === currentMonth.getFullYear()
+    );
 
     return (
         <div className="p-4 md:p-8">
@@ -88,10 +64,9 @@ export default function MonthlySchedulePage() {
                 </Popover>
             </div>
             <MonthlyScheduleView 
-                schedules={monthlySchedules}
+                schedules={filteredSchedules}
                 members={members}
-                columns={initialScheduleColumns}
-                onSchedulesChange={handleSchedulesChange}
+                columns={scheduleColumns}
             />
         </div>
     );
