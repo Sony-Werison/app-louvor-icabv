@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
-import { ListMusic, Users, Calendar } from 'lucide-react';
+import { ListMusic, Users, Calendar, Mic, BookUser } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useSchedule } from '@/context/schedule-context';
+import { Separator } from './ui/separator';
 
 interface ScheduleViewProps {
   initialSchedules: Schedule[];
@@ -47,7 +48,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     setIsPlaylistDialogOpen(true);
   }
 
-  const getMemberById = (id: string) => members.find(m => m.id === id);
+  const getMemberById = (id: string | null) => id ? members.find(m => m.id === id) : null;
   const getSongById = (id: string) => songs.find(s => s.id === id);
   const getMemberInitial = (name: string) => name.charAt(0).toUpperCase();
 
@@ -67,6 +68,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {schedules.map((schedule) => {
             const leader = getMemberById(schedule.leaderId);
+            const preacher = getMemberById(schedule.preacherId);
             const playlistSongs = schedule.playlist.map(getSongById).filter((s): s is Song => !!s);
             const teamMembers = (schedule.team?.multimedia || [])
               .map(id => getMemberById(id))
@@ -83,22 +85,38 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow space-y-6">
-                  {leader && (
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10" data-ai-hint="person portrait">
-                        <AvatarImage src={leader.avatar} alt={leader.name} />
-                        <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Dirigente</span>
-                        <p className="font-semibold">{leader.name}</p>
+                  <div className="space-y-4">
+                    {leader && (
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10" data-ai-hint="person portrait">
+                          <AvatarImage src={leader.avatar} alt={leader.name} />
+                          <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <span className="text-sm text-muted-foreground flex items-center gap-1"><Mic className="w-3 h-3"/>Dirigente</span>
+                          <p className="font-semibold">{leader.name}</p>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                    {preacher && (
+                       <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10" data-ai-hint="person portrait">
+                          <AvatarImage src={preacher.avatar} alt={preacher.name} />
+                          <AvatarFallback>{getMemberInitial(preacher.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <span className="text-sm text-muted-foreground flex items-center gap-1"><BookUser className="w-3 h-3"/>Pregador</span>
+                          <p className="font-semibold">{preacher.name}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
 
                   {teamMembers.length > 0 && (
                       <div>
-                          <h3 className="font-semibold mb-3 flex items-center gap-2"><Users className="w-4 h-4"/>Multimídia</h3>
+                          <Separator className="my-4" />
+                          <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm"><Users className="w-4 h-4"/>Equipe de Apoio</h3>
                           <div className="flex flex-wrap gap-x-4 gap-y-2">
                               {teamMembers.map(member => (
                                    <Tooltip key={member.id}>
@@ -119,7 +137,8 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                   )}
 
                   <div>
-                      <h3 className="font-semibold mb-2 flex items-center gap-2"><ListMusic className="w-4 h-4"/>Repertório</h3>
+                      <Separator className="my-4" />
+                      <h3 className="font-semibold mb-2 flex items-center gap-2 text-sm"><ListMusic className="w-4 h-4"/>Repertório</h3>
                       {playlistSongs.length > 0 ? (
                           <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                               {playlistSongs.map(song => (

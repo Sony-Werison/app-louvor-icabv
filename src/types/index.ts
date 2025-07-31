@@ -20,8 +20,9 @@ export type Schedule = {
   name: string;
   date: Date;
   leaderId: string;
+  preacherId: string | null;
   playlist: string[]; // array of song ids
-  team?: Record<string, string[]>; // roleId -> memberId[]
+  team?: Record<string, (string | null)[]>; // roleId -> memberId[]
 };
 
 export type ScheduleColumn = {

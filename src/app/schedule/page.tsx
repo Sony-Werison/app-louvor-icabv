@@ -27,6 +27,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 name: 'Culto de Dom. - Manhã',
                 date: dateManha,
                 leaderId: assignments.dirigente_manha[0],
+                preacherId: assignments.pregacao_manha?.[0] || null,
                 team: team,
                 playlist: songs.slice(0, 3).map(s => s.id) // Dummy playlist
             });
@@ -43,6 +44,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 name: 'Culto de Dom. - Noite',
                 date: dateNoite,
                 leaderId: assignments.dirigente_noite[0],
+                preacherId: assignments.pregacao_noite?.[0] || null,
                 team: team,
                 playlist: songs.slice(3, 6).map(s => s.id) // Dummy playlist
             });

@@ -1,5 +1,6 @@
 import type { Member, Song, Schedule, MonthlySchedule, ScheduleColumn } from '@/types';
 import { Tv, Sun, Moon, BookUser } from 'lucide-react';
+import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths } from 'date-fns';
 
 export const members: Member[] = [
   { id: '1', name: 'João Silva', avatar: 'https://i.pravatar.cc/150?u=joao', role: 'Líder de Louvor, Vocal', email: 'joao.silva@example.com', phone: '(11) 98765-4321' },
@@ -45,33 +46,45 @@ export const scheduleColumns: ScheduleColumn[] = [
     { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true },
   ];
 
-const generateDates = (): Date[] => {
-    const dates: Date[] = [];
+const generateSaturdays = (date: Date): Date[] => {
+    const start = startOfMonth(date);
+    const end = endOfMonth(date);
+    const days = eachDayOfInterval({ start, end });
+    return days.filter(day => getDay(day) === 6); // 6 = Saturday
+};
+
+
+const generateInitialSchedules = (): MonthlySchedule[] => {
     const today = new Date();
-    const currentDay = today.getDay();
+    const currentMonthSaturdays = generateSaturdays(today);
+    const nextMonthSaturdays = generateSaturdays(addMonths(today, 1));
+
+    const allSaturdays = [...currentMonthSaturdays, ...nextMonthSaturdays];
     
-    // Find the Saturday of the current week (or last week's Saturday if today is Sunday)
-    const thisWeekSaturday = new Date(today);
-    thisWeekSaturday.setDate(today.getDate() - currentDay - 1); // Go back to last Sunday and then one more day to get Saturday
-    thisWeekSaturday.setHours(0,0,0,0);
-    dates.push(thisWeekSaturday);
+    const preachers = members.filter(m => m.role === 'Preletor');
+    const leaders = members.filter(m => m.role.includes('Líder') || m.role.includes('Vocal'));
+    const musicians = members.filter(m => !m.role.includes('Preletor'));
 
-    // Generate the next 3 Saturdays
-    for (let i = 1; i <= 3; i++) {
-        const nextSaturday = new Date(thisWeekSaturday);
-        nextSaturday.setDate(thisWeekSaturday.getDate() + 7 * i);
-        dates.push(nextSaturday);
-    }
-    return dates;
-}
+    return allSaturdays.map((saturday, index) => {
+        const leaderMorning = leaders[index % leaders.length];
+        const leaderNight = leaders[(index + 1) % leaders.length];
+        const preacherMorning = preachers[index % preachers.length];
+        const preacherNight = preachers[(index + 1) % preachers.length];
+        const multimedia1 = musicians[index % musicians.length];
+        const multimedia2 = musicians[(index + 1) % musicians.length];
+        
+        return {
+            date: saturday,
+            assignments: {
+                'dirigente_manha': [leaderMorning.id],
+                'pregacao_manha': [preacherMorning.id],
+                'dirigente_noite': [leaderNight.id],
+                'pregacao_noite': [preacherNight.id],
+                'multimedia': [multimedia1.id, multimedia2.id],
+            }
+        }
+    });
+};
 
-export const monthlySchedules: MonthlySchedule[] = generateDates().map((date, index) => ({
-    date: date,
-    assignments: {
-        'dirigente_manha': [members[index % 4].id],
-        'pregacao_manha': [members[17 + (index % 3)].id],
-        'dirigente_noite': [members[(index + 1) % 4].id],
-        'pregacao_noite': [members[17 + ((index + 1) % 3)].id],
-        'multimedia': [members[(index + 2) % 6 + 2].id, members[(index + 3) % 6 + 2].id],
-    }
-}));
+
+export const monthlySchedules: MonthlySchedule[] = generateInitialSchedules();

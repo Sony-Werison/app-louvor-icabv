@@ -23,6 +23,7 @@ import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { ptBR } from 'date-fns/locale';
 import { useSchedule } from '@/context/schedule-context';
+import { cn } from '@/lib/utils';
 
 interface MonthlyScheduleViewProps {
   schedules: MonthlySchedule[];
@@ -130,7 +131,7 @@ export function MonthlyScheduleView({
                               value={assignedMemberId || ''}
                               onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className={cn(!assignedMemberId && "text-muted-foreground/60")}>
                                 <SelectValue placeholder="Selecione..." />
                               </SelectTrigger>
                               <SelectContent>
