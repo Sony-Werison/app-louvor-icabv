@@ -6,12 +6,17 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ListMusic, Play, Pause, FileText, Music } from 'lucide-react';
+import { ListMusic, Play, Pause, FileText, Music, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Slider } from './ui/slider';
@@ -24,6 +29,7 @@ interface PlaylistViewerProps {
 
 export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewerProps) {
   const [isOpen, setIsOpen] = useState(true);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'lyrics' | 'chords'>('lyrics');
   const [activeSongId, setActiveSongId] = useState<string | null>(null);
 
@@ -36,10 +42,10 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   const activeSong = songsInPlaylist.find(s => s.id === activeSongId);
 
   useEffect(() => {
-    if (songsInPlaylist.length > 0) {
+    if (songsInPlaylist.length > 0 && !activeSongId) {
       setActiveSongId(songsInPlaylist[0].id);
     }
-  }, [schedule.id]);
+  }, [schedule.id, songsInPlaylist, activeSongId]);
 
   useEffect(() => {
     return () => {
@@ -91,91 +97,114 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
       startScrolling();
     }
   };
+  
+  const handleSelectSong = (songId: string) => {
+    setActiveSongId(songId);
+    setIsSheetOpen(false);
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
-      <DialogContent className="max-w-7xl w-[95vw] h-[90vh] grid-rows-[auto,1fr,auto] p-4 sm:p-6 flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="font-headline font-bold text-xl sm:text-2xl truncate">
-            Visualizar: {schedule.name}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-none w-full h-full p-0 gap-0">
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <div className="h-full flex flex-col">
+                  <header className="flex-shrink-0 bg-background/95 backdrop-blur-sm z-20">
+                      <div className="h-16 flex items-center justify-between px-4 border-b">
+                          <div className="flex items-center gap-4">
+                              <SheetTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                      <ListMusic />
+                                  </Button>
+                              </SheetTrigger>
+                              <div className="flex flex-col">
+                                <h1 className="font-headline font-bold text-lg truncate leading-tight">{activeSong?.title || 'Repertório'}</h1>
+                                <p className="text-sm text-muted-foreground truncate leading-tight">{activeSong?.artist}</p>
+                              </div>
+                          </div>
+                           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+                            <TabsList>
+                                <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>
+                                <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
+                            </TabsList>
+                          </Tabs>
+                          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="ml-4">
+                            <X/>
+                          </Button>
+                      </div>
+                  </header>
 
-        <div className="grid md:grid-cols-[300px_1fr] gap-6 h-full min-h-0 py-4">
-          <div className="flex flex-col gap-4 h-full overflow-hidden">
-            <h3 className="font-semibold text-lg flex items-center gap-2 shrink-0"><ListMusic className="w-5 h-5" /> Repertório</h3>
-            <ScrollArea className="flex-grow rounded-md border">
-              <div className="p-2 space-y-1">
-                {songsInPlaylist.map((s) => (
-                  <Button
-                    key={`shortcut-${s.id}`}
-                    variant={activeSongId === s.id ? "secondary" : "ghost"}
-                    className="w-full justify-start h-auto py-2 px-3 text-left"
-                    onClick={() => setActiveSongId(s.id)}
-                  >
-                    <div className="flex flex-col overflow-hidden">
-                      <span className="truncate">{s.title}</span>
-                      <span className="text-xs text-muted-foreground truncate">{s.artist}</span>
+                  <main className="flex-grow min-h-0 relative">
+                      <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
+                      {activeSong ? (
+                          <div className="p-4 sm:p-8 text-lg md:text-xl">
+                              {activeTab === 'lyrics' ? (
+                                  <pre className="whitespace-pre-wrap font-body leading-relaxed">
+                                      {activeSong.lyrics || 'Nenhuma letra disponível.'}
+                                  </pre>
+                              ) : (
+                                  <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra disponível.'} />
+                              )}
+                          </div>
+                      ) : (
+                          <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
+                              <h3 className="text-lg font-semibold">Nenhuma música no repertório</h3>
+                              <p className="text-sm">Adicione músicas na tela de gerenciamento.</p>
+                          </div>
+                      )}
+                      </ScrollArea>
+                      {activeTab === 'chords' && activeSong && (
+                      <div className="absolute bottom-4 right-4 z-10">
+                          <div className="flex items-center justify-center gap-2 rounded-lg border bg-background/80 p-2 shadow-lg backdrop-blur-sm">
+                          <Button variant="ghost" size="icon" onClick={handleToggleScrolling}>
+                              {isScrolling ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                          </Button>
+                          <div className="flex items-center gap-2 w-24 sm:w-32">
+                              <Slider
+                              value={[scrollSpeed]}
+                              onValueChange={(value) => {
+                                  setScrollSpeed(value[0]);
+                                  if (isScrolling) {
+                                  stopScrolling();
+                                  setTimeout(() => startScrolling(), 0);
+                                  }
+                              }}
+                              min={1}
+                              max={100}
+                              step={1}
+                              />
+                          </div>
+                          </div>
+                      </div>
+                      )}
+                  </main>
+              </div>
+
+              <SheetContent side="left" className="p-0 flex flex-col">
+                <SheetHeader className="p-4 border-b">
+                    <SheetTitle>Repertório - {schedule.name}</SheetTitle>
+                </SheetHeader>
+                <ScrollArea className="flex-grow">
+                    <div className="p-2 space-y-1">
+                        {songsInPlaylist.map((s, index) => (
+                        <Button
+                            key={`shortcut-${s.id}`}
+                            variant={activeSongId === s.id ? "secondary" : "ghost"}
+                            className="w-full justify-start h-auto py-2 px-3 text-left"
+                            onClick={() => handleSelectSong(s.id)}
+                        >
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm font-bold text-muted-foreground w-4">{index + 1}</span>
+                                <div className="flex flex-col overflow-hidden">
+                                    <span className="truncate">{s.title}</span>
+                                    <span className="text-xs text-muted-foreground truncate">{s.artist}</span>
+                                </div>
+                            </div>
+                        </Button>
+                        ))}
                     </div>
-                  </Button>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-          <div className="h-full flex flex-col gap-4 overflow-hidden relative">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-shrink-0">
-              <TabsList>
-                <TabsTrigger value="lyrics"><FileText className="mr-2"/>Letra</TabsTrigger>
-                <TabsTrigger value="chords"><Music className="mr-2"/>Cifras</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <ScrollArea className="flex-grow rounded-md border" viewportRef={scrollViewportRef}>
-              {activeSong ? (
-                <div className="p-4 sm:p-6 text-lg">
-                  <h3 className="font-bold text-2xl font-headline">{activeSong.title}</h3>
-                  <p className="text-base text-muted-foreground mb-4">{activeSong.artist} - (Tom: {activeSong.key})</p>
-                  {activeTab === 'lyrics' ? (
-                    <pre className="whitespace-pre-wrap font-body text-base sm:text-lg leading-relaxed">
-                      {activeSong.lyrics || 'Nenhuma letra disponível.'}
-                    </pre>
-                  ) : (
-                    <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra disponível.'} />
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
-                  <h3 className="text-lg font-semibold">Selecione uma música</h3>
-                  <p className="text-sm">Clique em uma música na lista à esquerda para ver os detalhes aqui.</p>
-                </div>
-              )}
-            </ScrollArea>
-             {activeTab === 'chords' && (
-              <div className="absolute bottom-4 right-4 z-10">
-                <div className="flex items-center justify-center gap-2 rounded-lg border bg-background/80 p-2 shadow-lg backdrop-blur-sm">
-                  <Button variant="ghost" size="icon" onClick={handleToggleScrolling} disabled={!activeSong}>
-                    {isScrolling ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-                  </Button>
-                  <div className="flex items-center gap-2 w-24 sm:w-32">
-                    <Slider
-                      value={[scrollSpeed]}
-                      onValueChange={(value) => {
-                        setScrollSpeed(value[0]);
-                        if (isScrolling) {
-                          stopScrolling();
-                          setTimeout(() => startScrolling(), 0);
-                        }
-                      }}
-                      min={1}
-                      max={100}
-                      step={1}
-                      disabled={!activeSong}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+                </ScrollArea>
+            </SheetContent>
+        </Sheet>
       </DialogContent>
     </Dialog>
   );
