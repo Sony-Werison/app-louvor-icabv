@@ -68,8 +68,8 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
-      <DialogContent className="max-w-md h-[80vh] flex flex-col p-4 sm:p-6">
-        <DialogHeader>
+      <DialogContent className="max-w-md h-[90vh] sm:h-[80vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="font-headline font-bold text-xl sm:text-2xl">
             Gerenciar Repertório - {schedule.name}
           </DialogTitle>
@@ -79,11 +79,11 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
         </DialogHeader>
         
         <Tabs defaultValue="available" className="flex-grow flex flex-col min-h-0 mt-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 shrink-0">
             <TabsTrigger value="available">Disponíveis ({availableSongs.length})</TabsTrigger>
             <TabsTrigger value="selected">Selecionadas ({songsInPlaylist.length})</TabsTrigger>
           </TabsList>
-          <TabsContent value="available" className="flex-grow rounded-md border mt-2">
+          <TabsContent value="available" className="flex-grow rounded-md border mt-2 min-h-0">
              <ScrollArea className="h-full p-4">
                 <div className="space-y-4">
                 {availableSongs.map(song => (
@@ -102,7 +102,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                 </div>
             </ScrollArea>
           </TabsContent>
-          <TabsContent value="selected" className="flex-grow rounded-md border mt-2">
+          <TabsContent value="selected" className="flex-grow rounded-md border mt-2 min-h-0">
             <ScrollArea className="h-full p-4">
             {songsInPlaylist.length > 0 ? (
                 <div className="space-y-2">
@@ -116,14 +116,14 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                         onDragEnd={handleDragSort}
                         onDragOver={(e) => e.preventDefault()}
                     >
-                        <div className="flex items-center gap-2">
-                            <GripVertical className="h-5 w-5 text-muted-foreground"/>
-                            <div>
-                                <p className="font-medium">{song.title}</p>
-                                <p className="text-sm text-muted-foreground">{song.artist}</p>
+                        <div className="flex items-center gap-2 overflow-hidden">
+                            <GripVertical className="h-5 w-5 text-muted-foreground shrink-0"/>
+                            <div className="truncate">
+                                <p className="font-medium truncate">{song.title}</p>
+                                <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
                             </div>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => handleCheckedChange(song.id, false)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleCheckedChange(song.id, false)} className="shrink-0">
                             <X className="h-4 w-4"/>
                         </Button>
                     </div>
