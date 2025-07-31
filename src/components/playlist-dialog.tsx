@@ -13,11 +13,10 @@ import {
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
-import { ScrollArea, ScrollBar } from './ui/scroll-area';
+import { ScrollArea } from './ui/scroll-area';
 import { X, Music, GripVertical, ListMusic, Eye, Play, Pause } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ChordDisplay } from './chord-display';
 import { Slider } from './ui/slider';
 
@@ -28,12 +27,150 @@ interface PlaylistDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const SingleSongView = ({ type, song, songsInPlaylist, onSongSelect, activeSongId }: { 
+    type: 'lyrics' | 'chords', 
+    song: Song | undefined,
+    songsInPlaylist: Song[],
+    onSongSelect: (songId: string) => void,
+    activeSongId: string | null,
+}) => {
+    const [isScrolling, setIsScrolling] = useState(false);
+    const [scrollSpeed, setScrollSpeed] = useState(50); // From 1 to 100
+    const scrollViewportRef = useRef<HTMLDivElement>(null);
+    const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const stopScrolling = () => {
+        if (scrollIntervalRef.current) {
+            clearInterval(scrollIntervalRef.current);
+            scrollIntervalRef.current = null;
+        }
+        setIsScrolling(false);
+    };
+
+    const startScrolling = () => {
+        stopScrolling();
+        if (!scrollViewportRef.current) return;
+
+        setIsScrolling(true);
+        const maxScroll = scrollViewportRef.current.scrollHeight - scrollViewportRef.current.clientHeight;
+        if (scrollViewportRef.current.scrollTop >= maxScroll) {
+            scrollViewportRef.current.scrollTop = 0; // Reset scroll if at the bottom
+        }
+
+        scrollIntervalRef.current = setInterval(() => {
+            if (scrollViewportRef.current) {
+                const currentMaxScroll = scrollViewportRef.current.scrollHeight - scrollViewportRef.current.clientHeight;
+                if (scrollViewportRef.current.scrollTop < currentMaxScroll) {
+                    scrollViewportRef.current.scrollTop += 1;
+                } else {
+                    stopScrolling();
+                }
+            }
+        }, 151 - (scrollSpeed * 1.5)); // Adjust multiplier for a good speed range
+    };
+
+    useEffect(() => {
+        // Stop scrolling when song or tab changes
+        stopScrolling();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [song, type]);
+
+    useEffect(() => {
+        // Cleanup on unmount
+        return () => stopScrolling();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleToggleScrolling = () => {
+        if (isScrolling) {
+            stopScrolling();
+        } else {
+            startScrolling();
+        }
+    };
+    
+    return (
+        <div className="grid md:grid-cols-[250px_1fr] gap-6 h-full py-4">
+            <div className="flex flex-col gap-4 h-full overflow-hidden">
+                <h3 className="font-semibold text-lg flex items-center gap-2 shrink-0"><ListMusic className="w-5 h-5" /> Repertório</h3>
+                <ScrollArea className="flex-grow rounded-md border">
+                    <div className="p-2 space-y-1">
+                        {songsInPlaylist.map((s) => (
+                            <Button 
+                                key={`shortcut-${s.id}`}
+                                variant={activeSongId === s.id ? "secondary" : "ghost"}
+                                className="w-full justify-start h-auto py-2 px-3 text-left"
+                                onClick={() => onSongSelect(s.id)}
+                            >
+                                <div className="flex flex-col">
+                                    <span>{s.title}</span>
+                                    <span className="text-xs text-muted-foreground">{s.artist}</span>
+                                </div>
+                            </Button>
+                        ))}
+                    </div>
+                </ScrollArea>
+            </div>
+            <div className="h-full flex flex-col gap-2 overflow-hidden relative">
+                <ScrollArea className="flex-grow rounded-md border" viewportRef={scrollViewportRef}>
+                    {song ? (
+                    <div className="p-6">
+                        <h3 className="font-bold text-xl font-headline">{song.title}</h3>
+                        <p className="text-sm text-muted-foreground mb-4">{song.artist} - (Tom: {song.key})</p>
+                        {type === 'lyrics' ? (
+                            <pre className="whitespace-pre-wrap font-body text-base leading-relaxed">
+                                {song.lyrics || 'Nenhuma letra disponível.'}
+                            </pre>
+                        ) : (
+                            <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} />
+                        )}
+                    </div>
+                    ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
+                        <Eye className="w-12 h-12 mb-4" />
+                        <h3 className="text-lg font-semibold">Selecione uma música</h3>
+                        <p className="text-sm">Clique em uma música na lista à esquerda para ver os detalhes aqui.</p>
+                    </div>
+                    )}
+                </ScrollArea>
+                 {type === 'chords' && (
+                    <div className="absolute bottom-4 right-4 z-10">
+                        <div className="flex items-center justify-center gap-2 rounded-lg border bg-background/80 p-2 shadow-lg backdrop-blur-sm">
+                            <Button variant="ghost" size="icon" onClick={handleToggleScrolling} disabled={!song}>
+                                {isScrolling ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                            </Button>
+                            <div className="flex items-center gap-2 w-32">
+                                <Slider
+                                    value={[scrollSpeed]}
+                                    onValueChange={(value) => {
+                                        setScrollSpeed(value[0]);
+                                        if (isScrolling) { // Update speed immediately
+                                            stopScrolling();
+                                            startScrolling();
+                                        }
+                                    }}
+                                    min={1}
+                                    max={100}
+                                    step={1}
+                                    disabled={!song}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
 export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: PlaylistDialogProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [currentPlaylist, setCurrentPlaylist] = useState<string[]>(schedule.playlist);
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
   const [activeSongId, setActiveSongId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('selection');
 
   useEffect(() => {
     setIsOpen(true);
@@ -60,7 +197,8 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     setCurrentPlaylist(newPlaylist);
 
     if (activeSongId === songId && !checked) {
-      setActiveSongId(newPlaylist.length > 0 ? newPlaylist[0] : null);
+        const newActiveIndex = newPlaylist.indexOf(activeSongId);
+        setActiveSongId(newPlaylist.length > 0 ? newPlaylist[Math.max(0, newActiveIndex)] : null);
     } else if (!activeSongId && newPlaylist.length > 0) {
       setActiveSongId(newPlaylist[0]);
     }
@@ -87,129 +225,6 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   const availableSongs = allSongs.filter(song => !currentPlaylist.includes(song.id));
   const activeSong = songsInPlaylist.find(s => s.id === activeSongId);
   
-  const SingleSongView = ({ type, song }: { type: 'lyrics' | 'chords', song: Song | undefined }) => {
-    const [isScrolling, setIsScrolling] = useState(false);
-    const [scrollSpeed, setScrollSpeed] = useState(50);
-    const scrollViewportRef = useRef<HTMLDivElement>(null);
-    const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-    const stopScrolling = () => {
-        if (scrollIntervalRef.current) {
-            clearInterval(scrollIntervalRef.current);
-            scrollIntervalRef.current = null;
-        }
-        setIsScrolling(false);
-    }
-
-    const startScrolling = () => {
-        stopScrolling();
-        setIsScrolling(true);
-        
-        scrollIntervalRef.current = setInterval(() => {
-            if (scrollViewportRef.current) {
-                const { scrollTop, scrollHeight, clientHeight } = scrollViewportRef.current;
-                if (scrollTop < scrollHeight - clientHeight) {
-                    scrollViewportRef.current.scrollTop += 1;
-                } else {
-                    stopScrolling();
-                }
-            }
-        }, 101 - scrollSpeed);
-    };
-
-    useEffect(() => {
-        // Stop scrolling when song changes or when switching tabs
-        stopScrolling();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [song, type]);
-
-
-    useEffect(() => {
-        // Cleanup on unmount
-        return () => stopScrolling();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const handleToggleScrolling = () => {
-        if (isScrolling) {
-            stopScrolling();
-        } else {
-            startScrolling();
-        }
-    }
-    
-    return (
-        <div className="grid md:grid-cols-[250px_1fr] gap-6 h-full py-4">
-            <div className="flex flex-col gap-4 h-full">
-                <h3 className="font-semibold text-lg flex items-center gap-2"><ListMusic className="w-5 h-5" /> Repertório</h3>
-                <ScrollArea className="flex-grow rounded-md border">
-                    <div className="p-2 space-y-1">
-                        {songsInPlaylist.map((s) => (
-                            <Button 
-                                key={`shortcut-${s.id}`}
-                                variant={activeSongId === s.id ? "secondary" : "ghost"}
-                                className="w-full justify-start h-auto py-2 px-3 text-left"
-                                onClick={() => handleShortcutClick(s.id)}
-                            >
-                                <div className="flex flex-col">
-                                    <span>{s.title}</span>
-                                    <span className="text-xs text-muted-foreground">{s.artist}</span>
-                                </div>
-                            </Button>
-                        ))}
-                    </div>
-                </ScrollArea>
-            </div>
-            <div className="h-full flex flex-col gap-2">
-                <ScrollArea className="flex-grow rounded-md border" viewportRef={scrollViewportRef}>
-                    {song ? (
-                    <div className="p-6">
-                        <h3 className="font-bold text-xl font-headline">{song.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-4">{song.artist} - (Tom: {song.key})</p>
-                        {type === 'lyrics' ? (
-                            <pre className="whitespace-pre-wrap font-body text-base leading-relaxed">
-                                {song.lyrics || 'Nenhuma letra disponível.'}
-                            </pre>
-                        ) : (
-                            <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} />
-                        )}
-                    </div>
-                    ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
-                        <Eye className="w-12 h-12 mb-4" />
-                        <h3 className="text-lg font-semibold">Selecione uma música</h3>
-                        <p className="text-sm">Clique em uma música na lista à esquerda para ver os detalhes aqui.</p>
-                    </div>
-                    )}
-                </ScrollArea>
-                {type === 'chords' && (
-                     <div className="flex shrink-0 items-center justify-center gap-4 rounded-md border p-2">
-                        <Button variant="ghost" size="icon" onClick={handleToggleScrolling} disabled={!song}>
-                            {isScrolling ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-                        </Button>
-                        <div className="flex items-center gap-2 w-full max-w-xs">
-                             <span className="text-xs text-muted-foreground">Lento</span>
-                             <Slider
-                                value={[scrollSpeed]}
-                                onValueChange={(value) => {
-                                    setScrollSpeed(value[0]);
-                                    if(isScrolling) startScrolling(); // Update speed immediately
-                                }}
-                                min={1}
-                                max={100}
-                                step={1}
-                                disabled={!song}
-                              />
-                             <span className="text-xs text-muted-foreground">Rápido</span>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-  };
-
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-6xl grid-rows-[auto,1fr,auto] h-[90vh] sm:h-[80vh]">
@@ -222,16 +237,22 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="selection" className="flex flex-col overflow-hidden" onValueChange={() => {
-            if (currentPlaylist.length > 0 && !activeSongId) {
-                setActiveSongId(currentPlaylist[0]);
-            }
-        }}>
+        <Tabs 
+            value={activeTab} 
+            onValueChange={(value) => {
+                setActiveTab(value);
+                if (currentPlaylist.length > 0 && !activeSongId) {
+                    setActiveSongId(currentPlaylist[0]);
+                }
+            }} 
+            className="flex flex-col overflow-hidden"
+        >
             <TabsList className="shrink-0">
                 <TabsTrigger value="selection">Seleção</TabsTrigger>
                 <TabsTrigger value="lyrics">Letras</TabsTrigger>
                 <TabsTrigger value="chords">Cifras</TabsTrigger>
             </TabsList>
+
             <TabsContent value="selection" className="flex-grow overflow-auto mt-2">
                 <div className="grid md:grid-cols-2 gap-6 py-4 h-full">
                     <div className="flex flex-col gap-4 h-full">
@@ -292,11 +313,23 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                     </div>
                 </div>
             </TabsContent>
-            <TabsContent value="lyrics" className="flex-grow overflow-hidden mt-2">
-                 <SingleSongView type="lyrics" song={activeSong} />
+             <TabsContent value="lyrics" className="flex-grow overflow-hidden mt-2">
+                 <SingleSongView 
+                    type="lyrics" 
+                    song={activeSong} 
+                    songsInPlaylist={songsInPlaylist}
+                    onSongSelect={handleShortcutClick}
+                    activeSongId={activeSongId}
+                />
             </TabsContent>
             <TabsContent value="chords" className="flex-grow overflow-hidden mt-2">
-                <SingleSongView type="chords" song={activeSong} />
+                <SingleSongView 
+                    type="chords" 
+                    song={activeSong} 
+                    songsInPlaylist={songsInPlaylist}
+                    onSongSelect={handleShortcutClick}
+                    activeSongId={activeSongId}
+                />
             </TabsContent>
         </Tabs>
 
