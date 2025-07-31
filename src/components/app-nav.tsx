@@ -31,7 +31,7 @@ export function AppNav() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} passHref legacyBehavior>
+              <Link href={item.href} passHref>
                 <SidebarMenuButton
                   as="a"
                   isActive={pathname.startsWith(item.href)}

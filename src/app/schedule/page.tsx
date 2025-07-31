@@ -10,6 +10,8 @@ const transformMonthlyToSchedule = (monthlySchedules: any[], songs: any[]): Sche
         const saturday = new Date(ms.date);
         saturday.setHours(0,0,0,0);
         
+        const assignments = ms.assignments || {};
+
         // Culto de Domingo - Manhã
         const dateManha = new Date(saturday);
         dateManha.setDate(dateManha.getDate() + 1); // Sunday
@@ -19,12 +21,11 @@ const transformMonthlyToSchedule = (monthlySchedules: any[], songs: any[]): Sche
             id: `s-manha-${saturday.getTime()}`,
             name: 'Culto de Dom. - Manhã',
             date: dateManha,
-            leaderId: ms.assignments.dirigente_manha?.[0] || '',
+            leaderId: assignments.dirigente_manha?.[0] || '',
             team: {
-                ...ms.assignments,
-                dirigente_manha: ms.assignments.dirigente_manha || [],
-                pregacao_manha: ms.assignments.pregacao_manha || [],
-                multimedia: ms.assignments.multimedia || [],
+                dirigente_manha: assignments.dirigente_manha || [],
+                pregacao_manha: assignments.pregacao_manha || [],
+                multimedia: assignments.multimedia || [],
             },
             playlist: songs.slice(0, 3).map(s => s.id) // Dummy playlist
         });
@@ -37,12 +38,11 @@ const transformMonthlyToSchedule = (monthlySchedules: any[], songs: any[]): Sche
             id: `s-noite-${saturday.getTime()}`,
             name: 'Culto de Dom. - Noite',
             date: dateNoite,
-            leaderId: ms.assignments.dirigente_noite?.[0] || '',
+            leaderId: assignments.dirigente_noite?.[0] || '',
             team: {
-                 ...ms.assignments,
-                dirigente_noite: ms.assignments.dirigente_noite || [],
-                pregacao_noite: ms.assignments.pregacao_noite || [],
-                multimedia: ms.assignments.multimedia || [],
+                dirigente_noite: assignments.dirigente_noite || [],
+                pregacao_noite: assignments.pregacao_noite || [],
+                multimedia: assignments.multimedia || [],
             },
             playlist: songs.slice(3, 6).map(s => s.id) // Dummy playlist
         });
