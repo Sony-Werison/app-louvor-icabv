@@ -36,7 +36,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 leaderId: assignments.dirigente_manha[0],
                 preacherId: assignments.pregacao_manha?.[0] || null,
                 team: team,
-                playlist: ms.playlist_manha || songs.slice(0, 3).map(s => s.id) 
+                playlist: ms.playlist_manha || []
             });
         }
 
@@ -53,7 +53,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 leaderId: assignments.dirigente_noite[0],
                 preacherId: assignments.pregacao_noite?.[0] || null,
                 team: team,
-                playlist: ms.playlist_noite || songs.slice(3, 6).map(s => s.id)
+                playlist: ms.playlist_noite || []
             });
         }
     });
