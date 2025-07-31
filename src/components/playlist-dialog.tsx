@@ -3,6 +3,7 @@
 
 import type { Schedule, Song, SongCategory } from '@/types';
 import { useState, useMemo } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,16 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
       checked ? [...prev, songId] : prev.filter(id => id !== songId)
     );
   };
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const items = Array.from(currentPlaylist);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setCurrentPlaylist(items);
+  };
   
   const songsInPlaylist = useMemo(() => 
     currentPlaylist.map(id => allSongs.find(song => song.id === id)).filter((s): s is Song => !!s),
@@ -80,7 +91,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-none w-full h-full sm:h-[90vh] p-0 gap-0 flex flex-col">
-        <DialogHeader className="p-4 border-b">
+        <DialogHeader className="p-4 border-b shrink-0">
            <div className="flex items-center justify-between gap-4">
               <div className="flex flex-col">
                   <DialogTitle className="text-lg sm:text-xl font-bold">Gerenciar Repertório</DialogTitle>
@@ -92,16 +103,15 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
            </div>
         </DialogHeader>
         
-        <main className="flex-grow min-h-0">
-            <Tabs defaultValue="available" className="flex flex-col h-full">
-            <div className="px-4 pt-4 pb-2 border-b">
+        <Tabs defaultValue="available" className="flex-grow min-h-0 flex flex-col">
+            <div className="px-4 pt-4 pb-2 border-b shrink-0">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="available">Adicionar Músicas</TabsTrigger>
-                    <TabsTrigger value="selected">Repertório Selecionado ({songsInPlaylist.length})</TabsTrigger>
+                    <TabsTrigger value="selected">Selecionadas ({songsInPlaylist.length})</TabsTrigger>
                 </TabsList>
             </div>
             <TabsContent value="available" className="flex-grow flex flex-col min-h-0 mt-0">
-                <div className="px-4 py-2 border-b flex flex-col sm:flex-row gap-2">
+                <div className="px-4 py-2 border-b flex flex-col sm:flex-row gap-2 shrink-0">
                     <div className="relative flex-grow">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input 
@@ -146,41 +156,58 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                     </Accordion>
                 </ScrollArea>
             </TabsContent>
-            <TabsContent value="selected" className="flex-grow mt-0">
-                <ScrollArea className="h-full p-4">
-                {songsInPlaylist.length > 0 ? (
-                    <div className="space-y-2">
-                    {songsInPlaylist.map((song, index) => (
-                        <div 
-                            key={song.id} 
-                            className="flex items-center justify-between p-2 rounded-md hover:bg-muted"
+            <TabsContent value="selected" className="flex-grow mt-0 flex flex-col min-h-0">
+                <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="playlist">
+                      {(provided) => (
+                        <ScrollArea 
+                          className="h-full flex-grow p-4"
+                          {...provided.droppableProps}
+                          ref={provided.innerRef}
                         >
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <GripVertical className="h-5 w-5 text-muted-foreground shrink-0 cursor-grab active:cursor-grabbing"/>
-                                <div className="truncate">
-                                    <p className="font-medium truncate">{song.title}</p>
-                                    <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
-                                </div>
-                            </div>
-                            <Button variant="ghost" size="icon" onClick={() => handleCheckedChange(song.id, false)} className="shrink-0">
-                                <X className="h-4 w-4"/>
-                            </Button>
-                        </div>
-                    ))}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                        <Music className="w-10 h-10 mb-2"/>
-                        <p>Nenhuma música selecionada</p>
-                        <p className="text-sm">Volte para a aba "Adicionar Músicas" para montar o repertório.</p>
-                    </div>
-                )}
-                </ScrollArea>
+                          {songsInPlaylist.length > 0 ? (
+                              <div className="space-y-2">
+                              {songsInPlaylist.map((song, index) => (
+                                <Draggable key={song.id} draggableId={song.id} index={index}>
+                                  {(provided) => (
+                                    <div 
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      className="flex items-center justify-between p-2 rounded-md hover:bg-muted bg-card"
+                                    >
+                                      <div className="flex items-center gap-3 overflow-hidden">
+                                        <div {...provided.dragHandleProps}>
+                                          <GripVertical className="h-5 w-5 text-muted-foreground shrink-0"/>
+                                        </div>
+                                        <div className="truncate">
+                                            <p className="font-medium truncate">{song.title}</p>
+                                            <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
+                                        </div>
+                                      </div>
+                                      <Button variant="ghost" size="icon" onClick={() => handleCheckedChange(song.id, false)} className="shrink-0">
+                                          <X className="h-4 w-4"/>
+                                      </Button>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              ))}
+                              {provided.placeholder}
+                              </div>
+                          ) : (
+                              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                                  <Music className="w-10 h-10 mb-2"/>
+                                  <p>Nenhuma música selecionada</p>
+                                  <p className="text-sm">Volte para a aba "Adicionar Músicas" para montar o repertório.</p>
+                              </div>
+                          )}
+                        </ScrollArea>
+                      )}
+                    </Droppable>
+                </DragDropContext>
             </TabsContent>
-            </Tabs>
-        </main>
+        </Tabs>
         
-        <DialogFooter className="p-4 border-t">
+        <DialogFooter className="p-4 border-t shrink-0">
           <Button variant="outline" onClick={() => { setIsOpen(false); onOpenChange(false); }}>Cancelar</Button>
           <Button onClick={handleSave}>Salvar e Fechar</Button>
         </DialogFooter>
