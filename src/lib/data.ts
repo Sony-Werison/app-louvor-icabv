@@ -84,7 +84,7 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
         const multimedia1 = musicians[index % musicians.length];
         const multimedia2 = musicians[(index + 2) % musicians.length];
         
-        // Only populate assignments for Sundays, as Saturdays are for planning them
+        // Only populate assignments for Sundays
         const assignments = isSunday ? {
                 'dirigente_manha': [leaderMorning.id],
                 'pregacao_manha': [preacherMorning.id],
