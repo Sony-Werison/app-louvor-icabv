@@ -14,8 +14,9 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { X, Music, GripVertical } from 'lucide-react';
+import { X, Music, GripVertical, ListMusic } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 interface PlaylistDialogProps {
   schedule: Schedule;
@@ -29,6 +30,8 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   const [currentPlaylist, setCurrentPlaylist] = useState<string[]>(schedule.playlist);
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
+  const [activeSong, setActiveSong] = useState<string | null>(null);
+
 
   useEffect(() => {
     setIsOpen(true);
@@ -60,9 +63,56 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
 
     setCurrentPlaylist(playlistItems);
   };
+  
+  const handleShortcutClick = (songId: string) => {
+    const element = document.getElementById(`song-content-${songId}`);
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setActiveSong(songId);
+    }
+  }
 
   const songsInPlaylist = currentPlaylist.map(id => allSongs.find(song => song.id === id)).filter((s): s is Song => !!s);
   const availableSongs = allSongs.filter(song => !currentPlaylist.includes(song.id));
+  
+  const ConsolidatedView = ({ type }: { type: 'lyrics' | 'chords' }) => (
+    <div className="grid md:grid-cols-[250px_1fr] gap-6 h-full py-4">
+        <div className="flex flex-col gap-4 h-full">
+            <h3 className="font-semibold text-lg flex items-center gap-2"><ListMusic className="w-5 h-5" /> Repertório</h3>
+             <ScrollArea className="flex-grow rounded-md border">
+                <div className="p-2 space-y-1">
+                    {songsInPlaylist.map((song) => (
+                        <Button 
+                            key={`shortcut-${song.id}`}
+                            variant={activeSong === song.id ? "secondary" : "ghost"}
+                            className="w-full justify-start h-auto py-2 px-3 text-left"
+                            onClick={() => handleShortcutClick(song.id)}
+                        >
+                             <div className="flex flex-col">
+                                <span>{song.title}</span>
+                                <span className="text-xs text-muted-foreground">{song.artist}</span>
+                            </div>
+                        </Button>
+                    ))}
+                </div>
+            </ScrollArea>
+        </div>
+         <ScrollArea className="h-full rounded-md border">
+            <div className="p-6 space-y-8">
+                {songsInPlaylist.map(song => (
+                    <div key={`${type}-${song.id}`} id={`song-content-${song.id}`}>
+                        <h3 className="font-bold text-xl font-headline">{song.title}</h3>
+                        <p className="text-sm text-muted-foreground mb-4">{song.artist}</p>
+                        <pre className={cn("whitespace-pre-wrap text-base leading-relaxed", type === 'lyrics' ? 'font-body': 'font-code')}>
+                            {type === 'lyrics' ? (song.lyrics || 'Nenhuma letra disponível.') : (song.chords || 'Nenhuma cifra disponível.')}
+                        </pre>
+                    </div>
+                ))}
+            </div>
+        </ScrollArea>
+    </div>
+  );
+
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
@@ -76,7 +126,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="selection" className="flex flex-col overflow-hidden">
+        <Tabs defaultValue="selection" className="flex flex-col overflow-hidden" onValueChange={() => setActiveSong(null)}>
             <TabsList className="shrink-0">
                 <TabsTrigger value="selection">Seleção</TabsTrigger>
                 <TabsTrigger value="lyrics">Letras</TabsTrigger>
@@ -143,34 +193,10 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                 </div>
             </TabsContent>
             <TabsContent value="lyrics" className="flex-grow overflow-auto mt-2">
-                <ScrollArea className="h-full rounded-md border p-4">
-                    <div className="space-y-8">
-                        {songsInPlaylist.map(song => (
-                            <div key={`lyrics-${song.id}`}>
-                                <h3 className="font-bold text-xl font-headline">{song.title}</h3>
-                                <p className="text-sm text-muted-foreground mb-4">{song.artist}</p>
-                                <pre className="whitespace-pre-wrap font-body text-base leading-relaxed">
-                                    {song.lyrics || 'Nenhuma letra disponível.'}
-                                </pre>
-                            </div>
-                        ))}
-                    </div>
-                </ScrollArea>
+                 <ConsolidatedView type="lyrics" />
             </TabsContent>
             <TabsContent value="chords" className="flex-grow overflow-auto mt-2">
-                <ScrollArea className="h-full rounded-md border p-4">
-                    <div className="space-y-8">
-                        {songsInPlaylist.map(song => (
-                            <div key={`chords-${song.id}`}>
-                                <h3 className="font-bold text-xl font-headline">{song.title}</h3>
-                                <p className="text-sm text-muted-foreground mb-4">{song.artist}</p>
-                                <pre className="whitespace-pre-wrap font-code text-base leading-relaxed">
-                                    {song.chords || 'Nenhuma cifra disponível.'}
-                                </pre>
-                            </div>
-                        ))}
-                    </div>
-                </ScrollArea>
+                <ConsolidatedView type="chords" />
             </TabsContent>
         </Tabs>
 
