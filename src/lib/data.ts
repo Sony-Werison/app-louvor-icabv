@@ -38,40 +38,34 @@ export const songs: Song[] = [
 ];
 
 export const scheduleColumns: ScheduleColumn[] = [
-  { id: 'dirigente_manha', label: 'Dirigente Manhã', icon: Sun },
-  { id: 'pregacao_manha', label: 'Pregação Manhã', icon: BookUser },
-  { id: 'dirigente_noite', label: 'Dirigente Noite', icon: Moon },
-  { id: 'pregacao_noite', label: 'Pregação Noite', icon: BookUser },
-  { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true },
-];
+    { id: 'dirigente_manha', label: 'Dirigente Manhã', icon: Sun },
+    { id: 'pregacao_manha', label: 'Pregação Manhã', icon: BookUser },
+    { id: 'dirigente_noite', label: 'Dirigente Noite', icon: Moon },
+    { id: 'pregacao_noite', label: 'Pregação Noite', icon: BookUser },
+    { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true },
+  ];
 
-const getNextSaturday = (date: Date) => {
-    const newDate = new Date(date);
-    const day = newDate.getDay();
-    const diff = day === 6 ? 7 : (6-day+7)%7;
-    newDate.setDate(newDate.getDate() + diff);
-    newDate.setHours(0,0,0,0);
-    return newDate;
-}
-
-const generateDates = (startDate: Date, count: number): Date[] => {
+const generateDates = (): Date[] => {
     const dates: Date[] = [];
-    let currentDate = new Date(startDate);
-    for(let i=0; i < count; i++) {
-        dates.push(new Date(currentDate));
-        currentDate.setDate(currentDate.getDate() + 7);
+    const today = new Date();
+    const currentDay = today.getDay();
+    
+    // Find the Saturday of the current week (or last week's Saturday if today is Sunday)
+    const thisWeekSaturday = new Date(today);
+    thisWeekSaturday.setDate(today.getDate() - currentDay - 1); // Go back to last Sunday and then one more day to get Saturday
+    thisWeekSaturday.setHours(0,0,0,0);
+    dates.push(thisWeekSaturday);
+
+    // Generate the next 3 Saturdays
+    for (let i = 1; i <= 3; i++) {
+        const nextSaturday = new Date(thisWeekSaturday);
+        nextSaturday.setDate(thisWeekSaturday.getDate() + 7 * i);
+        dates.push(nextSaturday);
     }
     return dates;
 }
 
-const today = new Date();
-const dayOfWeek = today.getDay();
-const daysUntilSaturday = dayOfWeek === 6 ? 0 : 6 - dayOfWeek;
-const firstSaturday = new Date(new Date().setDate(today.getDate() + daysUntilSaturday));
-firstSaturday.setHours(0,0,0,0);
-
-
-export const monthlySchedules: MonthlySchedule[] = generateDates(firstSaturday, 4).map((date, index) => ({
+export const monthlySchedules: MonthlySchedule[] = generateDates().map((date, index) => ({
     date: date,
     assignments: {
         'dirigente_manha': [members[index % 4].id],
