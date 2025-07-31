@@ -66,7 +66,7 @@ const SingleSongView = ({ type, song, songsInPlaylist, onSongSelect, activeSongI
                     stopScrolling();
                 }
             }
-        }, 151 - (scrollSpeed * 1.5)); // Adjust multiplier for a good speed range
+        }, 151 - (scrollSpeed * 1.3)); // Adjust multiplier for a good speed range
     };
 
     useEffect(() => {
@@ -145,6 +145,7 @@ const SingleSongView = ({ type, song, songsInPlaylist, onSongSelect, activeSongI
                                     onValueChange={(value) => {
                                         setScrollSpeed(value[0]);
                                         if (isScrolling) { // Update speed immediately
+                                            // Must restart to apply new speed
                                             stopScrolling();
                                             startScrolling();
                                         }
