@@ -157,7 +157,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                 </ScrollArea>
             </div>
             <div className="h-full flex flex-col gap-2">
-                <ScrollArea className="h-full rounded-md border" viewportRef={scrollViewportRef}>
+                <ScrollArea className="flex-grow rounded-md border" viewportRef={scrollViewportRef}>
                     {song ? (
                     <div className="p-6">
                         <h3 className="font-bold text-xl font-headline">{song.title}</h3>
@@ -179,7 +179,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                     )}
                 </ScrollArea>
                 {type === 'chords' && (
-                     <div className="flex items-center justify-center gap-4 rounded-md border p-2">
+                     <div className="flex shrink-0 items-center justify-center gap-4 rounded-md border p-2">
                         <Button variant="ghost" size="icon" onClick={handleToggleScrolling} disabled={!song}>
                             {isScrolling ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                         </Button>
@@ -288,10 +288,10 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                     </div>
                 </div>
             </TabsContent>
-            <TabsContent value="lyrics" className="flex-grow overflow-auto mt-2">
+            <TabsContent value="lyrics" className="flex-grow overflow-hidden mt-2">
                  <SingleSongView type="lyrics" song={activeSong} />
             </TabsContent>
-            <TabsContent value="chords" className="flex-grow overflow-auto mt-2">
+            <TabsContent value="chords" className="flex-grow overflow-hidden mt-2">
                 <SingleSongView type="chords" song={activeSong} />
             </TabsContent>
         </Tabs>
