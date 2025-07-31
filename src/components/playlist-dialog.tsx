@@ -68,7 +68,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-4xl grid-rows-[auto,1fr,auto] h-[90vh] sm:h-auto">
         <DialogHeader>
-          <DialogTitle className="font-headline text-2xl">
+          <DialogTitle className="font-headline font-bold text-2xl">
             Gerenciar Repertório - {schedule.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
           </DialogTitle>
           <DialogDescription>

@@ -15,7 +15,7 @@ export default function MembersPage() {
                 <AvatarImage src={member.avatar} alt={member.name} data-ai-hint="person portrait" />
                 <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
               </Avatar>
-              <CardTitle className="font-headline text-xl">{member.name}</CardTitle>
+              <CardTitle className="font-headline font-bold text-xl">{member.name}</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
               <div className="flex items-center gap-2">

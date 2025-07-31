@@ -41,7 +41,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
           return (
             <Card key={schedule.id} className="flex flex-col">
               <CardHeader>
-                <CardTitle className="font-headline text-2xl">
+                <CardTitle className="font-headline font-bold text-2xl">
                   {schedule.name}
                 </CardTitle>
                 <CardDescription>
