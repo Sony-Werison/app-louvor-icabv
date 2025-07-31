@@ -94,7 +94,7 @@ const SingleSongView = ({ type, song, songsInPlaylist, onSongSelect, activeSongI
     
     return (
         <div className="grid md:grid-cols-[250px_1fr] gap-6 h-full py-4">
-            <div className="flex-col gap-4 h-full overflow-hidden hidden md:flex">
+            <div className="hidden md:flex flex-col gap-4 h-full overflow-hidden">
                 <h3 className="font-semibold text-lg flex items-center gap-2 shrink-0"><ListMusic className="w-5 h-5" /> Repertório</h3>
                 <ScrollArea className="flex-grow rounded-md border">
                     <div className="p-2 space-y-1">
