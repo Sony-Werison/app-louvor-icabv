@@ -14,9 +14,10 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { X, Music, GripVertical, ListMusic } from 'lucide-react';
+import { X, Music, GripVertical, ListMusic, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 interface PlaylistDialogProps {
   schedule: Schedule;
@@ -30,12 +31,16 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   const [currentPlaylist, setCurrentPlaylist] = useState<string[]>(schedule.playlist);
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
-  const [activeSong, setActiveSong] = useState<string | null>(null);
+  const [activeSongId, setActiveSongId] = useState<string | null>(null);
 
 
   useEffect(() => {
     setIsOpen(true);
     setCurrentPlaylist(schedule.playlist);
+    // Set the first song as active by default if playlist is not empty
+    if (schedule.playlist.length > 0) {
+      setActiveSongId(schedule.playlist[0]);
+    }
   }, [schedule]);
 
   const handleSave = () => {
@@ -44,10 +49,20 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   };
 
   const handleCheckedChange = (songId: string, checked: boolean | 'indeterminate') => {
+    let newPlaylist;
     if (checked) {
-      setCurrentPlaylist(prev => [...prev, songId]);
+      newPlaylist = [...currentPlaylist, songId];
     } else {
-      setCurrentPlaylist(prev => prev.filter(id => id !== songId));
+      newPlaylist = currentPlaylist.filter(id => id !== songId);
+    }
+    setCurrentPlaylist(newPlaylist);
+
+    // If the active song is removed, reset the active song
+    if (activeSongId === songId && !checked) {
+      setActiveSongId(newPlaylist.length > 0 ? newPlaylist[0] : null);
+    } else if (!activeSongId && newPlaylist.length > 0) {
+      // If no song was active, set the first one
+      setActiveSongId(newPlaylist[0]);
     }
   };
   
@@ -65,32 +80,29 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   };
   
   const handleShortcutClick = (songId: string) => {
-    const element = document.getElementById(`song-content-${songId}`);
-    if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        setActiveSong(songId);
-    }
+    setActiveSongId(songId);
   }
 
   const songsInPlaylist = currentPlaylist.map(id => allSongs.find(song => song.id === id)).filter((s): s is Song => !!s);
   const availableSongs = allSongs.filter(song => !currentPlaylist.includes(song.id));
+  const activeSong = songsInPlaylist.find(s => s.id === activeSongId);
   
-  const ConsolidatedView = ({ type }: { type: 'lyrics' | 'chords' }) => (
+  const SingleSongView = ({ type, song }: { type: 'lyrics' | 'chords', song: Song | undefined }) => (
     <div className="grid md:grid-cols-[250px_1fr] gap-6 h-full py-4">
         <div className="flex flex-col gap-4 h-full">
             <h3 className="font-semibold text-lg flex items-center gap-2"><ListMusic className="w-5 h-5" /> Repertório</h3>
              <ScrollArea className="flex-grow rounded-md border">
                 <div className="p-2 space-y-1">
-                    {songsInPlaylist.map((song) => (
+                    {songsInPlaylist.map((s) => (
                         <Button 
-                            key={`shortcut-${song.id}`}
-                            variant={activeSong === song.id ? "secondary" : "ghost"}
+                            key={`shortcut-${s.id}`}
+                            variant={activeSongId === s.id ? "secondary" : "ghost"}
                             className="w-full justify-start h-auto py-2 px-3 text-left"
-                            onClick={() => handleShortcutClick(song.id)}
+                            onClick={() => handleShortcutClick(s.id)}
                         >
                              <div className="flex flex-col">
-                                <span>{song.title}</span>
-                                <span className="text-xs text-muted-foreground">{song.artist}</span>
+                                <span>{s.title}</span>
+                                <span className="text-xs text-muted-foreground">{s.artist}</span>
                             </div>
                         </Button>
                     ))}
@@ -98,17 +110,21 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
             </ScrollArea>
         </div>
          <ScrollArea className="h-full rounded-md border">
-            <div className="p-6 space-y-8">
-                {songsInPlaylist.map(song => (
-                    <div key={`${type}-${song.id}`} id={`song-content-${song.id}`}>
-                        <h3 className="font-bold text-xl font-headline">{song.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-4">{song.artist}</p>
-                        <pre className={cn("whitespace-pre-wrap text-base leading-relaxed", type === 'lyrics' ? 'font-body': 'font-code')}>
-                            {type === 'lyrics' ? (song.lyrics || 'Nenhuma letra disponível.') : (song.chords || 'Nenhuma cifra disponível.')}
-                        </pre>
-                    </div>
-                ))}
-            </div>
+            {song ? (
+              <div className="p-6">
+                  <h3 className="font-bold text-xl font-headline">{song.title}</h3>
+                  <p className="text-sm text-muted-foreground mb-4">{song.artist} - (Tom: {song.key})</p>
+                  <pre className={cn("whitespace-pre-wrap text-base leading-relaxed", type === 'lyrics' ? 'font-body': 'font-code')}>
+                      {type === 'lyrics' ? (song.lyrics || 'Nenhuma letra disponível.') : (song.chords || 'Nenhuma cifra disponível.')}
+                  </pre>
+              </div>
+            ) : (
+               <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
+                  <Eye className="w-12 h-12 mb-4" />
+                  <h3 className="text-lg font-semibold">Selecione uma música</h3>
+                  <p className="text-sm">Clique em uma música na lista à esquerda para ver os detalhes aqui.</p>
+              </div>
+            )}
         </ScrollArea>
     </div>
   );
@@ -126,7 +142,11 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="selection" className="flex flex-col overflow-hidden" onValueChange={() => setActiveSong(null)}>
+        <Tabs defaultValue="selection" className="flex flex-col overflow-hidden" onValueChange={() => {
+            if (currentPlaylist.length > 0 && !activeSongId) {
+                setActiveSongId(currentPlaylist[0]);
+            }
+        }}>
             <TabsList className="shrink-0">
                 <TabsTrigger value="selection">Seleção</TabsTrigger>
                 <TabsTrigger value="lyrics">Letras</TabsTrigger>
@@ -193,10 +213,10 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                 </div>
             </TabsContent>
             <TabsContent value="lyrics" className="flex-grow overflow-auto mt-2">
-                 <ConsolidatedView type="lyrics" />
+                 <SingleSongView type="lyrics" song={activeSong} />
             </TabsContent>
             <TabsContent value="chords" className="flex-grow overflow-auto mt-2">
-                <ConsolidatedView type="chords" />
+                <SingleSongView type="chords" song={activeSong} />
             </TabsContent>
         </Tabs>
 
