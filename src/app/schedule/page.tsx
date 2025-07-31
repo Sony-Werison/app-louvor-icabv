@@ -23,8 +23,8 @@ const transformMonthlyToSchedule = (monthlySchedules: any[], songs: any[]): Sche
             team: {
                 ...ms.assignments,
                 dirigente_manha: ms.assignments.dirigente_manha || [],
+                pregacao_manha: ms.assignments.pregacao_manha || [],
                 multimedia: ms.assignments.multimedia || [],
-                abertura_ebd: ms.assignments.abertura_ebd || [],
             },
             playlist: songs.slice(0, 3).map(s => s.id) // Dummy playlist
         });
@@ -41,9 +41,8 @@ const transformMonthlyToSchedule = (monthlySchedules: any[], songs: any[]): Sche
             team: {
                  ...ms.assignments,
                 dirigente_noite: ms.assignments.dirigente_noite || [],
-                multimedia: ms.assignments.multimedia || [],
-                abertura_noite: ms.assignments.abertura_noite || [],
                 pregacao_noite: ms.assignments.pregacao_noite || [],
+                multimedia: ms.assignments.multimedia || [],
             },
             playlist: songs.slice(3, 6).map(s => s.id) // Dummy playlist
         });

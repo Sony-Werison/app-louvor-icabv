@@ -63,12 +63,11 @@ export const schedules: Schedule[] = [
 ];
 
 export const scheduleColumns: ScheduleColumn[] = [
-  { id: 'dirigente_manha', label: 'Dirigente Manhã', icon: Mic },
-  { id: 'dirigente_noite', label: 'Dirigente Noite', icon: Mic },
-  { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true },
-  { id: 'abertura_ebd', label: 'Abertura EBD', icon: Sun },
-  { id: 'abertura_noite', label: 'Abertura Noite', icon: Moon },
+  { id: 'dirigente_manha', label: 'Dirigente Manhã', icon: Sun },
+  { id: 'pregacao_manha', label: 'Pregação Manhã', icon: BookUser },
+  { id: 'dirigente_noite', label: 'Dirigente Noite', icon: Moon },
   { id: 'pregacao_noite', label: 'Pregação Noite', icon: BookUser },
+  { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true },
 ];
 
 const getNextSaturday = (date: Date) => {
@@ -91,16 +90,21 @@ const generateDates = (startDate: Date, count: number): Date[] => {
     return dates;
 }
 
-const firstSaturday = getNextSaturday(new Date());
+// Set the first saturday to be the one for the current week, to have data on the main page.
+const today = new Date();
+const dayOfWeek = today.getDay();
+const daysUntilSaturday = dayOfWeek === 6 ? 0 : 6 - dayOfWeek;
+const firstSaturday = new Date(today.setDate(today.getDate() + daysUntilSaturday));
+firstSaturday.setHours(0,0,0,0);
 
-export const monthlySchedules: MonthlySchedule[] = generateDates(firstSaturday, 4).map((date) => ({
+
+export const monthlySchedules: MonthlySchedule[] = generateDates(firstSaturday, 4).map((date, index) => ({
     date: date,
     assignments: {
-        'dirigente_manha': ['1'],
-        'dirigente_noite': ['2'],
-        'multimedia': ['3', '4'],
-        'abertura_ebd': ['7'],
-        'abertura_noite': ['8'],
-        'pregacao_noite': ['18']
+        'dirigente_manha': [members[index % 4].id],
+        'pregacao_manha': [members[18 + (index % 3)].id],
+        'dirigente_noite': [members[(index + 1) % 4].id],
+        'pregacao_noite': [members[18 + ((index+1) % 3)].id],
+        'multimedia': [members[(index + 2) % 6 + 2].id, members[(index + 3) % 6 + 2].id],
     }
 }));
