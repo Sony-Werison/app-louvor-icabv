@@ -105,79 +105,77 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
-      <DialogContent className="max-w-none w-full h-full p-0 gap-0">
+      <DialogContent className="max-w-none w-full h-full p-0 gap-0 flex flex-col">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-              <div className="h-full flex flex-col">
-                  <header className="flex-shrink-0 bg-background/95 backdrop-blur-sm z-20">
-                      <div className="h-16 flex items-center justify-between px-4 border-b">
-                          <div className="flex items-center gap-4">
-                              <SheetTrigger asChild>
-                                  <Button variant="ghost" size="icon">
-                                      <ListMusic />
-                                  </Button>
-                              </SheetTrigger>
-                              <div className="flex flex-col">
-                                <h1 className="font-headline font-bold text-lg truncate leading-tight">{activeSong?.title || 'Repertório'}</h1>
-                                <p className="text-sm text-muted-foreground truncate leading-tight">{activeSong?.artist}</p>
-                              </div>
+              <header className="flex-shrink-0 bg-background/95 backdrop-blur-sm z-20 border-b">
+                  <div className="h-16 flex items-center justify-between px-2 sm:px-4 gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <SheetTrigger asChild>
+                              <Button variant="ghost" size="icon" className="shrink-0">
+                                  <ListMusic />
+                              </Button>
+                          </SheetTrigger>
+                          <div className="flex flex-col flex-1 min-w-0">
+                            <h1 className="font-headline font-bold text-base sm:text-lg truncate leading-tight">{activeSong?.title || 'Repertório'}</h1>
+                            <p className="text-xs sm:text-sm text-muted-foreground truncate leading-tight">{activeSong?.artist}</p>
                           </div>
-                           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-                            <TabsList>
-                                <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>
-                                <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
-                            </TabsList>
-                          </Tabs>
-                          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="ml-4">
-                            <X/>
-                          </Button>
                       </div>
-                  </header>
+                       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
+                        <TabsList>
+                            <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>
+                            <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                      <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0">
+                        <X/>
+                      </Button>
+                  </div>
+              </header>
 
-                  <main className="flex-grow min-h-0 relative">
-                      <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
-                      {activeSong ? (
-                          <div className="p-4 sm:p-8 text-lg md:text-xl">
-                              {activeTab === 'lyrics' ? (
-                                  <pre className="whitespace-pre-wrap font-body leading-relaxed">
-                                      {activeSong.lyrics || 'Nenhuma letra disponível.'}
-                                  </pre>
-                              ) : (
-                                  <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra disponível.'} />
-                              )}
-                          </div>
-                      ) : (
-                          <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
-                              <h3 className="text-lg font-semibold">Nenhuma música no repertório</h3>
-                              <p className="text-sm">Adicione músicas na tela de gerenciamento.</p>
-                          </div>
-                      )}
-                      </ScrollArea>
-                      {activeTab === 'chords' && activeSong && (
-                      <div className="absolute bottom-4 right-4 z-10">
-                          <div className="flex items-center justify-center gap-2 rounded-lg border bg-background/80 p-2 shadow-lg backdrop-blur-sm">
-                          <Button variant="ghost" size="icon" onClick={handleToggleScrolling}>
-                              {isScrolling ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-                          </Button>
-                          <div className="flex items-center gap-2 w-24 sm:w-32">
-                              <Slider
-                              value={[scrollSpeed]}
-                              onValueChange={(value) => {
-                                  setScrollSpeed(value[0]);
-                                  if (isScrolling) {
-                                  stopScrolling();
-                                  setTimeout(() => startScrolling(), 0);
-                                  }
-                              }}
-                              min={1}
-                              max={100}
-                              step={1}
-                              />
-                          </div>
-                          </div>
+              <main className="flex-grow min-h-0 relative">
+                  <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
+                  {activeSong ? (
+                      <div className="p-4 sm:p-8 text-lg md:text-xl">
+                          {activeTab === 'lyrics' ? (
+                              <pre className="whitespace-pre-wrap font-body leading-relaxed">
+                                  {activeSong.lyrics || 'Nenhuma letra disponível.'}
+                              </pre>
+                          ) : (
+                              <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra disponível.'} />
+                          )}
                       </div>
-                      )}
-                  </main>
-              </div>
+                  ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
+                          <h3 className="text-lg font-semibold">Nenhuma música no repertório</h3>
+                          <p className="text-sm">Adicione músicas na tela de gerenciamento.</p>
+                      </div>
+                  )}
+                  </ScrollArea>
+                  {activeTab === 'chords' && activeSong && (
+                  <div className="absolute bottom-4 right-4 z-10">
+                      <div className="flex items-center justify-center gap-2 rounded-lg border bg-background/80 p-2 shadow-lg backdrop-blur-sm">
+                      <Button variant="ghost" size="icon" onClick={handleToggleScrolling}>
+                          {isScrolling ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                      </Button>
+                      <div className="flex items-center gap-2 w-24 sm:w-32">
+                          <Slider
+                          value={[scrollSpeed]}
+                          onValueChange={(value) => {
+                              setScrollSpeed(value[0]);
+                              if (isScrolling) {
+                              stopScrolling();
+                              setTimeout(() => startScrolling(), 0);
+                              }
+                          }}
+                          min={1}
+                          max={100}
+                          step={1}
+                          />
+                      </div>
+                      </div>
+                  </div>
+                  )}
+              </main>
 
               <SheetContent side="left" className="p-0 flex flex-col">
                 <SheetHeader className="p-4 border-b">
