@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SongEditForm } from '@/components/song-edit-form';
+import { ChordDisplay } from '@/components/chord-display';
 
 export default function SongDetailPage() {
   const params = useParams();
@@ -73,10 +74,8 @@ export default function SongDetailPage() {
                   {song.lyrics || 'Nenhuma letra disponível.'}
                 </pre>
               </TabsContent>
-              <TabsContent value="chords" className="mt-4">
-                <pre className="whitespace-pre-wrap font-code text-base leading-relaxed p-4 bg-muted/50 rounded-md">
-                  {song.chords || 'Nenhuma cifra disponível.'}
-                </pre>
+              <TabsContent value="chords" className="mt-4 p-4 bg-muted/50 rounded-md">
+                <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} />
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -85,3 +84,5 @@ export default function SongDetailPage() {
     </div>
   );
 }
+
+    

@@ -10,6 +10,8 @@ import { ListMusic, Users, Mic, BookUser, Tv } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useSchedule } from '@/context/schedule-context';
 import { Separator } from './ui/separator';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface ScheduleViewProps {
   initialSchedules: Schedule[];
@@ -77,8 +79,8 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                       <CardTitle className="font-headline font-bold text-lg capitalize">
                         {schedule.name}
                       </CardTitle>
-                      <CardDescription className="text-xs">
-                        {schedule.date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      <CardDescription className="text-xs capitalize">
+                        {format(schedule.date, 'dd/MMMM', { locale: ptBR })}
                       </CardDescription>
                     </div>
                   </div>
@@ -164,3 +166,5 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     </TooltipProvider>
   );
 }
+
+    

@@ -66,35 +66,20 @@ Tu és digno do louvor
 Eu cantarei quão grande é o meu Deus`,
     chords: `[Intro] G C Em D
 
-[Primeira Parte]
-      G
-Com esplendor de um rei
-      C
-Em majestade e luz
-         Em
-Faz a Terra se alegrar
-         D
+[G]Com esplendor de um [C]rei
+Em majestade e [Em]luz
+Faz a Terra se alegrar[D]
 Faz a Terra se alegrar
 
-[Segunda Parte]
-       G
-Ele é a própria luz
-       C
-E as trevas vão fugir
-           Em
-Tremer com a Sua voz
-           D
+[G]Ele é a própria [C]luz
+E as trevas vão fu[Em]gir
+Tremer com a Sua [D]voz
 Tremer com a Sua voz
 
-[Refrão]
-          G
-Quão grande é o meu Deus
-          C
-Cantarei quão grande é o meu Deus
-   Em
-E todos hão de ver
-      D                  G
-Quão grande é o meu Deus`
+Quão [G]grande é o meu Deus
+Canta[C]rei quão grande é o meu Deus
+E [Em]todos hão de ver
+Quão [D]grande é o meu [G]Deus`
   },
   { 
     id: 's2', 
@@ -129,27 +114,15 @@ And my faith will be made stronger
 In the presence of my Savior`,
     chords: `[Intro] Bm A D G
 
-[Verse 1]
-Bm                A/C#     D
-You call me out upon the waters
-      G               D          A
-The great unknown where feet may fail
-Bm                A/C#      D
-And there I find You in the mystery
-     G          D         A
-In oceans deep my faith will stand
+[Bm]You call me [A/C#]out upon the [D]waters
+The great un[G]known where [D]feet may [A]fail
+[Bm]And there I [A/C#]find You in the [D]mystery
+In [G]oceans [D]deep, my [A]faith will stand
 
-[Chorus]
-      G          D          A
-And I will call upon Your name
-      G          D          A
-And keep my eyes above the waves
-                G
-When oceans rise
-       D                  A
-My soul will rest in Your embrace
-      G      A       Bm
-For I am Yours and You are mine`
+And [G]I will call u[D]pon Your [A]name
+And [G]keep my eyes a[D]bove the [A]waves
+When oceans [G]rise, my [D]soul will rest in [A]Your embrace
+For [G]I am [A]Yours and [Bm]You are mine`
   },
   { id: 's3', title: 'Amazing Grace', artist: 'Chris Tomlin', key: 'G' },
   { id: 's4', title: 'Te Agradeço', artist: 'Diante do Trono', key: 'A' },
@@ -230,3 +203,5 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
 
 
 export const monthlySchedules: MonthlySchedule[] = generateInitialSchedules();
+
+    

@@ -18,6 +18,7 @@ import { X, Music, GripVertical, ListMusic, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { ChordDisplay } from './chord-display';
 
 interface PlaylistDialogProps {
   schedule: Schedule;
@@ -114,9 +115,13 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
               <div className="p-6">
                   <h3 className="font-bold text-xl font-headline">{song.title}</h3>
                   <p className="text-sm text-muted-foreground mb-4">{song.artist} - (Tom: {song.key})</p>
-                  <pre className={cn("whitespace-pre-wrap text-base leading-relaxed", type === 'lyrics' ? 'font-body': 'font-code')}>
-                      {type === 'lyrics' ? (song.lyrics || 'Nenhuma letra disponível.') : (song.chords || 'Nenhuma cifra disponível.')}
-                  </pre>
+                  {type === 'lyrics' ? (
+                     <pre className="whitespace-pre-wrap font-body text-base leading-relaxed">
+                        {song.lyrics || 'Nenhuma letra disponível.'}
+                     </pre>
+                  ) : (
+                    <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} />
+                  )}
               </div>
             ) : (
                <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
@@ -228,3 +233,5 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     </Dialog>
   );
 }
+
+    
