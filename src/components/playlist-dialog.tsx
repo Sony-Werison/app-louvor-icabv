@@ -40,6 +40,8 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     setCurrentPlaylist(schedule.playlist);
     if (schedule.playlist.length > 0) {
       setActiveSongId(schedule.playlist[0]);
+    } else {
+      setActiveSongId(null);
     }
   }, [schedule]);
 
@@ -118,12 +120,14 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     useEffect(() => {
         // Stop scrolling when song changes or when switching tabs
         stopScrolling();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [song, type]);
 
 
     useEffect(() => {
         // Cleanup on unmount
         return () => stopScrolling();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleToggleScrolling = () => {
