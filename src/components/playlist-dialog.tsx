@@ -70,6 +70,9 @@ const SingleSongView = ({ type, song, songsInPlaylist, onSongSelect, activeSongI
     };
 
     useEffect(() => {
+        if (scrollViewportRef.current) {
+            scrollViewportRef.current.scrollTop = 0;
+        }
         // Stop scrolling when song or tab changes
         stopScrolling();
         // eslint-disable-next-line react-hooks/exhaustive-deps
