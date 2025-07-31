@@ -16,6 +16,11 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
         const team = {
             multimedia: assignments.multimedia || [],
         };
+
+        const getShortDay = (date: Date) => {
+            const dayName = format(date, 'EEEE', { locale: ptBR });
+            return dayName.charAt(0).toUpperCase() + dayName.slice(1, 3);
+        }
         
         // Culto de Domingo - Manhã
         const dateManha = new Date(saturday);
@@ -25,7 +30,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
         if (assignments.dirigente_manha && assignments.dirigente_manha[0]) {
             schedules.push({
                 id: `s-manha-${saturday.getTime()}`,
-                name: `${format(dateManha, 'EEE', { locale: ptBR })}. Manhã`,
+                name: `${getShortDay(dateManha)}. Manhã`,
                 date: dateManha,
                 leaderId: assignments.dirigente_manha[0],
                 preacherId: assignments.pregacao_manha?.[0] || null,
@@ -42,7 +47,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
         if (assignments.dirigente_noite && assignments.dirigente_noite[0]) {
             schedules.push({
                 id: `s-noite-${saturday.getTime()}`,
-                name: `${format(dateNoite, 'EEE', { locale: ptBR })}. Noite`,
+                name: `${getShortDay(dateNoite)}. Noite`,
                 date: dateNoite,
                 leaderId: assignments.dirigente_noite[0],
                 preacherId: assignments.pregacao_noite?.[0] || null,
