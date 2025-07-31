@@ -1,9 +1,9 @@
+
 'use client';
 
 import { useState } from 'react';
 import type { Member } from '@/types';
 import { members as initialMembers } from '@/lib/data';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MemberFormDialog } from '@/components/member-form-dialog';
-import { Mail, Phone, User, Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,11 +34,9 @@ export default function MembersPage() {
 
   const handleSaveMember = (memberData: Omit<Member, 'id'> & { id?: string }) => {
     if (memberData.id) {
-      // Edit existing member
-      setMembers(members.map((m) => (m.id === memberData.id ? { ...m, ...memberData } : m)));
+      setMembers(members.map((m) => (m.id === memberData.id ? { ...m, ...memberData } as Member : m)));
     } else {
-      // Add new member
-      const newMember = { ...memberData, id: `m${Date.now()}` };
+      const newMember = { ...memberData, id: `m${Date.now()}` } as Member;
       setMembers([...members, newMember]);
     }
     setIsDialogOpen(false);
@@ -68,6 +66,26 @@ export default function MembersPage() {
     }
   };
 
+  const groupedMembers = members.reduce((acc, member) => {
+    const role = member.role;
+    if (!acc[role]) {
+      acc[role] = [];
+    }
+    acc[role].push(member);
+    return acc;
+  }, {} as Record<Member['role'], Member[]>);
+
+  const roleOrder: Member['role'][] = ['Dirigente', 'Pregador', 'Multimídia'];
+  const sortedRoles = Object.keys(groupedMembers).sort((a,b) => {
+    const aIndex = roleOrder.indexOf(a as any);
+    const bIndex = roleOrder.indexOf(b as any);
+    if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+    if (aIndex === -1) return 1;
+    if (bIndex === -1) return -1;
+    return aIndex - bIndex;
+  });
+
+
   return (
     <div className="p-4 md:p-8">
       <div className="flex justify-between items-center mb-8">
@@ -78,56 +96,44 @@ export default function MembersPage() {
         </Button>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {members.map((member) => (
-          <Card key={member.id} className="relative">
-            <CardHeader className="items-center text-center">
-              <Avatar className="w-24 h-24 mb-4">
-                <AvatarImage src={member.avatar} alt={member.name} data-ai-hint="person portrait" />
-                <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <CardTitle className="font-headline font-bold text-xl">{member.name}</CardTitle>
-              <div className="absolute top-2 right-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleEdit(member)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      <span>Editar</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDeleteClick(member)} className="text-destructive">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Excluir</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-2">
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                <span>{member.role}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                <a href={`mailto:${member.email}`} className="hover:text-foreground transition-colors break-all">
-                  {member.email}
-                </a>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                <a href={`tel:${member.phone}`} className="hover:text-foreground transition-colors">
-                  {member.phone}
-                </a>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="space-y-8">
+        {sortedRoles.map((role) => (
+          <section key={role}>
+            <h2 className="text-2xl font-headline font-semibold mb-4 border-b pb-2">{role}</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-6">
+              {groupedMembers[role as Member['role']].map((member) => (
+                <div key={member.id} className="relative flex flex-col items-center text-center group">
+                  <Avatar className="w-20 h-20 mb-2">
+                    <AvatarImage src={member.avatar} alt={member.name} data-ai-hint="person portrait" />
+                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <p className="font-medium text-sm w-full break-words">{member.name}</p>
+                   <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => handleEdit(member)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          <span>Editar</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteClick(member)} className="text-destructive">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          <span>Excluir</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         ))}
       </div>
+
 
       {isDialogOpen && (
         <MemberFormDialog

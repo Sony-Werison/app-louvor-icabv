@@ -1,8 +1,11 @@
+
+export type MemberRole = 'Dirigente' | 'Pregador' | 'Multimídia';
+
 export type Member = {
   id: string;
   name: string;
   avatar: string;
-  role: string;
+  role: MemberRole;
   email: string;
   phone: string;
 };

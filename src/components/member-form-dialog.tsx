@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Member } from '@/types';
@@ -22,6 +23,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface MemberFormDialogProps {
   isOpen: boolean;
@@ -30,9 +32,11 @@ interface MemberFormDialogProps {
   member: Member | null;
 }
 
+const memberRoles = ['Dirigente', 'Pregador', 'Multimídia'] as const;
+
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
-  role: z.string().min(2, { message: 'A função é obrigatória.' }),
+  role: z.enum(memberRoles, { required_error: 'Selecione uma função.' }),
   email: z.string().email({ message: 'Por favor, insira um e-mail válido.' }),
   phone: z.string().min(10, { message: 'O telefone deve ter pelo menos 10 caracteres.' }),
   avatar: z.string().url({ message: 'Por favor, insira uma URL de avatar válida.' }).optional().or(z.literal('')),
@@ -43,7 +47,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: member?.name || '',
-      role: member?.role || '',
+      role: member?.role,
       email: member?.email || '',
       phone: member?.phone || '',
       avatar: member?.avatar || '',
@@ -89,9 +93,18 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Função</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Vocal, Guitarra" {...field} />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a função" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {memberRoles.map(role => (
+                        <SelectItem key={role} value={role}>{role}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
