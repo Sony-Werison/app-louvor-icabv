@@ -29,16 +29,11 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
 
 
   const handlePlaylistSave = (scheduleId: string, newPlaylist: string[]) => {
-    // This function will now update the context/global state
-    // For now, it just updates local state for the dialog to close properly
     const updatedSchedules = schedules.map(s =>
       s.id === scheduleId ? { ...s, playlist: newPlaylist } : s
     );
     setSchedules(updatedSchedules);
-
-    // Here you could call a function from context to persist the change
     updateSchedulePlaylist(scheduleId, newPlaylist);
-
     setIsPlaylistDialogOpen(false);
     setSelectedSchedule(null);
   };
@@ -54,8 +49,8 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
 
   return (
     <TooltipProvider>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-headline font-bold">Reuniões da Semana</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-headline font-bold">Reuniões da Semana</h1>
       </div>
 
       {schedules.length === 0 ? (
@@ -65,7 +60,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
             <p>Vá para a página "Escala Mensal" para planejar as próximas semanas.</p>
          </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {schedules.map((schedule) => {
             const leader = getMemberById(schedule.leaderId);
             const preacher = getMemberById(schedule.preacherId);
@@ -76,51 +71,55 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
 
             return (
               <Card key={schedule.id} className="flex flex-col relative">
-                <CardHeader>
-                  <CardTitle className="font-headline font-bold text-2xl pr-8">
-                    {schedule.name}
-                  </CardTitle>
-                  <CardDescription>
-                    {schedule.date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })}
-                  </CardDescription>
+                <CardHeader className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="font-headline font-bold text-lg capitalize">
+                        {schedule.name}
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        {schedule.date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent className="flex-grow space-y-6">
-                  <div className="space-y-4">
+                <CardContent className="flex-grow space-y-4 p-4 pt-0">
+                  <div className="space-y-3">
                     {leader && (
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10" data-ai-hint="person portrait">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8" data-ai-hint="person portrait">
                           <AvatarImage src={leader.avatar} alt={leader.name} />
                           <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <span className="text-sm text-muted-foreground flex items-center gap-1"><Mic className="w-3 h-3"/>Dirigente</span>
-                          <p className="font-semibold">{leader.name}</p>
+                          <p className="font-semibold text-sm leading-none">{leader.name}</p>
+                          <span className="text-xs text-muted-foreground flex items-center gap-1"><Mic className="w-3 h-3"/>Dirigente</span>
                         </div>
                       </div>
                     )}
                     {preacher && (
-                       <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10" data-ai-hint="person portrait">
+                       <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8" data-ai-hint="person portrait">
                           <AvatarImage src={preacher.avatar} alt={preacher.name} />
                           <AvatarFallback>{getMemberInitial(preacher.name)}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <span className="text-sm text-muted-foreground flex items-center gap-1"><BookUser className="w-3 h-3"/>Pregador</span>
-                          <p className="font-semibold">{preacher.name}</p>
+                          <p className="font-semibold text-sm leading-none">{preacher.name}</p>
+                          <span className="text-xs text-muted-foreground flex items-center gap-1"><BookUser className="w-3 h-3"/>Pregador</span>
                         </div>
                       </div>
                     )}
                   </div>
 
+                  {(teamMembers.length > 0 || playlistSongs.length > 0) && <Separator />}
 
                   {teamMembers.length > 0 && (
                       <div>
-                          <Separator className="my-4" />
-                          <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm"><Tv className="w-4 h-4"/>Multimídia</h3>
-                          <div className="space-y-2">
+                          <h3 className="font-semibold mb-2 flex items-center gap-1.5 text-xs"><Tv className="w-3 h-3"/>Multimídia</h3>
+                          <div className="space-y-1.5">
                               {teamMembers.map(member => (
-                                <div key={member.id} className="flex items-center gap-2 text-sm">
-                                    <Avatar className="h-6 w-6" data-ai-hint="person portrait">
+                                <div key={member.id} className="flex items-center gap-2 text-xs">
+                                    <Avatar className="h-5 w-5" data-ai-hint="person portrait">
                                         <AvatarImage src={member.avatar} alt={member.name} />
                                         <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
                                     </Avatar>
@@ -131,23 +130,20 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                       </div>
                   )}
 
-                  <div>
-                      <Separator className="my-4" />
-                      <h3 className="font-semibold mb-2 flex items-center gap-2 text-sm"><ListMusic className="w-4 h-4"/>Repertório</h3>
-                      {playlistSongs.length > 0 ? (
-                          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                  {playlistSongs.length > 0 && (
+                      <div>
+                          <h3 className="font-semibold mb-2 flex items-center gap-1.5 text-xs"><ListMusic className="w-3 h-3"/>Repertório</h3>
+                          <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1 ml-1">
                               {playlistSongs.map(song => (
-                                  <li key={song.id}>{song.title} - <span className="opacity-80">{song.artist}</span></li>
+                                  <li key={song.id} className="truncate">{song.title} - <span className="opacity-80">{song.artist}</span></li>
                               ))}
                           </ul>
-                      ) : (
-                          <p className="text-sm text-muted-foreground italic">Nenhuma música selecionada.</p>
-                      )}
-                  </div>
+                      </div>
+                  )}
                 </CardContent>
-                <CardFooter>
-                  <Button onClick={() => handleOpenPlaylist(schedule)} className="w-full">
-                    <ListMusic className="mr-2 h-4 w-4" />
+                <CardFooter className="p-2">
+                  <Button onClick={() => handleOpenPlaylist(schedule)} className="w-full h-8 text-xs">
+                    <ListMusic className="mr-2 h-3 w-3" />
                     Gerenciar Repertório
                   </Button>
                 </CardFooter>

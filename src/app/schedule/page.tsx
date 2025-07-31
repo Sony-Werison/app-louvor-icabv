@@ -1,7 +1,8 @@
 'use client';
 import { useSchedule } from '@/context/schedule-context';
 import { ScheduleView } from '@/components/schedule-view';
-import { startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { startOfWeek, endOfWeek, isWithinInterval, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import type { Schedule, MonthlySchedule } from '@/types';
 
 const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: any[]): Schedule[] => {
@@ -24,7 +25,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
         if (assignments.dirigente_manha && assignments.dirigente_manha[0]) {
             schedules.push({
                 id: `s-manha-${saturday.getTime()}`,
-                name: 'Culto de Dom. - Manhã',
+                name: `${format(dateManha, 'EEE', { locale: ptBR })}. Manhã`,
                 date: dateManha,
                 leaderId: assignments.dirigente_manha[0],
                 preacherId: assignments.pregacao_manha?.[0] || null,
@@ -41,7 +42,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
         if (assignments.dirigente_noite && assignments.dirigente_noite[0]) {
             schedules.push({
                 id: `s-noite-${saturday.getTime()}`,
-                name: 'Culto de Dom. - Noite',
+                name: `${format(dateNoite, 'EEE', { locale: ptBR })}. Noite`,
                 date: dateNoite,
                 leaderId: assignments.dirigente_noite[0],
                 preacherId: assignments.pregacao_noite?.[0] || null,
