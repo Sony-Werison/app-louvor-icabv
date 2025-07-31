@@ -19,6 +19,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { ptBR } from 'date-fns/locale';
 
 interface MonthlyScheduleViewProps {
   schedules: MonthlySchedule[];
@@ -66,6 +69,15 @@ export function MonthlyScheduleView({
     onSchedulesChange(newSchedules);
   };
 
+  const handleDateChange = (oldDate: Date, newDate: Date | undefined) => {
+     if (newDate) {
+        const newSchedules = schedules.map(s => 
+            s.date.getTime() === oldDate.getTime() ? { ...s, date: newDate } : s
+        );
+        onSchedulesChange(newSchedules);
+     }
+  }
+
   const getAssignedMemberIds = (date: Date, columnId: string): (string | null)[] => {
     const schedule = schedules.find(s => s.date.getTime() === date.getTime());
     if (schedule) {
@@ -79,7 +91,7 @@ export function MonthlyScheduleView({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[120px]">Data</TableHead>
+            <TableHead className="w-[180px]">Data</TableHead>
             {columns.map((col) => (
               <TableHead key={col.id}>
                 <div className="flex items-center gap-2">
@@ -95,7 +107,22 @@ export function MonthlyScheduleView({
           {schedules.map((schedule) => (
             <TableRow key={schedule.date.toISOString()}>
               <TableCell className="font-medium">
-                {format(schedule.date, 'dd/MM/yyyy')}
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start font-normal">
+                           {format(schedule.date, 'EEEE, dd/MM/yyyy', { locale: ptBR })}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <Calendar
+                            mode="single"
+                            selected={schedule.date}
+                            onSelect={(newDate) => handleDateChange(schedule.date, newDate)}
+                            locale={ptBR}
+                            initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
               </TableCell>
               {columns.map((col) => {
                 const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);

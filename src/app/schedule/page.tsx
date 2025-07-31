@@ -7,19 +7,22 @@ import type { Schedule } from '@/types';
 const transformMonthlyToSchedule = (monthlySchedules: any[], songs: any[]): Schedule[] => {
     let schedules: Schedule[] = [];
     monthlySchedules.forEach(ms => {
+        const saturday = new Date(ms.date);
+        saturday.setHours(0,0,0,0);
+        
         // Culto de Domingo - Manhã
-        const dateManha = new Date(ms.date);
+        const dateManha = new Date(saturday);
         dateManha.setDate(dateManha.getDate() + 1); // Sunday
         dateManha.setHours(10,0,0,0);
 
         schedules.push({
-            id: `s-manha-${ms.date.getTime()}`,
+            id: `s-manha-${saturday.getTime()}`,
             name: 'Culto de Dom. - Manhã',
             date: dateManha,
-            leaderId: ms.assignments.dirigente?.[0] || '',
+            leaderId: ms.assignments.dirigente_manha?.[0] || '',
             team: {
                 ...ms.assignments,
-                dirigente: ms.assignments.dirigente || [],
+                dirigente_manha: ms.assignments.dirigente_manha || [],
                 multimedia: ms.assignments.multimedia || [],
                 abertura_ebd: ms.assignments.abertura_ebd || [],
             },
@@ -27,17 +30,17 @@ const transformMonthlyToSchedule = (monthlySchedules: any[], songs: any[]): Sche
         });
 
         // Culto de Domingo - Noite
-        const dateNoite = new Date(ms.date);
+        const dateNoite = new Date(saturday);
         dateNoite.setDate(dateNoite.getDate() + 1); // Sunday
         dateNoite.setHours(19,0,0,0);
         schedules.push({
-            id: `s-noite-${ms.date.getTime()}`,
+            id: `s-noite-${saturday.getTime()}`,
             name: 'Culto de Dom. - Noite',
             date: dateNoite,
-            leaderId: ms.assignments.dirigente?.[0] || '',
+            leaderId: ms.assignments.dirigente_noite?.[0] || '',
             team: {
                  ...ms.assignments,
-                dirigente: ms.assignments.dirigente || [],
+                dirigente_noite: ms.assignments.dirigente_noite || [],
                 multimedia: ms.assignments.multimedia || [],
                 abertura_noite: ms.assignments.abertura_noite || [],
                 pregacao_noite: ms.assignments.pregacao_noite || [],

@@ -1,5 +1,5 @@
 import type { Member, Song, Schedule, MonthlySchedule, ScheduleColumn } from '@/types';
-import { Tv, Sun, Moon, BookUser } from 'lucide-react';
+import { Tv, Sun, Moon, BookUser, Mic } from 'lucide-react';
 
 export const members: Member[] = [
   { id: '1', name: 'João Silva', avatar: 'https://i.pravatar.cc/150?u=joao', role: 'Líder de Louvor, Vocal', email: 'joao.silva@example.com', phone: '(11) 98765-4321' },
@@ -63,7 +63,8 @@ export const schedules: Schedule[] = [
 ];
 
 export const scheduleColumns: ScheduleColumn[] = [
-  { id: 'dirigente', label: 'Dirigente', icon: BookUser },
+  { id: 'dirigente_manha', label: 'Dirigente Manhã', icon: Mic },
+  { id: 'dirigente_noite', label: 'Dirigente Noite', icon: Mic },
   { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true },
   { id: 'abertura_ebd', label: 'Abertura EBD', icon: Sun },
   { id: 'abertura_noite', label: 'Abertura Noite', icon: Moon },
@@ -95,10 +96,11 @@ const firstSaturday = getNextSaturday(new Date());
 export const monthlySchedules: MonthlySchedule[] = generateDates(firstSaturday, 4).map((date) => ({
     date: date,
     assignments: {
-        'dirigente': ['1'],
+        'dirigente_manha': ['1'],
+        'dirigente_noite': ['2'],
         'multimedia': ['3', '4'],
-        'abertura_ebd': ['2'],
-        'abertura_noite': ['7'],
+        'abertura_ebd': ['7'],
+        'abertura_noite': ['8'],
         'pregacao_noite': ['18']
     }
 }));
