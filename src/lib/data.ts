@@ -28,13 +28,6 @@ export const schedules: Schedule[] = [
     name: 'Culto de Domingo - Manhã',
     date: new Date(new Date(new Date().setDate(new Date().getDate() + 3)).setHours(10, 0, 0, 0)),
     leaderId: '1',
-    team: [
-      { memberId: '1', instrument: 'Vocal' },
-      { memberId: '2', instrument: 'Guitar' },
-      { memberId: '4', instrument: 'Keyboard' },
-      { memberId: '5', instrument: 'Drums' },
-      { memberId: '6', instrument: 'Bass' },
-    ],
     playlist: ['s1', 's2', 's3'],
   },
   {
@@ -42,12 +35,6 @@ export const schedules: Schedule[] = [
     name: 'Culto de Domingo - Noite',
     date: new Date(new Date(new Date().setDate(new Date().getDate() + 3)).setHours(19, 0, 0, 0)),
     leaderId: '2',
-    team: [
-      { memberId: '2', instrument: 'Vocal' },
-      { memberId: '3', instrument: 'Guitar' },
-      { memberId: '4', instrument: 'Keyboard' },
-      { memberId: '5', instrument: 'Drums' },
-    ],
     playlist: ['s4', 's5', 's6'],
   },
   {
@@ -55,13 +42,6 @@ export const schedules: Schedule[] = [
     name: 'Ensaio de Sábado',
     date: new Date(new Date(new Date().setDate(new Date().getDate() + 9)).setHours(16, 0, 0, 0)),
     leaderId: '1',
-    team: [
-        { memberId: '1', instrument: 'Vocal' },
-        { memberId: '3', instrument: 'Guitar' },
-        { memberId: '4', instrument: 'Keyboard' },
-        { memberId: '5', instrument: 'Drums' },
-        { memberId: '6', instrument: 'Bass' },
-    ],
     playlist: [],
   },
 ];

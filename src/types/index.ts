@@ -20,9 +20,5 @@ export type Schedule = {
   name: string;
   date: Date;
   leaderId: string;
-  team: {
-    memberId: string;
-    instrument: 'Vocal' | 'Guitar' | 'Drums' | 'Keyboard' | 'Bass';
-  }[];
   playlist: string[]; // array of song ids
 };

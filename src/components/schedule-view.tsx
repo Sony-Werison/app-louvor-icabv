@@ -6,15 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
-import { Guitar, MicVocal, Music, Users, ListMusic, User, Star } from 'lucide-react';
-
-const instrumentIcons: Record<string, React.ElementType> = {
-  Vocal: MicVocal,
-  Guitar: Guitar,
-  Bass: Guitar,
-  Drums: Music,
-  Keyboard: Music,
-};
+import { ListMusic, Star } from 'lucide-react';
 
 interface ScheduleViewProps {
   initialSchedules: Schedule[];
@@ -82,30 +74,6 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                         <p className="text-sm text-muted-foreground italic">Nenhuma música selecionada.</p>
                     )}
                 </div>
-
-                <div>
-                    <h3 className="font-semibold mb-2 flex items-center gap-2"><Users className="w-4 h-4"/>Equipe</h3>
-                    <div className="flex flex-wrap gap-4">
-                        {schedule.team.map(({ memberId, instrument }) => {
-                        const Icon = instrumentIcons[instrument];
-                        const member = getMemberById(memberId);
-                        if (!member) return null;
-                        return (
-                            <div key={memberId} className="flex items-center gap-2 text-sm">
-                            <Avatar className="h-8 w-8">
-                                <AvatarImage src={member.avatar} alt={member.name} />
-                                <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="font-medium">{member.name}</p>
-                                <p className="text-muted-foreground flex items-center gap-1"><Icon className="w-3 h-3"/>{instrument}</p>
-                            </div>
-                            </div>
-                        );
-                        })}
-                    </div>
-                </div>
-
               </CardContent>
               <CardFooter>
                 <Button onClick={() => setSelectedSchedule(schedule)} className="w-full">
