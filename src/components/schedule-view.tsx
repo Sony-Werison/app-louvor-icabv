@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
-import { ListMusic, Users, User, Calendar } from 'lucide-react';
+import { ListMusic, Users, Calendar } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 interface ScheduleViewProps {
@@ -73,7 +73,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                 <CardContent className="flex-grow space-y-6">
                   {leader && (
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
+                      <Avatar className="h-10 w-10" data-ai-hint="person portrait">
                         <AvatarImage src={leader.avatar} alt={leader.name} />
                         <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
                       </Avatar>
@@ -91,7 +91,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                               {teamMembers.map(member => (
                                    <Tooltip key={member.id}>
                                       <TooltipTrigger>
-                                          <Avatar className="h-8 w-8">
+                                          <Avatar className="h-8 w-8" data-ai-hint="person portrait">
                                               <AvatarImage src={member.avatar} alt={member.name} />
                                               <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
                                           </Avatar>
