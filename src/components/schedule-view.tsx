@@ -56,12 +56,17 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                   {schedule.date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex-grow space-y-4">
+              <CardContent className="flex-grow space-y-6">
                 {leader && (
-                  <div className="flex items-center gap-2">
-                     <Star className="w-4 h-4 text-amber-400"/>
-                    <span className="font-semibold">Dirigente:</span>
-                    <span>{leader.name}</span>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border-2 border-amber-400">
+                      <AvatarImage src={leader.avatar} alt={leader.name} />
+                      <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <span className="text-sm text-muted-foreground flex items-center gap-1.5"><Star className="w-4 h-4 text-amber-400"/> Dirigente</span>
+                      <p className="font-semibold">{leader.name}</p>
+                    </div>
                   </div>
                 )}
 
