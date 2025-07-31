@@ -57,26 +57,30 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
     const today = new Date();
     const currentMonthSaturdays = getSaturdays(today);
     const nextMonthSaturdays = getSaturdays(addMonths(today, 1));
+    const previousMonthSaturdays = getSaturdays(addMonths(today, -1));
 
-    const allSaturdays = [...currentMonthSaturdays, ...nextMonthSaturdays];
+    const allSaturdays = [...previousMonthSaturdays, ...currentMonthSaturdays, ...nextMonthSaturdays];
     
-    // Ensure the current week's saturday is included for preview
-    const mostRecentSaturday = isSaturday(today) ? today : previousSaturday(today);
-    if (!allSaturdays.some(d => d.getTime() === mostRecentSaturday.getTime())) {
-      allSaturdays.unshift(mostRecentSaturday);
-    }
-    
+    const uniqueSaturdays = Array.from(new Set(allSaturdays.map(d => d.getTime())))
+      .map(time => new Date(time))
+      .sort((a,b) => a.getTime() - b.getTime());
+
     const preachers = members.filter(m => m.role === 'Preletor');
     const leaders = members.filter(m => m.role.includes('Líder') || m.role.includes('Vocal'));
     const musicians = members.filter(m => !m.role.includes('Preletor'));
 
-    return allSaturdays.map((date, index) => {
+    if (preachers.length === 0) preachers.push(members[0]);
+    if (leaders.length === 0) leaders.push(members[0]);
+    if (musicians.length < 2) musicians.push(...members.slice(0, 2));
+
+
+    return uniqueSaturdays.map((date, index) => {
         const leaderMorning = leaders[index % leaders.length];
         const leaderNight = leaders[(index + 1) % leaders.length];
         const preacherMorning = preachers[index % preachers.length];
         const preacherNight = preachers[(index + 1) % preachers.length];
         const multimedia1 = musicians[index % musicians.length];
-        const multimedia2 = musicians[(index + 1) % musicians.length];
+        const multimedia2 = musicians[(index + 2) % musicians.length];
         
         return {
             date: date,
