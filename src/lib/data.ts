@@ -55,14 +55,19 @@ const getWeekends = (date: Date): Date[] => {
 
 const generateInitialSchedules = (): MonthlySchedule[] => {
     const today = new Date();
-    const currentMonthWeekends = getWeekends(today);
-    const nextMonthWeekends = getWeekends(addMonths(today, 1));
-    const previousMonthWeekends = getWeekends(addMonths(today, -1));
-
-    const allWeekends = [...previousMonthWeekends, ...currentMonthWeekends, ...nextMonthWeekends];
+    const monthsToGenerate = [addMonths(today, -1), today, addMonths(today, 1)];
+    const allWeekends: Date[] = [];
+  
+    monthsToGenerate.forEach(month => {
+      allWeekends.push(...getWeekends(month));
+    });
     
-    const uniqueDates = Array.from(new Set(allWeekends.map(d => d.getTime())))
-      .map(time => new Date(time))
+    const uniqueDates = Array.from(new Set(allWeekends.map(d => d.toISOString().split('T')[0])))
+      .map(dateStr => {
+        const date = new Date(dateStr);
+        // Adjust for timezone offset to prevent date shifts
+        return new Date(date.valueOf() + date.getTimezoneOffset() * 60 * 1000);
+      })
       .sort((a,b) => a.getTime() - b.getTime());
 
     const preachers = members.filter(m => m.role === 'Preletor');
