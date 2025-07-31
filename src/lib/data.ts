@@ -1,5 +1,5 @@
 import type { Member, Song, Schedule, MonthlySchedule, ScheduleColumn } from '@/types';
-import { Tv, Sun, Moon, BookUser, Mic } from 'lucide-react';
+import { Tv, Sun, Moon, BookUser } from 'lucide-react';
 
 export const members: Member[] = [
   { id: '1', name: 'João Silva', avatar: 'https://i.pravatar.cc/150?u=joao', role: 'Líder de Louvor, Vocal', email: 'joao.silva@example.com', phone: '(11) 98765-4321' },
@@ -37,31 +37,6 @@ export const songs: Song[] = [
   { id: 's10', title: 'Em Teus Braços', artist: 'Laura Souguellis', key: 'C' },
 ];
 
-// This is now legacy data, the schedule page will be built from monthlySchedules
-export const schedules: Schedule[] = [
-  {
-    id: 'e1',
-    name: 'Culto de Domingo - Manhã',
-    date: new Date(new Date(new Date().setDate(new Date().getDate() + 3)).setHours(10, 0, 0, 0)),
-    leaderId: '1',
-    playlist: ['s1', 's2', 's3'],
-  },
-  {
-    id: 'e2',
-    name: 'Culto de Domingo - Noite',
-    date: new Date(new Date(new Date().setDate(new Date().getDate() + 3)).setHours(19, 0, 0, 0)),
-    leaderId: '2',
-    playlist: ['s4', 's5', 's6'],
-  },
-  {
-    id: 'e3',
-    name: 'Ensaio de Sábado',
-    date: new Date(new Date(new Date().setDate(new Date().getDate() + 9)).setHours(16, 0, 0, 0)),
-    leaderId: '1',
-    playlist: [],
-  },
-];
-
 export const scheduleColumns: ScheduleColumn[] = [
   { id: 'dirigente_manha', label: 'Dirigente Manhã', icon: Sun },
   { id: 'pregacao_manha', label: 'Pregação Manhã', icon: BookUser },
@@ -73,7 +48,6 @@ export const scheduleColumns: ScheduleColumn[] = [
 const getNextSaturday = (date: Date) => {
     const newDate = new Date(date);
     const day = newDate.getDay();
-    // 6 = Saturday. If today is Saturday, get next one.
     const diff = day === 6 ? 7 : (6-day+7)%7;
     newDate.setDate(newDate.getDate() + diff);
     newDate.setHours(0,0,0,0);
@@ -90,11 +64,10 @@ const generateDates = (startDate: Date, count: number): Date[] => {
     return dates;
 }
 
-// Set the first saturday to be the one for the current week, to have data on the main page.
 const today = new Date();
 const dayOfWeek = today.getDay();
 const daysUntilSaturday = dayOfWeek === 6 ? 0 : 6 - dayOfWeek;
-const firstSaturday = new Date(today.setDate(today.getDate() + daysUntilSaturday));
+const firstSaturday = new Date(new Date().setDate(today.getDate() + daysUntilSaturday));
 firstSaturday.setHours(0,0,0,0);
 
 
@@ -102,9 +75,9 @@ export const monthlySchedules: MonthlySchedule[] = generateDates(firstSaturday, 
     date: date,
     assignments: {
         'dirigente_manha': [members[index % 4].id],
-        'pregacao_manha': [members[18 + (index % 3)].id],
+        'pregacao_manha': [members[17 + (index % 3)].id],
         'dirigente_noite': [members[(index + 1) % 4].id],
-        'pregacao_noite': [members[18 + ((index+1) % 3)].id],
+        'pregacao_noite': [members[17 + ((index + 1) % 3)].id],
         'multimedia': [members[(index + 2) % 6 + 2].id, members[(index + 3) % 6 + 2].id],
     }
 }));
