@@ -8,12 +8,13 @@ import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ptBR } from 'date-fns/locale';
-import { addMonths, subMonths, startOfMonth, endOfMonth, eachSaturdayOfInterval, format } from 'date-fns';
+import { addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSaturday, format } from 'date-fns';
 
 const generateSchedulesForMonth = (month: Date, scheduleColumns: ScheduleColumn[]): MonthlySchedule[] => {
     const start = startOfMonth(month);
     const end = endOfMonth(month);
-    const saturdays = eachSaturdayOfInterval({ start, end });
+    const allDaysInMonth = eachDayOfInterval({ start, end });
+    const saturdays = allDaysInMonth.filter(day => isSaturday(day));
     
     return saturdays.map(date => ({
         date: date,
@@ -62,7 +63,7 @@ export default function MonthlySchedulePage() {
                     <Button variant="outline" size="icon" onClick={() => navigateMonths(-1)}>
                         <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <h1 className="text-2xl md:text-4xl font-headline font-bold text-center w-64">
+                    <h1 className="text-2xl md:text-4xl font-headline font-bold text-center w-64 capitalize">
                         {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
                     </h1>
                     <Button variant="outline" size="icon" onClick={() => navigateMonths(1)}>

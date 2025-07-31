@@ -109,7 +109,7 @@ export function MonthlyScheduleView({
               <TableCell className="font-medium">
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start font-normal">
+                        <Button variant="outline" className="w-full justify-start font-normal capitalize">
                            {format(schedule.date, 'EEEE, dd/MM/yyyy', { locale: ptBR })}
                         </Button>
                     </PopoverTrigger>
