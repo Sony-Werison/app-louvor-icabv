@@ -87,10 +87,10 @@ export default function MembersPage() {
 
 
   return (
-    <div className="p-4 md:p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-headline font-bold">Membros</h1>
-        <Button onClick={handleAddNew}>
+    <div className="p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8 gap-4">
+        <h1 className="text-3xl sm:text-4xl font-headline font-bold">Membros</h1>
+        <Button onClick={handleAddNew} size="sm" className="sm:size-auto">
           <Plus className="mr-2" />
           Novo Membro
         </Button>
@@ -99,15 +99,15 @@ export default function MembersPage() {
       <div className="space-y-8">
         {sortedRoles.map((role) => (
           <section key={role}>
-            <h2 className="text-2xl font-headline font-semibold mb-4 border-b pb-2">{role}</h2>
+            <h2 className="text-xl sm:text-2xl font-headline font-semibold mb-4 border-b pb-2">{role}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-6">
               {groupedMembers[role as Member['role']].map((member) => (
                 <div key={member.id} className="relative flex flex-col items-center text-center group">
-                  <Avatar className="w-20 h-20 mb-2">
+                  <Avatar className="w-16 h-16 sm:w-20 sm:h-20 mb-2">
                     <AvatarImage src={member.avatar} alt={member.name} data-ai-hint="person portrait" />
                     <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <p className="font-medium text-sm w-full break-words">{member.name}</p>
+                  <p className="font-medium text-xs sm:text-sm w-full break-words">{member.name}</p>
                    <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

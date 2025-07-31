@@ -87,29 +87,29 @@ export function MonthlyScheduleView({
   };
 
   return (
-    <div className="rounded-lg border overflow-y-auto" style={{maxHeight: 'calc(100vh - 12rem)'}}>
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-background hover:bg-background">
-            <TableHead className="w-[180px] sticky top-0 z-10 bg-inherit">Data</TableHead>
+    <div className="rounded-lg border overflow-x-auto" style={{maxHeight: 'calc(100vh - 12rem)'}}>
+      <Table className="min-w-max">
+        <TableHeader className="bg-background">
+          <TableRow className="hover:bg-background">
+            <TableHead className="w-[180px] sticky left-0 z-20 bg-inherit">Data</TableHead>
             {columns.map((col) => (
-              <TableHead key={col.id} className="sticky top-0 z-10 bg-inherit">
+              <TableHead key={col.id} className="sticky top-0 z-10 bg-inherit min-w-[180px]">
                 <div className="flex items-center gap-2">
                   {col.icon && <col.icon className="h-4 w-4 text-muted-foreground" />}
                   {col.label}
                 </div>
               </TableHead>
             ))}
-            <TableHead className="w-[50px] sticky top-0 z-10 bg-inherit">Ações</TableHead>
+            <TableHead className="w-[50px] sticky right-0 z-20 bg-inherit">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedSchedules.map((schedule) => (
             <TableRow key={schedule.date.toISOString()}>
-              <TableCell className="font-medium p-2">
+              <TableCell className="font-medium p-2 sticky left-0 z-10 bg-background group-hover:bg-muted/50">
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="w-full justify-start font-normal capitalize h-9">
+                        <Button variant="outline" size="sm" className="w-full justify-start font-normal capitalize h-9 text-xs sm:text-sm">
                            {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
                         </Button>
                     </PopoverTrigger>
@@ -140,7 +140,7 @@ export function MonthlyScheduleView({
                               value={assignedMemberId || ''}
                               onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
                             >
-                              <SelectTrigger className={cn("h-9", !assignedMemberId && "text-muted-foreground/60")}>
+                              <SelectTrigger className={cn("h-9 text-xs sm:text-sm", !assignedMemberId && "text-muted-foreground/60")}>
                                 <SelectValue placeholder="Selecione..." />
                               </SelectTrigger>
                               <SelectContent>
@@ -163,7 +163,7 @@ export function MonthlyScheduleView({
                   </TableCell>
                 );
               })}
-              <TableCell className="p-2">
+              <TableCell className="p-2 sticky right-0 z-10 bg-background group-hover:bg-muted/50">
                  <Button variant="ghost" size="icon" onClick={() => handleRemoveDate(schedule.date)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                  </Button>

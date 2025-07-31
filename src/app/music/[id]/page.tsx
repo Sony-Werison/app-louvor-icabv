@@ -22,7 +22,7 @@ export default function SongDetailPage() {
 
   if (!song) {
     return (
-      <div className="p-4 md:p-8 text-center">
+      <div className="p-4 md:p-6 text-center">
         <h2 className="text-2xl font-bold">Música não encontrada</h2>
         <Button onClick={() => router.push('/music')} className="mt-4">
           <ArrowLeft className="mr-2" />
@@ -38,15 +38,15 @@ export default function SongDetailPage() {
   };
   
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-6">
       <div className="flex justify-between items-center mb-6">
         <Button variant="outline" onClick={() => router.push('/music')}>
           <ArrowLeft className="mr-2" />
           Voltar
         </Button>
-        <Button onClick={() => setIsEditing(!isEditing)}>
+        <Button size="sm" onClick={() => setIsEditing(!isEditing)}>
           <Edit className="mr-2" />
-          {isEditing ? 'Cancelar Edição' : 'Editar'}
+          {isEditing ? 'Cancelar' : 'Editar'}
         </Button>
       </div>
 
@@ -57,10 +57,10 @@ export default function SongDetailPage() {
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="font-headline font-bold text-3xl">{song.title}</CardTitle>
-                <p className="text-muted-foreground text-lg">{song.artist}</p>
+                <CardTitle className="font-headline font-bold text-2xl sm:text-3xl">{song.title}</CardTitle>
+                <p className="text-muted-foreground text-md sm:text-lg">{song.artist}</p>
               </div>
-              <Badge variant="secondary" className="text-base">{song.key}</Badge>
+              <Badge variant="secondary" className="text-sm sm:text-base">{song.key}</Badge>
             </div>
           </CardHeader>
           <CardContent>
@@ -70,7 +70,7 @@ export default function SongDetailPage() {
                 <TabsTrigger value="chords">Cifras</TabsTrigger>
               </TabsList>
               <TabsContent value="lyrics" className="mt-4">
-                <pre className="whitespace-pre-wrap font-body text-base leading-relaxed p-4 bg-muted/50 rounded-md">
+                <pre className="whitespace-pre-wrap font-body text-sm sm:text-base leading-relaxed p-4 bg-muted/50 rounded-md">
                   {song.lyrics || 'Nenhuma letra disponível.'}
                 </pre>
               </TabsContent>
@@ -84,5 +84,3 @@ export default function SongDetailPage() {
     </div>
   );
 }
-
-    

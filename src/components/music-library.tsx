@@ -33,7 +33,7 @@ export function MusicLibrary({ songs }: MusicLibraryProps) {
         <Input
           type="search"
           placeholder="Buscar por título ou artista..."
-          className="pl-10 w-full md:w-1/2 lg:w-1/3"
+          className="pl-10 w-full"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -43,7 +43,7 @@ export function MusicLibrary({ songs }: MusicLibraryProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Título</TableHead>
-              <TableHead>Artista</TableHead>
+              <TableHead className="hidden sm:table-cell">Artista</TableHead>
               <TableHead className="text-center">Tom</TableHead>
             </TableRow>
           </TableHeader>
@@ -51,8 +51,11 @@ export function MusicLibrary({ songs }: MusicLibraryProps) {
             {filteredSongs.length > 0 ? (
               filteredSongs.map((song) => (
                 <TableRow key={song.id} onClick={() => handleRowClick(song.id)} className="cursor-pointer">
-                  <TableCell className="font-medium">{song.title}</TableCell>
-                  <TableCell className="text-muted-foreground">{song.artist}</TableCell>
+                  <TableCell className="font-medium">
+                    <div>{song.title}</div>
+                    <div className="text-muted-foreground text-xs sm:hidden">{song.artist}</div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground hidden sm:table-cell">{song.artist}</TableCell>
                   <TableCell className="text-center">
                     <Badge variant="outline">{song.key}</Badge>
                   </TableCell>

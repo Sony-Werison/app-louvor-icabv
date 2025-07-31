@@ -49,13 +49,13 @@ export default function MonthlySchedulePage() {
     );
 
     return (
-        <div className="p-4 md:p-8">
-            <div className="flex justify-between items-center mb-8 gap-4">
-                <div className="flex items-center gap-4">
+        <div className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8 gap-4">
+                <div className="flex items-center gap-2 sm:gap-4 justify-between">
                     <Button variant="outline" size="icon" onClick={() => navigateMonths(-1)}>
                         <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <h1 className="text-2xl md:text-4xl font-headline font-bold text-center w-64 capitalize">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold text-center w-48 sm:w-64 capitalize">
                         {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
                     </h1>
                     <Button variant="outline" size="icon" onClick={() => navigateMonths(1)}>
@@ -64,7 +64,7 @@ export default function MonthlySchedulePage() {
                 </div>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
-                        <Button>
+                        <Button size="sm" className="sm:size-auto w-full sm:w-auto">
                             <Plus className="mr-2" />
                             Adicionar Data
                         </Button>

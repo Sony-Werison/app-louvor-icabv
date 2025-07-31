@@ -94,7 +94,7 @@ const SingleSongView = ({ type, song, songsInPlaylist, onSongSelect, activeSongI
     
     return (
         <div className="grid md:grid-cols-[250px_1fr] gap-6 h-full py-4">
-            <div className="flex flex-col gap-4 h-full overflow-hidden">
+            <div className="flex-col gap-4 h-full overflow-hidden hidden md:flex">
                 <h3 className="font-semibold text-lg flex items-center gap-2 shrink-0"><ListMusic className="w-5 h-5" /> Repertório</h3>
                 <ScrollArea className="flex-grow rounded-md border">
                     <div className="p-2 space-y-1">
@@ -117,7 +117,7 @@ const SingleSongView = ({ type, song, songsInPlaylist, onSongSelect, activeSongI
             <div className="h-full flex flex-col gap-2 overflow-hidden relative">
                 <ScrollArea className="flex-grow rounded-md border" viewportRef={scrollViewportRef}>
                     {song ? (
-                    <div className="p-6">
+                    <div className="p-4 sm:p-6">
                         <h3 className="font-bold text-xl font-headline">{song.title}</h3>
                         <p className="text-sm text-muted-foreground mb-4">{song.artist} - (Tom: {song.key})</p>
                         {type === 'lyrics' ? (
@@ -142,7 +142,7 @@ const SingleSongView = ({ type, song, songsInPlaylist, onSongSelect, activeSongI
                             <Button variant="ghost" size="icon" onClick={handleToggleScrolling} disabled={!song}>
                                 {isScrolling ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                             </Button>
-                            <div className="flex items-center gap-2 w-32">
+                            <div className="flex items-center gap-2 w-24 sm:w-32">
                                 <Slider
                                     value={[scrollSpeed]}
                                     onValueChange={(value) => {
@@ -230,12 +230,12 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
-      <DialogContent className="max-w-6xl grid-rows-[auto,1fr,auto] h-[90vh] sm:h-[80vh]">
+      <DialogContent className="max-w-6xl grid-rows-[auto,1fr,auto] h-[90vh] sm:h-[80vh] p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="font-headline font-bold text-2xl">
+          <DialogTitle className="font-headline font-bold text-xl sm:text-2xl">
             Gerenciar Repertório - {schedule.name}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm sm:text-base">
             Selecione, ordene e visualize as músicas para este culto.
           </DialogDescription>
         </DialogHeader>
@@ -250,7 +250,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
             }} 
             className="flex flex-col overflow-hidden"
         >
-            <TabsList className="shrink-0">
+            <TabsList className="shrink-0 self-start">
                 <TabsTrigger value="selection">Seleção</TabsTrigger>
                 <TabsTrigger value="lyrics">Letras</TabsTrigger>
                 <TabsTrigger value="chords">Cifras</TabsTrigger>
@@ -336,7 +336,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
             </TabsContent>
         </Tabs>
 
-        <DialogFooter className="shrink-0">
+        <DialogFooter className="shrink-0 pt-4">
           <Button variant="outline" onClick={() => { setIsOpen(false); onOpenChange(false); }}>Cancelar</Button>
           <Button onClick={handleSave}>Salvar</Button>
         </DialogFooter>
