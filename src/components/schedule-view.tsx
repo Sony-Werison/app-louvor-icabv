@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
-import { ListMusic, Users, Mic, BookUser, Tv } from 'lucide-react';
+import { PlaylistViewer } from '@/components/playlist-viewer';
+import { ListMusic, Users, Mic, BookUser, Tv, Eye } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useSchedule } from '@/context/schedule-context';
 import { Separator } from './ui/separator';
@@ -23,6 +24,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const [schedules, setSchedules] = useState(initialSchedules);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
+  const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
   const { updateSchedulePlaylist } = useSchedule();
   
   useEffect(() => {
@@ -43,6 +45,11 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const handleOpenPlaylist = (schedule: Schedule) => {
     setSelectedSchedule(schedule);
     setIsPlaylistDialogOpen(true);
+  }
+
+  const handleOpenViewer = (schedule: Schedule) => {
+    setSelectedSchedule(schedule);
+    setIsPlaylistViewerOpen(true);
   }
 
   const getMemberById = (id: string | null) => id ? members.find(m => m.id === id) : null;
@@ -143,10 +150,14 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                       </div>
                   )}
                 </CardContent>
-                <CardFooter className="p-2">
+                <CardFooter className="p-2 flex gap-2">
+                   <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="w-full h-8 text-xs" disabled={schedule.playlist.length === 0}>
+                    <Eye className="mr-2 h-3 w-3" />
+                    Visualizar
+                  </Button>
                   <Button onClick={() => handleOpenPlaylist(schedule)} className="w-full h-8 text-xs">
                     <ListMusic className="mr-2 h-3 w-3" />
-                    Gerenciar Repertório
+                    Gerenciar
                   </Button>
                 </CardFooter>
               </Card>
@@ -161,6 +172,14 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
           allSongs={songs}
           onSave={handlePlaylistSave}
           onOpenChange={() => { setIsPlaylistDialogOpen(false); setSelectedSchedule(null); }}
+        />
+      )}
+
+      {isPlaylistViewerOpen && selectedSchedule && (
+        <PlaylistViewer
+          schedule={selectedSchedule}
+          songs={songs}
+          onOpenChange={() => { setIsPlaylistViewerOpen(false); setSelectedSchedule(null); }}
         />
       )}
     </TooltipProvider>
