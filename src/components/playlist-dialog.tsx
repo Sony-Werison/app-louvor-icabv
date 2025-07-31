@@ -178,7 +178,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                     </div>
                     )}
                 </ScrollArea>
-                {type === 'chords' && song && (
+                {type === 'chords' && (
                      <div className="flex items-center justify-center gap-4 rounded-md border p-2">
                         <Button variant="ghost" size="icon" onClick={handleToggleScrolling} disabled={!song}>
                             {isScrolling ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
@@ -211,7 +211,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
       <DialogContent className="max-w-6xl grid-rows-[auto,1fr,auto] h-[90vh] sm:h-[80vh]">
         <DialogHeader>
           <DialogTitle className="font-headline font-bold text-2xl">
-            Gerenciar Repertório - {schedule.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+            Gerenciar Repertório - {schedule.name}
           </DialogTitle>
           <DialogDescription>
             Selecione, ordene e visualize as músicas para este culto.

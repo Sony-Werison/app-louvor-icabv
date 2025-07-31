@@ -80,7 +80,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                         {schedule.name}
                       </CardTitle>
                       <CardDescription className="text-xs capitalize">
-                        {format(schedule.date, 'dd/MMMM', { locale: ptBR })}
+                        {format(schedule.date, 'dd MMMM yyyy', { locale: ptBR })}
                       </CardDescription>
                     </div>
                   </div>
