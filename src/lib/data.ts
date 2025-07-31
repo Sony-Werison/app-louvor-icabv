@@ -136,11 +136,11 @@ For [G]I am [A]Yours and [Bm]You are mine`
 ];
 
 export const scheduleColumns: ScheduleColumn[] = [
-    { id: 'dirigente_manha', label: 'Dirigente Manhã', icon: Sun },
-    { id: 'pregacao_manha', label: 'Pregação Manhã', icon: BookUser },
-    { id: 'dirigente_noite', label: 'Dirigente Noite', icon: Moon },
-    { id: 'pregacao_noite', label: 'Pregação Noite', icon: BookUser },
-    { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true },
+    { id: 'dirigente_manha', label: 'Dirigente Manhã', icon: Sun, role: 'Dirigente' },
+    { id: 'pregacao_manha', label: 'Pregação Manhã', icon: BookUser, role: 'Pregador' },
+    { id: 'dirigente_noite', label: 'Dirigente Noite', icon: Moon, role: 'Dirigente' },
+    { id: 'pregacao_noite', label: 'Pregação Noite', icon: BookUser, role: 'Pregador' },
+    { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true, role: 'Multimídia' },
 ];
 
 const getWeekends = (date: Date): Date[] => {
@@ -204,5 +204,3 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
 
 
 export const monthlySchedules: MonthlySchedule[] = generateInitialSchedules();
-
-    

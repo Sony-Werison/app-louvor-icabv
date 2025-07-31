@@ -1,6 +1,6 @@
 'use client';
 
-import type { MonthlySchedule, Member, ScheduleColumn } from '@/types';
+import type { MonthlySchedule, Member, ScheduleColumn, MemberRole } from '@/types';
 import {
   Table,
   TableBody,
@@ -24,6 +24,7 @@ import { Calendar } from './ui/calendar';
 import { ptBR } from 'date-fns/locale';
 import { useSchedule } from '@/context/schedule-context';
 import { cn } from '@/lib/utils';
+import React from 'react';
 
 interface MonthlyScheduleViewProps {
   schedules: MonthlySchedule[];
@@ -78,6 +79,13 @@ export function MonthlyScheduleView({
   
   const sortedSchedules = [...schedules].sort((a, b) => a.date.getTime() - b.date.getTime());
 
+  const getFilteredMembers = (role: MemberRole | undefined) => {
+    if (!role) {
+      return members;
+    }
+    return members.filter(member => member.role === role);
+  };
+
   return (
     <div className="rounded-lg border overflow-y-auto" style={{maxHeight: 'calc(100vh - 12rem)'}}>
       <Table>
@@ -119,6 +127,7 @@ export function MonthlyScheduleView({
               {columns.map((col) => {
                 const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
                 const slots = col.isMulti ? [0, 1] : [0];
+                const filteredMembersForColumn = getFilteredMembers(col.role);
 
                 return (
                   <TableCell key={col.id} className="p-2">
@@ -135,7 +144,7 @@ export function MonthlyScheduleView({
                                 <SelectValue placeholder="Selecione..." />
                               </SelectTrigger>
                               <SelectContent>
-                                {members.map((member) => (
+                                {filteredMembersForColumn.map((member) => (
                                   <SelectItem key={member.id} value={member.id}>
                                     {member.name}
                                   </SelectItem>

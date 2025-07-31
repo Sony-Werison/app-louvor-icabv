@@ -35,6 +35,7 @@ export type ScheduleColumn = {
   label: string;
   icon?: React.ElementType;
   isMulti?: boolean;
+  role?: MemberRole;
 };
 
 export type MonthlySchedule = {
