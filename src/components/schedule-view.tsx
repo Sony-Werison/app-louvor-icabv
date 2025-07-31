@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
-import { ListMusic, Star } from 'lucide-react';
+import { ListMusic } from 'lucide-react';
 
 interface ScheduleViewProps {
   initialSchedules: Schedule[];
@@ -51,12 +51,12 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
               <CardContent className="flex-grow space-y-6">
                 {leader && (
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 border-2 border-amber-400">
+                    <Avatar className="h-10 w-10">
                       <AvatarImage src={leader.avatar} alt={leader.name} />
                       <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <span className="text-sm text-muted-foreground flex items-center gap-1.5"><Star className="w-4 h-4 text-amber-400"/> Dirigente</span>
+                      <span className="text-sm text-muted-foreground">Dirigente</span>
                       <p className="font-semibold">{leader.name}</p>
                     </div>
                   </div>
