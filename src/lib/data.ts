@@ -37,6 +37,7 @@ export const songs: Song[] = [
   { id: 's10', title: 'Em Teus Braços', artist: 'Laura Souguellis', key: 'C' },
 ];
 
+// This is now legacy data, the schedule page will be built from monthlySchedules
 export const schedules: Schedule[] = [
   {
     id: 'e1',
@@ -63,32 +64,19 @@ export const schedules: Schedule[] = [
 
 export const scheduleColumns: ScheduleColumn[] = [
   { id: 'dirigente', label: 'Dirigente', icon: BookUser },
-  { id: 'multimedia', label: 'Multimídia', icon: Tv },
+  { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true },
   { id: 'abertura_ebd', label: 'Abertura EBD', icon: Sun },
   { id: 'abertura_noite', label: 'Abertura Noite', icon: Moon },
   { id: 'pregacao_noite', label: 'Pregação Noite', icon: BookUser },
 ];
 
-const today = new Date();
-const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-const generateSaturdays = (count: number) => {
-  const saturdays = [];
-  let day = new Date(firstDayOfMonth);
-  while (saturdays.length < count) {
-    if (day.getDay() === 6) { // 6 = Saturday
-      saturdays.push(new Date(day));
-    }
-    day.setDate(day.getDate() + 1);
-  }
-  return saturdays;
-}
-
 const getNextSaturday = (date: Date) => {
     const newDate = new Date(date);
     const day = newDate.getDay();
+    // 6 = Saturday. If today is Saturday, get next one.
     const diff = day === 6 ? 7 : (6-day+7)%7;
     newDate.setDate(newDate.getDate() + diff);
+    newDate.setHours(0,0,0,0);
     return newDate;
 }
 
@@ -104,13 +92,13 @@ const generateDates = (startDate: Date, count: number): Date[] => {
 
 const firstSaturday = getNextSaturday(new Date());
 
-export const monthlySchedules: MonthlySchedule[] = generateDates(firstSaturday, 8).map((date) => ({
+export const monthlySchedules: MonthlySchedule[] = generateDates(firstSaturday, 4).map((date) => ({
     date: date,
     assignments: {
-        'dirigente': null,
-        'multimedia': null,
-        'abertura_ebd': null,
-        'abertura_noite': null,
-        'pregacao_noite': null
+        'dirigente': ['1'],
+        'multimedia': ['3', '4'],
+        'abertura_ebd': ['2'],
+        'abertura_noite': ['7'],
+        'pregacao_noite': ['18']
     }
 }));

@@ -21,15 +21,17 @@ export type Schedule = {
   date: Date;
   leaderId: string;
   playlist: string[]; // array of song ids
+  team?: Record<string, string[]>; // roleId -> memberId[]
 };
 
 export type ScheduleColumn = {
   id: string;
   label: string;
   icon?: React.ElementType;
+  isMulti?: boolean;
 };
 
 export type MonthlySchedule = {
   date: Date;
-  assignments: Record<string, string | null>; // columnId -> memberId
+  assignments: Record<string, (string | null)[]>; // columnId -> memberId[]
 };

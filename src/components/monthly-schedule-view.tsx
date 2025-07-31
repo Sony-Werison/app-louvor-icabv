@@ -19,7 +19,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 interface MonthlyScheduleViewProps {
   schedules: MonthlySchedule[];
@@ -34,28 +33,46 @@ export function MonthlyScheduleView({
   columns,
   onSchedulesChange,
 }: MonthlyScheduleViewProps) {
-
-  const handleMemberChange = (date: Date, columnId: string, memberId: string) => {
+  const handleMemberChange = (date: Date, columnId: string, memberId: string, index: number) => {
     const newSchedules = schedules.map((schedule) => {
       if (schedule.date.getTime() === date.getTime()) {
-        const newAssignments = { ...schedule.assignments, [columnId]: memberId };
+        const newAssignments = { ...schedule.assignments };
+        const currentAssignment = newAssignments[columnId] ? [...newAssignments[columnId]] : [];
+        currentAssignment[index] = memberId;
+        newAssignments[columnId] = currentAssignment;
         return { ...schedule, assignments: newAssignments };
       }
       return schedule;
     });
     onSchedulesChange(newSchedules);
   };
-  
-  const handleClearAssignment = (date: Date, columnId: string) => {
-     const newSchedules = schedules.map((schedule) => {
+
+  const handleClearAssignment = (date: Date, columnId: string, index: number) => {
+    const newSchedules = schedules.map((schedule) => {
       if (schedule.date.getTime() === date.getTime()) {
-        const newAssignments = { ...schedule.assignments, [columnId]: null };
+        const newAssignments = { ...schedule.assignments };
+        const currentAssignment = newAssignments[columnId] ? [...newAssignments[columnId]] : [];
+        currentAssignment[index] = null;
+        newAssignments[columnId] = currentAssignment;
         return { ...schedule, assignments: newAssignments };
       }
       return schedule;
     });
     onSchedulesChange(newSchedules);
-  }
+  };
+
+  const handleRemoveDate = (date: Date) => {
+    const newSchedules = schedules.filter(schedule => schedule.date.getTime() !== date.getTime());
+    onSchedulesChange(newSchedules);
+  };
+
+  const getAssignedMemberIds = (date: Date, columnId: string): (string | null)[] => {
+    const schedule = schedules.find(s => s.date.getTime() === date.getTime());
+    if (schedule) {
+      return schedule.assignments[columnId] || [];
+    }
+    return [];
+  };
 
   return (
     <div className="rounded-lg border">
@@ -71,6 +88,7 @@ export function MonthlyScheduleView({
                 </div>
               </TableHead>
             ))}
+            <TableHead className="w-[50px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -80,36 +98,48 @@ export function MonthlyScheduleView({
                 {format(schedule.date, 'dd/MM/yyyy')}
               </TableCell>
               {columns.map((col) => {
-                const assignedMemberId = schedule.assignments[col.id];
-                const assignedMember = members.find(m => m.id === assignedMemberId);
+                const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
+                const slots = col.isMulti ? [0, 1] : [0];
 
                 return (
                   <TableCell key={col.id}>
-                    <div className="flex items-center gap-1">
-                      <Select
-                        value={assignedMemberId || ''}
-                        onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {members.map((member) => (
-                            <SelectItem key={member.id} value={member.id}>
-                              {member.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {assignedMemberId && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleClearAssignment(schedule.date, col.id)}>
-                            <Trash2 className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      )}
+                    <div className={`flex gap-2 ${col.isMulti ? 'flex-col' : ''}`}>
+                      {slots.map(index => {
+                        const assignedMemberId = assignedMemberIds[index];
+                        return (
+                          <div key={index} className="flex items-center gap-1">
+                            <Select
+                              value={assignedMemberId || ''}
+                              onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {members.map((member) => (
+                                  <SelectItem key={member.id} value={member.id}>
+                                    {member.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {assignedMemberId && (
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleClearAssignment(schedule.date, col.id, index)}>
+                                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   </TableCell>
                 );
               })}
+              <TableCell>
+                 <Button variant="ghost" size="icon" onClick={() => handleRemoveDate(schedule.date)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                 </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

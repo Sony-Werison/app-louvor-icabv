@@ -32,7 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 interface ScheduleFormDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (data: Omit<Schedule, 'id' | 'playlist'> & { id?: string }) => void;
+  onSave: (data: Omit<Schedule, 'id' | 'playlist' | 'team'> & { id?: string }) => void;
   schedule: Schedule | null;
   members: Member[];
 }
