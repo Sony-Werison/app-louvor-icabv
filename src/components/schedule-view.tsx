@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
-import { ListMusic, Users, Calendar, Mic, BookUser } from 'lucide-react';
+import { ListMusic, Users, Mic, BookUser, Tv } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useSchedule } from '@/context/schedule-context';
 import { Separator } from './ui/separator';
@@ -37,7 +37,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     setSchedules(updatedSchedules);
 
     // Here you could call a function from context to persist the change
-    // e.g. updateSchedulePlaylist(scheduleId, newPlaylist);
+    updateSchedulePlaylist(scheduleId, newPlaylist);
 
     setIsPlaylistDialogOpen(false);
     setSelectedSchedule(null);
@@ -60,7 +60,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
 
       {schedules.length === 0 ? (
          <div className="flex flex-col items-center justify-center text-center text-muted-foreground bg-card border rounded-lg p-12">
-            <Calendar className="w-16 h-16 mb-4" />
+            <Users className="w-16 h-16 mb-4" />
             <h2 className="text-2xl font-bold mb-2">Nenhuma reunião esta semana</h2>
             <p>Vá para a página "Escala Mensal" para planejar as próximas semanas.</p>
          </div>
@@ -116,21 +116,16 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                   {teamMembers.length > 0 && (
                       <div>
                           <Separator className="my-4" />
-                          <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm"><Users className="w-4 h-4"/>Equipe de Apoio</h3>
-                          <div className="flex flex-wrap gap-x-4 gap-y-2">
+                          <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm"><Tv className="w-4 h-4"/>Multimídia</h3>
+                          <div className="space-y-2">
                               {teamMembers.map(member => (
-                                   <Tooltip key={member.id}>
-                                      <TooltipTrigger>
-                                          <Avatar className="h-8 w-8" data-ai-hint="person portrait">
-                                              <AvatarImage src={member.avatar} alt={member.name} />
-                                              <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
-                                          </Avatar>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                          <p className="font-semibold">{member.name}</p>
-                                          <p className="text-muted-foreground">{member.role}</p>
-                                      </TooltipContent>
-                                  </Tooltip>
+                                <div key={member.id} className="flex items-center gap-2 text-sm">
+                                    <Avatar className="h-6 w-6" data-ai-hint="person portrait">
+                                        <AvatarImage src={member.avatar} alt={member.name} />
+                                        <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-muted-foreground">{member.name}</span>
+                                </div>
                               ))}
                           </div>
                       </div>

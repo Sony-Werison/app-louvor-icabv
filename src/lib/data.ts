@@ -1,4 +1,4 @@
-import type { Member, Song, Schedule, MonthlySchedule, ScheduleColumn } from '@/types';
+import type { Member, Song, MonthlySchedule, ScheduleColumn } from '@/types';
 import { Tv, Sun, Moon, BookUser } from 'lucide-react';
 import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths } from 'date-fns';
 
@@ -44,28 +44,33 @@ export const scheduleColumns: ScheduleColumn[] = [
     { id: 'dirigente_noite', label: 'Dirigente Noite', icon: Moon },
     { id: 'pregacao_noite', label: 'Pregação Noite', icon: BookUser },
     { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true },
-  ];
+];
 
-const generateSaturdays = (date: Date): Date[] => {
+const generateWeekendDates = (date: Date): Date[] => {
     const start = startOfMonth(date);
     const end = endOfMonth(date);
     const days = eachDayOfInterval({ start, end });
-    return days.filter(day => getDay(day) === 6); // 6 = Saturday
+    return days.filter(day => getDay(day) === 6 || getDay(day) === 0); // 6 = Saturday, 0 = Sunday
 };
 
 
 const generateInitialSchedules = (): MonthlySchedule[] => {
     const today = new Date();
-    const currentMonthSaturdays = generateSaturdays(today);
-    const nextMonthSaturdays = generateSaturdays(addMonths(today, 1));
+    const currentMonthWeekend = generateWeekendDates(today);
+    const nextMonthWeekend = generateWeekendDates(addMonths(today, 1));
 
-    const allSaturdays = [...currentMonthSaturdays, ...nextMonthSaturdays];
+    const allWeekendDates = [...currentMonthWeekend, ...nextMonthWeekend];
     
     const preachers = members.filter(m => m.role === 'Preletor');
     const leaders = members.filter(m => m.role.includes('Líder') || m.role.includes('Vocal'));
     const musicians = members.filter(m => !m.role.includes('Preletor'));
 
-    return allSaturdays.map((saturday, index) => {
+    return allWeekendDates.map((date, index) => {
+        // Skip Sundays for assignment generation as we link them to Saturdays
+        if (getDay(date) === 0) {
+            return { date, assignments: {} };
+        }
+
         const leaderMorning = leaders[index % leaders.length];
         const leaderNight = leaders[(index + 1) % leaders.length];
         const preacherMorning = preachers[index % preachers.length];
@@ -74,7 +79,7 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
         const multimedia2 = musicians[(index + 1) % musicians.length];
         
         return {
-            date: saturday,
+            date: date,
             assignments: {
                 'dirigente_manha': [leaderMorning.id],
                 'pregacao_manha': [preacherMorning.id],
@@ -83,7 +88,7 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
                 'multimedia': [multimedia1.id, multimedia2.id],
             }
         }
-    });
+    }).filter(s => s.assignments); // Filter out empty sunday assignments
 };
 
 
