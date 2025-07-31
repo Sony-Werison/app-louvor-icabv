@@ -1,7 +1,7 @@
 'use client';
 
 import type { Schedule, Song } from '@/types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,8 +14,8 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { Separator } from './ui/separator';
-import { X, Music } from 'lucide-react';
+import { X, Music, GripVertical } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PlaylistDialogProps {
   schedule: Schedule;
@@ -27,9 +27,12 @@ interface PlaylistDialogProps {
 export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: PlaylistDialogProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [currentPlaylist, setCurrentPlaylist] = useState<string[]>(schedule.playlist);
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
 
   useEffect(() => {
     setIsOpen(true);
+    setCurrentPlaylist(schedule.playlist);
   }, [schedule]);
 
   const handleSave = () => {
@@ -44,8 +47,21 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
       setCurrentPlaylist(prev => prev.filter(id => id !== songId));
     }
   };
+  
+  const handleDragSort = () => {
+    if (dragItem.current === null || dragOverItem.current === null) return;
+    
+    const playlistItems = [...currentPlaylist];
+    const draggedItemContent = playlistItems.splice(dragItem.current, 1)[0];
+    playlistItems.splice(dragOverItem.current, 0, draggedItemContent);
+    
+    dragItem.current = null;
+    dragOverItem.current = null;
 
-  const songsInPlaylist = allSongs.filter(song => currentPlaylist.includes(song.id));
+    setCurrentPlaylist(playlistItems);
+  };
+
+  const songsInPlaylist = currentPlaylist.map(id => allSongs.find(song => song.id === id)).filter((s): s is Song => !!s);
   const availableSongs = allSongs.filter(song => !currentPlaylist.includes(song.id));
 
   return (
@@ -56,7 +72,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
             Gerenciar Repertório - {schedule.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
           </DialogTitle>
           <DialogDescription>
-            Selecione as músicas para esta escala.
+            Selecione e arraste as músicas para reordenar o repertório.
           </DialogDescription>
         </DialogHeader>
         <div className="grid md:grid-cols-2 gap-6 overflow-hidden py-4">
@@ -85,11 +101,22 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                 <ScrollArea className="h-full rounded-md border p-4">
                 {songsInPlaylist.length > 0 ? (
                     <div className="space-y-2">
-                    {songsInPlaylist.map(song => (
-                        <div key={song.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                            <div>
-                                <p className="font-medium">{song.title}</p>
-                                <p className="text-sm text-muted-foreground">{song.artist}</p>
+                    {songsInPlaylist.map((song, index) => (
+                        <div 
+                            key={song.id} 
+                            className="flex items-center justify-between p-2 rounded-md hover:bg-muted cursor-grab active:cursor-grabbing"
+                            draggable
+                            onDragStart={() => (dragItem.current = index)}
+                            onDragEnter={() => (dragOverItem.current = index)}
+                            onDragEnd={handleDragSort}
+                            onDragOver={(e) => e.preventDefault()}
+                        >
+                            <div className="flex items-center gap-2">
+                                <GripVertical className="h-5 w-5 text-muted-foreground"/>
+                                <div>
+                                    <p className="font-medium">{song.title}</p>
+                                    <p className="text-sm text-muted-foreground">{song.artist}</p>
+                                </div>
                             </div>
                             <Button variant="ghost" size="icon" onClick={() => handleCheckedChange(song.id, false)}>
                                 <X className="h-4 w-4"/>
