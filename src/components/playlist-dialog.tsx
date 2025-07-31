@@ -13,12 +13,13 @@ import {
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
-import { ScrollArea } from './ui/scroll-area';
-import { X, Music, GripVertical, ListMusic, Eye } from 'lucide-react';
+import { ScrollArea, ScrollBar } from './ui/scroll-area';
+import { X, Music, GripVertical, ListMusic, Eye, Play, Pause } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ChordDisplay } from './chord-display';
+import { Slider } from './ui/slider';
 
 interface PlaylistDialogProps {
   schedule: Schedule;
@@ -34,11 +35,9 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   const dragOverItem = useRef<number | null>(null);
   const [activeSongId, setActiveSongId] = useState<string | null>(null);
 
-
   useEffect(() => {
     setIsOpen(true);
     setCurrentPlaylist(schedule.playlist);
-    // Set the first song as active by default if playlist is not empty
     if (schedule.playlist.length > 0) {
       setActiveSongId(schedule.playlist[0]);
     }
@@ -58,11 +57,9 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     }
     setCurrentPlaylist(newPlaylist);
 
-    // If the active song is removed, reset the active song
     if (activeSongId === songId && !checked) {
       setActiveSongId(newPlaylist.length > 0 ? newPlaylist[0] : null);
     } else if (!activeSongId && newPlaylist.length > 0) {
-      // If no song was active, set the first one
       setActiveSongId(newPlaylist[0]);
     }
   };
@@ -88,56 +85,130 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   const availableSongs = allSongs.filter(song => !currentPlaylist.includes(song.id));
   const activeSong = songsInPlaylist.find(s => s.id === activeSongId);
   
-  const SingleSongView = ({ type, song }: { type: 'lyrics' | 'chords', song: Song | undefined }) => (
-    <div className="grid md:grid-cols-[250px_1fr] gap-6 h-full py-4">
-        <div className="flex flex-col gap-4 h-full">
-            <h3 className="font-semibold text-lg flex items-center gap-2"><ListMusic className="w-5 h-5" /> Repertório</h3>
-             <ScrollArea className="flex-grow rounded-md border">
-                <div className="p-2 space-y-1">
-                    {songsInPlaylist.map((s) => (
-                        <Button 
-                            key={`shortcut-${s.id}`}
-                            variant={activeSongId === s.id ? "secondary" : "ghost"}
-                            className="w-full justify-start h-auto py-2 px-3 text-left"
-                            onClick={() => handleShortcutClick(s.id)}
-                        >
-                             <div className="flex flex-col">
-                                <span>{s.title}</span>
-                                <span className="text-xs text-muted-foreground">{s.artist}</span>
-                            </div>
+  const SingleSongView = ({ type, song }: { type: 'lyrics' | 'chords', song: Song | undefined }) => {
+    const [isScrolling, setIsScrolling] = useState(false);
+    const [scrollSpeed, setScrollSpeed] = useState(50);
+    const scrollViewportRef = useRef<HTMLDivElement>(null);
+    const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const stopScrolling = () => {
+        if (scrollIntervalRef.current) {
+            clearInterval(scrollIntervalRef.current);
+            scrollIntervalRef.current = null;
+        }
+        setIsScrolling(false);
+    }
+
+    const startScrolling = () => {
+        stopScrolling();
+        setIsScrolling(true);
+        
+        scrollIntervalRef.current = setInterval(() => {
+            if (scrollViewportRef.current) {
+                const { scrollTop, scrollHeight, clientHeight } = scrollViewportRef.current;
+                if (scrollTop < scrollHeight - clientHeight) {
+                    scrollViewportRef.current.scrollTop += 1;
+                } else {
+                    stopScrolling();
+                }
+            }
+        }, 101 - scrollSpeed);
+    };
+
+    useEffect(() => {
+        // Stop scrolling when song changes or when switching tabs
+        stopScrolling();
+    }, [song, type]);
+
+
+    useEffect(() => {
+        // Cleanup on unmount
+        return () => stopScrolling();
+    }, []);
+
+    const handleToggleScrolling = () => {
+        if (isScrolling) {
+            stopScrolling();
+        } else {
+            startScrolling();
+        }
+    }
+    
+    return (
+        <div className="grid md:grid-cols-[250px_1fr] gap-6 h-full py-4">
+            <div className="flex flex-col gap-4 h-full">
+                <h3 className="font-semibold text-lg flex items-center gap-2"><ListMusic className="w-5 h-5" /> Repertório</h3>
+                <ScrollArea className="flex-grow rounded-md border">
+                    <div className="p-2 space-y-1">
+                        {songsInPlaylist.map((s) => (
+                            <Button 
+                                key={`shortcut-${s.id}`}
+                                variant={activeSongId === s.id ? "secondary" : "ghost"}
+                                className="w-full justify-start h-auto py-2 px-3 text-left"
+                                onClick={() => handleShortcutClick(s.id)}
+                            >
+                                <div className="flex flex-col">
+                                    <span>{s.title}</span>
+                                    <span className="text-xs text-muted-foreground">{s.artist}</span>
+                                </div>
+                            </Button>
+                        ))}
+                    </div>
+                </ScrollArea>
+            </div>
+            <div className="h-full flex flex-col gap-2">
+                <ScrollArea className="h-full rounded-md border" viewportRef={scrollViewportRef}>
+                    {song ? (
+                    <div className="p-6">
+                        <h3 className="font-bold text-xl font-headline">{song.title}</h3>
+                        <p className="text-sm text-muted-foreground mb-4">{song.artist} - (Tom: {song.key})</p>
+                        {type === 'lyrics' ? (
+                            <pre className="whitespace-pre-wrap font-body text-base leading-relaxed">
+                                {song.lyrics || 'Nenhuma letra disponível.'}
+                            </pre>
+                        ) : (
+                            <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} />
+                        )}
+                    </div>
+                    ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
+                        <Eye className="w-12 h-12 mb-4" />
+                        <h3 className="text-lg font-semibold">Selecione uma música</h3>
+                        <p className="text-sm">Clique em uma música na lista à esquerda para ver os detalhes aqui.</p>
+                    </div>
+                    )}
+                </ScrollArea>
+                {type === 'chords' && song && (
+                     <div className="flex items-center justify-center gap-4 rounded-md border p-2">
+                        <Button variant="ghost" size="icon" onClick={handleToggleScrolling} disabled={!song}>
+                            {isScrolling ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                         </Button>
-                    ))}
-                </div>
-            </ScrollArea>
+                        <div className="flex items-center gap-2 w-full max-w-xs">
+                             <span className="text-xs text-muted-foreground">Lento</span>
+                             <Slider
+                                value={[scrollSpeed]}
+                                onValueChange={(value) => {
+                                    setScrollSpeed(value[0]);
+                                    if(isScrolling) startScrolling(); // Update speed immediately
+                                }}
+                                min={1}
+                                max={100}
+                                step={1}
+                                disabled={!song}
+                              />
+                             <span className="text-xs text-muted-foreground">Rápido</span>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
-         <ScrollArea className="h-full rounded-md border">
-            {song ? (
-              <div className="p-6">
-                  <h3 className="font-bold text-xl font-headline">{song.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">{song.artist} - (Tom: {song.key})</p>
-                  {type === 'lyrics' ? (
-                     <pre className="whitespace-pre-wrap font-body text-base leading-relaxed">
-                        {song.lyrics || 'Nenhuma letra disponível.'}
-                     </pre>
-                  ) : (
-                    <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} />
-                  )}
-              </div>
-            ) : (
-               <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
-                  <Eye className="w-12 h-12 mb-4" />
-                  <h3 className="text-lg font-semibold">Selecione uma música</h3>
-                  <p className="text-sm">Clique em uma música na lista à esquerda para ver os detalhes aqui.</p>
-              </div>
-            )}
-        </ScrollArea>
-    </div>
-  );
+    );
+  };
 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
-      <DialogContent className="max-w-4xl grid-rows-[auto,1fr,auto] h-[90vh] sm:h-[80vh]">
+      <DialogContent className="max-w-6xl grid-rows-[auto,1fr,auto] h-[90vh] sm:h-[80vh]">
         <DialogHeader>
           <DialogTitle className="font-headline font-bold text-2xl">
             Gerenciar Repertório - {schedule.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
@@ -233,5 +304,3 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     </Dialog>
   );
 }
-
-    
