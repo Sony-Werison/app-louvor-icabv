@@ -4,6 +4,7 @@ import { ScheduleView } from '@/components/schedule-view';
 import { startOfWeek, endOfWeek, isWithinInterval, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Schedule, MonthlySchedule } from '@/types';
+import { useEffect, useState } from 'react';
 
 const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: any[]): Schedule[] => {
     let schedules: Schedule[] = [];
@@ -35,7 +36,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 leaderId: assignments.dirigente_manha[0],
                 preacherId: assignments.pregacao_manha?.[0] || null,
                 team: team,
-                playlist: songs.slice(0, 3).map(s => s.id) // Dummy playlist
+                playlist: ms.playlist_manha || songs.slice(0, 3).map(s => s.id) 
             });
         }
 
@@ -52,7 +53,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 leaderId: assignments.dirigente_noite[0],
                 preacherId: assignments.pregacao_noite?.[0] || null,
                 team: team,
-                playlist: songs.slice(3, 6).map(s => s.id) // Dummy playlist
+                playlist: ms.playlist_noite || songs.slice(3, 6).map(s => s.id)
             });
         }
     });
@@ -63,16 +64,23 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
 
 export default function SchedulePage() {
   const { monthlySchedules, members, songs } = useSchedule();
+  const [weeklySchedules, setWeeklySchedules] = useState<Schedule[]>([]);
   
-  const allSchedules = transformMonthlyToSchedule(monthlySchedules, songs);
+  useEffect(() => {
+    const allSchedules = transformMonthlyToSchedule(monthlySchedules, songs);
 
-  const today = new Date();
-  const startOfThisWeek = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
-  const endOfThisWeek = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
+    const today = new Date();
+    const startOfThisWeek = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
+    const endOfThisWeek = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
 
-  const weeklySchedules = allSchedules.filter(schedule => 
-    isWithinInterval(schedule.date, { start: startOfThisWeek, end: endOfThisWeek })
-  );
+    const filteredSchedules = allSchedules.filter(schedule => 
+      isWithinInterval(schedule.date, { start: startOfThisWeek, end: endOfThisWeek })
+    );
+
+    setWeeklySchedules(filteredSchedules);
+
+  }, [monthlySchedules, songs]);
+
 
   return (
     <div className="p-4 md:p-8">

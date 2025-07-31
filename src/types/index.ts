@@ -35,4 +35,6 @@ export type ScheduleColumn = {
 export type MonthlySchedule = {
   date: Date;
   assignments: Record<string, (string | null)[]>; // columnId -> memberId[]
+  playlist_manha?: string[];
+  playlist_noite?: string[];
 };

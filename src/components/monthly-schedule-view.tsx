@@ -79,30 +79,30 @@ export function MonthlyScheduleView({
   const sortedSchedules = [...schedules].sort((a, b) => a.date.getTime() - b.date.getTime());
 
   return (
-    <div className="rounded-lg border">
+    <div className="rounded-lg border overflow-y-auto" style={{maxHeight: 'calc(100vh - 12rem)'}}>
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-[180px]">Data</TableHead>
+          <TableRow className="bg-background hover:bg-background">
+            <TableHead className="w-[180px] sticky top-0 z-10 bg-inherit">Data</TableHead>
             {columns.map((col) => (
-              <TableHead key={col.id}>
+              <TableHead key={col.id} className="sticky top-0 z-10 bg-inherit">
                 <div className="flex items-center gap-2">
                   {col.icon && <col.icon className="h-4 w-4 text-muted-foreground" />}
                   {col.label}
                 </div>
               </TableHead>
             ))}
-            <TableHead className="w-[50px]">Ações</TableHead>
+            <TableHead className="w-[50px] sticky top-0 z-10 bg-inherit">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedSchedules.map((schedule) => (
             <TableRow key={schedule.date.toISOString()}>
-              <TableCell className="font-medium">
+              <TableCell className="font-medium p-2">
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start font-normal capitalize">
-                           {format(schedule.date, 'EEEE, dd/MM/yyyy', { locale: ptBR })}
+                        <Button variant="outline" size="sm" className="w-full justify-start font-normal capitalize h-9">
+                           {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
@@ -121,8 +121,8 @@ export function MonthlyScheduleView({
                 const slots = col.isMulti ? [0, 1] : [0];
 
                 return (
-                  <TableCell key={col.id}>
-                    <div className={`flex gap-2 ${col.isMulti ? 'flex-col' : ''}`}>
+                  <TableCell key={col.id} className="p-2">
+                    <div className={`flex gap-1 ${col.isMulti ? 'flex-col' : ''}`}>
                       {slots.map(index => {
                         const assignedMemberId = assignedMemberIds[index];
                         return (
@@ -131,7 +131,7 @@ export function MonthlyScheduleView({
                               value={assignedMemberId || ''}
                               onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
                             >
-                              <SelectTrigger className={cn(!assignedMemberId && "text-muted-foreground/60")}>
+                              <SelectTrigger className={cn("h-9", !assignedMemberId && "text-muted-foreground/60")}>
                                 <SelectValue placeholder="Selecione..." />
                               </SelectTrigger>
                               <SelectContent>
@@ -143,8 +143,8 @@ export function MonthlyScheduleView({
                               </SelectContent>
                             </Select>
                             {assignedMemberId && (
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleClearAssignment(schedule.date, col.id, index)}>
-                                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => handleClearAssignment(schedule.date, col.id, index)}>
+                                <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
                               </Button>
                             )}
                           </div>
@@ -154,7 +154,7 @@ export function MonthlyScheduleView({
                   </TableCell>
                 );
               })}
-              <TableCell>
+              <TableCell className="p-2">
                  <Button variant="ghost" size="icon" onClick={() => handleRemoveDate(schedule.date)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                  </Button>

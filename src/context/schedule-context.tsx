@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import type { MonthlySchedule, Member, Song, ScheduleColumn } from '@/types';
 import { 
   members as initialMembers, 
@@ -50,9 +50,23 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const updateSchedulePlaylist = (scheduleId: string, playlist: string[]) => {
-    // This is more complex as it involves transforming the monthly schedule.
-    // For now, we'll leave this as a placeholder for a more robust implementation if needed.
-    console.log("Updating playlist for schedule:", scheduleId, playlist);
+    const [type, timestampStr] = scheduleId.replace('s-', '').split('-');
+    const timestamp = parseInt(timestampStr, 10);
+
+    setMonthlySchedules(prevSchedules => {
+        return prevSchedules.map(schedule => {
+            if (schedule.date.getTime() === timestamp) {
+                const newSchedule = { ...schedule };
+                if (type === 'manha') {
+                    newSchedule.playlist_manha = playlist;
+                } else if (type === 'noite') {
+                    newSchedule.playlist_noite = playlist;
+                }
+                return newSchedule;
+            }
+            return schedule;
+        });
+    });
   };
 
 
