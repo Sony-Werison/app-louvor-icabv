@@ -144,10 +144,9 @@ const SingleSongView = ({ type, song, songsInPlaylist, onSongSelect, activeSongI
                                     value={[scrollSpeed]}
                                     onValueChange={(value) => {
                                         setScrollSpeed(value[0]);
-                                        if (isScrolling) { // Update speed immediately
-                                            // Must restart to apply new speed
+                                        if (isScrolling) {
                                             stopScrolling();
-                                            startScrolling();
+                                            setTimeout(() => startScrolling(), 0);
                                         }
                                     }}
                                     min={1}
