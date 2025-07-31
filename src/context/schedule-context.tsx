@@ -18,6 +18,7 @@ interface ScheduleContextType {
   removeSchedule: (date: Date) => void;
   updateSchedule: (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => void;
   updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => void;
+  updateSong: (songId: string, updates: Partial<Song>) => void;
 }
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
@@ -25,18 +26,15 @@ const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined
 export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [monthlySchedules, setMonthlySchedules] = useState<MonthlySchedule[]>(initialMonthlySchedules);
   const [members] = useState<Member[]>(initialMembers);
-  const [songs] = useState<Song[]>(initialSongs);
+  const [songs, setSongs] = useState<Song[]>(initialSongs);
   const [scheduleColumns] = useState<ScheduleColumn[]>(initialScheduleColumns);
 
   const addSchedule = (date: Date) => {
     const newSchedule: MonthlySchedule = {
       date,
-      assignments: scheduleColumns.reduce((acc, col) => {
-        acc[col.id] = col.isMulti ? [null, null] : [null];
-        return acc;
-      }, {} as Record<string, (string | null)[]>),
+      assignments: {},
     };
-    setMonthlySchedules(prev => [...prev, newSchedule]);
+    setMonthlySchedules(prev => [...prev, newSchedule].sort((a,b) => a.date.getTime() - b.date.getTime()));
   };
 
   const removeSchedule = (date: Date) => {
@@ -69,6 +67,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const updateSong = (songId: string, updates: Partial<Song>) => {
+    setSongs(prev => prev.map(s => s.id === songId ? { ...s, ...updates } : s));
+  };
+
 
   return (
     <ScheduleContext.Provider value={{ 
@@ -80,6 +82,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       removeSchedule,
       updateSchedule,
       updateSchedulePlaylist,
+      updateSong,
     }}>
       {children}
     </ScheduleContext.Provider>

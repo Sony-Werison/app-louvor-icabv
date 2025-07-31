@@ -26,8 +26,131 @@ export const members: Member[] = [
 ];
 
 export const songs: Song[] = [
-  { id: 's1', title: 'Quão Grande É o Meu Deus', artist: 'Soraya Moraes', key: 'G' },
-  { id: 's2', title: 'Oceans (Where Feet May Fail)', artist: 'Hillsong United', key: 'D' },
+  { 
+    id: 's1', 
+    title: 'Quão Grande É o Meu Deus', 
+    artist: 'Soraya Moraes', 
+    key: 'G',
+    lyrics: `Com esplendor de um rei
+Em majestade e luz
+Faz a Terra se alegrar
+Faz a Terra se alegrar
+
+Ele é a própria luz
+E as trevas vão fugir
+Tremer com a Sua voz
+Tremer com a Sua voz
+
+Quão grande é o meu Deus
+Cantarei quão grande é o meu Deus
+E todos hão de ver
+Quão grande é o meu Deus
+
+Por gerações Ele é
+O tempo está em Suas mãos
+O início e o fim
+O início e o fim
+
+Três se formam em um
+Filho, Espírito e Pai
+Cordeiro e leão
+Cordeiro e leão
+
+Quão grande é o meu Deus
+Cantarei quão grande é o meu Deus
+E todos hão de ver
+Quão grande é o meu Deus
+
+Sobre todo nome é o Seu
+Tu és digno do louvor
+Eu cantarei quão grande é o meu Deus`,
+    chords: `[Intro] G C Em D
+
+[Primeira Parte]
+      G
+Com esplendor de um rei
+      C
+Em majestade e luz
+         Em
+Faz a Terra se alegrar
+         D
+Faz a Terra se alegrar
+
+[Segunda Parte]
+       G
+Ele é a própria luz
+       C
+E as trevas vão fugir
+           Em
+Tremer com a Sua voz
+           D
+Tremer com a Sua voz
+
+[Refrão]
+          G
+Quão grande é o meu Deus
+          C
+Cantarei quão grande é o meu Deus
+   Em
+E todos hão de ver
+      D                  G
+Quão grande é o meu Deus`
+  },
+  { 
+    id: 's2', 
+    title: 'Oceans (Where Feet May Fail)', 
+    artist: 'Hillsong United', 
+    key: 'D',
+    lyrics: `You call me out upon the waters
+The great unknown where feet may fail
+And there I find You in the mystery
+In oceans deep, my faith will stand
+
+And I will call upon Your name
+And keep my eyes above the waves
+When oceans rise, my soul will rest in Your embrace
+For I am Yours and You are mine
+
+Your grace abounds in deepest waters
+Your sovereign hand will be my guide
+Where feet may fail and fear surrounds me
+You've never failed and You won't start now
+
+So I will call upon Your name
+And keep my eyes above the waves
+When oceans rise, my soul will rest in Your embrace
+For I am Yours and You are mine
+
+Spirit lead me where my trust is without borders
+Let me walk upon the waters
+Wherever You would call me
+Take me deeper than my feet could ever wander
+And my faith will be made stronger
+In the presence of my Savior`,
+    chords: `[Intro] Bm A D G
+
+[Verse 1]
+Bm                A/C#     D
+You call me out upon the waters
+      G               D          A
+The great unknown where feet may fail
+Bm                A/C#      D
+And there I find You in the mystery
+     G          D         A
+In oceans deep my faith will stand
+
+[Chorus]
+      G          D          A
+And I will call upon Your name
+      G          D          A
+And keep my eyes above the waves
+                G
+When oceans rise
+       D                  A
+My soul will rest in Your embrace
+      G      A       Bm
+For I am Yours and You are mine`
+  },
   { id: 's3', title: 'Amazing Grace', artist: 'Chris Tomlin', key: 'G' },
   { id: 's4', title: 'Te Agradeço', artist: 'Diante do Trono', key: 'A' },
   { id: 's5', title: 'What a Beautiful Name', artist: 'Hillsong Worship', key: 'D' },
@@ -50,13 +173,14 @@ const getWeekends = (date: Date): Date[] => {
     const start = startOfMonth(date);
     const end = endOfMonth(date);
     const days = eachDayOfInterval({ start, end });
-    return days.filter(day => getDay(day) === 6 || getDay(day) === 0); // 6 = Saturday, 0 = Sunday
+    // Retorna todos os sábados e domingos
+    return days.filter(day => getDay(day) === 6 || getDay(day) === 0);
 };
 
 const generateInitialSchedules = (): MonthlySchedule[] => {
     const today = new Date();
-    const monthsToGenerate = [addMonths(today, -1), today, addMonths(today, 1)];
-    const allWeekends: Date[] = [];
+    const monthsToGenerate = [addMonths(today, -1), today, addMonths(today, 1), addMonths(today, 2)];
+    let allWeekends: Date[] = [];
   
     monthsToGenerate.forEach(month => {
       allWeekends.push(...getWeekends(month));
@@ -65,7 +189,6 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
     const uniqueDates = Array.from(new Set(allWeekends.map(d => d.toISOString().split('T')[0])))
       .map(dateStr => {
         const date = new Date(dateStr);
-        // Adjust for timezone offset to prevent date shifts
         return new Date(date.valueOf() + date.getTimezoneOffset() * 60 * 1000);
       })
       .sort((a,b) => a.getTime() - b.getTime());

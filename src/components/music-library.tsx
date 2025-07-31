@@ -2,6 +2,7 @@
 
 import type { Song } from '@/types';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -13,12 +14,17 @@ interface MusicLibraryProps {
 
 export function MusicLibrary({ songs }: MusicLibraryProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const router = useRouter();
 
   const filteredSongs = songs.filter(
     (song) =>
       song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       song.artist.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  const handleRowClick = (songId: string) => {
+    router.push(`/music/${songId}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -44,7 +50,7 @@ export function MusicLibrary({ songs }: MusicLibraryProps) {
           <TableBody>
             {filteredSongs.length > 0 ? (
               filteredSongs.map((song) => (
-                <TableRow key={song.id}>
+                <TableRow key={song.id} onClick={() => handleRowClick(song.id)} className="cursor-pointer">
                   <TableCell className="font-medium">{song.title}</TableCell>
                   <TableCell className="text-muted-foreground">{song.artist}</TableCell>
                   <TableCell className="text-center">

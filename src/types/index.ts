@@ -13,6 +13,8 @@ export type Song = {
   artist: string;
   key: string;
   youtubeUrl?: string;
+  lyrics?: string;
+  chords?: string;
 };
 
 export type Schedule = {
