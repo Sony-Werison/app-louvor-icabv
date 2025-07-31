@@ -17,7 +17,9 @@ export type Song = {
 
 export type Schedule = {
   id: string;
+  name: string;
   date: Date;
+  leaderId: string;
   team: {
     memberId: string;
     instrument: 'Vocal' | 'Guitar' | 'Drums' | 'Keyboard' | 'Bass';

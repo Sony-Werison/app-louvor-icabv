@@ -9,7 +9,7 @@ export default function SchedulePage() {
 
   return (
     <div className="p-4 md:p-8">
-      <h1 className="text-4xl font-headline font-bold mb-8">Próximas Escalas</h1>
+      <h1 className="text-4xl font-headline font-bold mb-8">Próximas Reuniões</h1>
       <ScheduleView initialSchedules={allSchedules} members={allMembers} songs={allSongs} />
     </div>
   );
