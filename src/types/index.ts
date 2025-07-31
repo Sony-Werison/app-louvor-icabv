@@ -22,3 +22,14 @@ export type Schedule = {
   leaderId: string;
   playlist: string[]; // array of song ids
 };
+
+export type ScheduleColumn = {
+  id: string;
+  label: string;
+  icon?: React.ElementType;
+};
+
+export type MonthlySchedule = {
+  date: Date;
+  assignments: Record<string, string | null>; // columnId -> memberId
+};

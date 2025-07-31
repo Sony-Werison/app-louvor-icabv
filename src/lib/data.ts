@@ -1,4 +1,5 @@
-import type { Member, Song, Schedule } from '@/types';
+import type { Member, Song, Schedule, MonthlySchedule, ScheduleColumn } from '@/types';
+import { Tv, Sun, Moon, BookUser } from 'lucide-react';
 
 export const members: Member[] = [
   { id: '1', name: 'João Silva', avatar: 'https://i.pravatar.cc/150?u=joao', role: 'Líder de Louvor, Vocal', email: 'joao.silva@example.com', phone: '(11) 98765-4321' },
@@ -7,6 +8,20 @@ export const members: Member[] = [
   { id: '4', name: 'Ana Costa', avatar: 'https://i.pravatar.cc/150?u=ana', role: 'Teclado', email: 'ana.costa@example.com', phone: '(11) 94444-5678' },
   { id: '5', name: 'Lucas Souza', avatar: 'https://i.pravatar.cc/150?u=lucas', role: 'Bateria', email: 'lucas.souza@example.com', phone: '(11) 93333-8765' },
   { id: '6', name: 'Carla Pereira', avatar: 'https://i.pravatar.cc/150?u=carla', role: 'Baixo', email: 'carla.pereira@example.com', phone: '(11) 92222-4321' },
+  { id: '7', name: 'Marcella', avatar: 'https://i.pravatar.cc/150?u=marcella', role: 'Vocal', email: 'marcella@example.com', phone: '(11) 98888-1111' },
+  { id: '8', name: 'Arthur', avatar: 'https://i.pravatar.cc/150?u=arthur', role: 'Violão', email: 'arthur@example.com', phone: '(11) 98888-2222' },
+  { id: '9', name: 'Júlio', avatar: 'https://i.pravatar.cc/150?u=julio', role: 'Bateria', email: 'julio@example.com', phone: '(11) 98888-3333' },
+  { id: '10', name: 'Breno', avatar: 'https://i.pravatar.cc/150?u=breno', role: 'Teclado', email: 'breno@example.com', phone: '(11) 98888-4444' },
+  { id: '11', name: 'Bruno', avatar: 'https://i.pravatar.cc/150?u=bruno', role: 'Baixo', email: 'bruno@example.com', phone: '(11) 98888-5555' },
+  { id: '12', name: 'Werison', avatar: 'https://i.pravatar.cc/150?u=werison', role: 'Vocal', email: 'werison@example.com', phone: '(11) 98888-6666' },
+  { id: '13', name: 'Marcos Diogo', avatar: 'https://i.pravatar.cc/150?u=marcos-diogo', role: 'Guitarra', email: 'marcos.diogo@example.com', phone: '(11) 98888-7777' },
+  { id: '14', name: 'Welton', avatar: 'https://i.pravatar.cc/150?u=welton', role: 'Vocal', email: 'welton@example.com', phone: '(11) 98888-8888' },
+  { id: '15', name: 'Rudinei', avatar: 'https://i.pravatar.cc/150?u=rudinei', role: 'Vocal', email: 'rudinei@example.com', phone: '(11) 98888-9999' },
+  { id: '16', name: 'Marcos Morazotti', avatar: 'https://i.pravatar.cc/150?u=marcos-morazotti', role: 'Vocal', email: 'marcos.morazotti@example.com', phone: '(11) 97777-1111' },
+  { id: '17', name: 'Ricardo', avatar: 'https://i.pravatar.cc/150?u=ricardo', role: 'Vocal', email: 'ricardo@example.com', phone: '(11) 97777-2222' },
+  { id: '18', name: 'Jônatas', avatar: 'https://i.pravatar.cc/150?u=jonatas', role: 'Preletor', email: 'jonatas@example.com', phone: '(11) 97777-3333' },
+  { id: '19', name: 'Davi', avatar: 'https://i.pravatar.cc/150?u=davi', role: 'Preletor', email: 'davi@example.com', phone: '(11) 97777-4444' },
+  { id: '20', name: 'Rafael', avatar: 'https://i.pravatar.cc/150?u=rafael', role: 'Preletor', email: 'rafael@example.com', phone: '(11) 97777-5555' },
 ];
 
 export const songs: Song[] = [
@@ -45,3 +60,57 @@ export const schedules: Schedule[] = [
     playlist: [],
   },
 ];
+
+export const scheduleColumns: ScheduleColumn[] = [
+  { id: 'dirigente', label: 'Dirigente', icon: BookUser },
+  { id: 'multimedia', label: 'Multimídia', icon: Tv },
+  { id: 'abertura_ebd', label: 'Abertura EBD', icon: Sun },
+  { id: 'abertura_noite', label: 'Abertura Noite', icon: Moon },
+  { id: 'pregacao_noite', label: 'Pregação Noite', icon: BookUser },
+];
+
+const today = new Date();
+const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+const generateSaturdays = (count: number) => {
+  const saturdays = [];
+  let day = new Date(firstDayOfMonth);
+  while (saturdays.length < count) {
+    if (day.getDay() === 6) { // 6 = Saturday
+      saturdays.push(new Date(day));
+    }
+    day.setDate(day.getDate() + 1);
+  }
+  return saturdays;
+}
+
+const getNextSaturday = (date: Date) => {
+    const newDate = new Date(date);
+    const day = newDate.getDay();
+    const diff = day === 6 ? 7 : (6-day+7)%7;
+    newDate.setDate(newDate.getDate() + diff);
+    return newDate;
+}
+
+const generateDates = (startDate: Date, count: number): Date[] => {
+    const dates: Date[] = [];
+    let currentDate = new Date(startDate);
+    for(let i=0; i < count; i++) {
+        dates.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 7);
+    }
+    return dates;
+}
+
+const firstSaturday = getNextSaturday(new Date());
+
+export const monthlySchedules: MonthlySchedule[] = generateDates(firstSaturday, 8).map((date) => ({
+    date: date,
+    assignments: {
+        'dirigente': null,
+        'multimedia': null,
+        'abertura_ebd': null,
+        'abertura_noite': null,
+        'pregacao_noite': null
+    }
+}));
