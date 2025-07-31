@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
-import { format, getDay } from 'date-fns';
+import { format } from 'date-fns';
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { ptBR } from 'date-fns/locale';
@@ -96,10 +96,7 @@ export function MonthlyScheduleView({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedSchedules.map((schedule) => {
-            const isSunday = getDay(schedule.date) === 0;
-
-            return (
+          {sortedSchedules.map((schedule) => (
             <TableRow key={schedule.date.toISOString()}>
               <TableCell className="font-medium p-2">
                 <Popover>
@@ -120,9 +117,6 @@ export function MonthlyScheduleView({
                 </Popover>
               </TableCell>
               {columns.map((col) => {
-                if (!isSunday) {
-                  return <TableCell key={col.id} className="p-2"></TableCell>;
-                }
                 const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
                 const slots = col.isMulti ? [0, 1] : [0];
 
@@ -166,7 +160,7 @@ export function MonthlyScheduleView({
                  </Button>
               </TableCell>
             </TableRow>
-          )})}
+          ))}
         </TableBody>
       </Table>
     </div>
