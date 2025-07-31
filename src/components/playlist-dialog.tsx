@@ -50,7 +50,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
-      <DialogContent className="max-w-4xl grid-rows-[auto,1fr,auto]">
+      <DialogContent className="max-w-4xl grid-rows-[auto,1fr,auto] h-[90vh] sm:h-auto">
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">
             Gerenciar Repertório - {schedule.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
@@ -62,7 +62,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
         <div className="grid md:grid-cols-2 gap-6 overflow-hidden py-4">
             <div className="flex flex-col gap-4">
                 <h3 className="font-semibold text-lg">Disponíveis</h3>
-                <ScrollArea className="h-72 rounded-md border p-4">
+                <ScrollArea className="h-full rounded-md border p-4">
                     <div className="space-y-4">
                     {availableSongs.map(song => (
                         <div key={song.id} className="flex items-center space-x-2">
@@ -82,7 +82,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
             </div>
             <div className="flex flex-col gap-4">
                 <h3 className="font-semibold text-lg">Selecionadas</h3>
-                <ScrollArea className="h-72 rounded-md border p-4">
+                <ScrollArea className="h-full rounded-md border p-4">
                 {songsInPlaylist.length > 0 ? (
                     <div className="space-y-2">
                     {songsInPlaylist.map(song => (

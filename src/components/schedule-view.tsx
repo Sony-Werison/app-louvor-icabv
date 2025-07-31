@@ -41,7 +41,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
 
   return (
     <>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {schedules.map((schedule) => (
           <Card key={schedule.id} className="flex flex-col">
             <CardHeader>
