@@ -1,7 +1,7 @@
 'use client';
 import { useSchedule } from '@/context/schedule-context';
 import { ScheduleView } from '@/components/schedule-view';
-import { startOfWeek, endOfWeek, isWithinInterval, format } from 'date-fns';
+import { startOfWeek, endOfWeek, isWithinInterval, format, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Schedule, MonthlySchedule } from '@/types';
 import { useEffect, useState } from 'react';
@@ -9,8 +9,13 @@ import { useEffect, useState } from 'react';
 const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: any[]): Schedule[] => {
     let schedules: Schedule[] = [];
     monthlySchedules.forEach(ms => {
-        const saturday = new Date(ms.date);
-        saturday.setHours(0,0,0,0);
+        // We only care about Sundays for the actual service schedules
+        if (getDay(ms.date) !== 0) {
+            return;
+        }
+
+        const sunday = new Date(ms.date);
+        sunday.setHours(0,0,0,0);
         
         const assignments = ms.assignments || {};
 
@@ -24,13 +29,12 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
         }
         
         // Culto de Domingo - Manhã
-        const dateManha = new Date(saturday);
-        dateManha.setDate(dateManha.getDate() + 1); // Sunday
+        const dateManha = new Date(sunday);
         dateManha.setHours(10, 0, 0, 0);
 
         if (assignments.dirigente_manha && assignments.dirigente_manha[0]) {
             schedules.push({
-                id: `s-manha-${saturday.getTime()}`,
+                id: `s-manha-${sunday.getTime()}`,
                 name: `${getShortDay(dateManha)}. Manhã`,
                 date: dateManha,
                 leaderId: assignments.dirigente_manha[0],
@@ -41,13 +45,12 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
         }
 
         // Culto de Domingo - Noite
-        const dateNoite = new Date(saturday);
-        dateNoite.setDate(dateNoite.getDate() + 1); // Sunday
+        const dateNoite = new Date(sunday);
         dateNoite.setHours(19, 0, 0, 0);
 
         if (assignments.dirigente_noite && assignments.dirigente_noite[0]) {
             schedules.push({
-                id: `s-noite-${saturday.getTime()}`,
+                id: `s-noite-${sunday.getTime()}`,
                 name: `${getShortDay(dateNoite)}. Noite`,
                 date: dateNoite,
                 leaderId: assignments.dirigente_noite[0],

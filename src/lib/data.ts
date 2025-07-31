@@ -46,22 +46,22 @@ export const scheduleColumns: ScheduleColumn[] = [
     { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true },
 ];
 
-const getSaturdays = (date: Date): Date[] => {
+const getWeekends = (date: Date): Date[] => {
     const start = startOfMonth(date);
     const end = endOfMonth(date);
     const days = eachDayOfInterval({ start, end });
-    return days.filter(day => getDay(day) === 6); // 6 = Saturday
+    return days.filter(day => getDay(day) === 6 || getDay(day) === 0); // 6 = Saturday, 0 = Sunday
 };
 
 const generateInitialSchedules = (): MonthlySchedule[] => {
     const today = new Date();
-    const currentMonthSaturdays = getSaturdays(today);
-    const nextMonthSaturdays = getSaturdays(addMonths(today, 1));
-    const previousMonthSaturdays = getSaturdays(addMonths(today, -1));
+    const currentMonthWeekends = getWeekends(today);
+    const nextMonthWeekends = getWeekends(addMonths(today, 1));
+    const previousMonthWeekends = getWeekends(addMonths(today, -1));
 
-    const allSaturdays = [...previousMonthSaturdays, ...currentMonthSaturdays, ...nextMonthSaturdays];
+    const allWeekends = [...previousMonthWeekends, ...currentMonthWeekends, ...nextMonthWeekends];
     
-    const uniqueSaturdays = Array.from(new Set(allSaturdays.map(d => d.getTime())))
+    const uniqueDates = Array.from(new Set(allWeekends.map(d => d.getTime())))
       .map(time => new Date(time))
       .sort((a,b) => a.getTime() - b.getTime());
 
@@ -74,7 +74,9 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
     if (musicians.length < 2) musicians.push(...members.slice(0, 2));
 
 
-    return uniqueSaturdays.map((date, index) => {
+    return uniqueDates.map((date, index) => {
+        const isSunday = getDay(date) === 0;
+
         const leaderMorning = leaders[index % leaders.length];
         const leaderNight = leaders[(index + 1) % leaders.length];
         const preacherMorning = preachers[index % preachers.length];
@@ -82,15 +84,18 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
         const multimedia1 = musicians[index % musicians.length];
         const multimedia2 = musicians[(index + 2) % musicians.length];
         
-        return {
-            date: date,
-            assignments: {
+        // Only populate assignments for Sundays, as Saturdays are for planning them
+        const assignments = isSunday ? {
                 'dirigente_manha': [leaderMorning.id],
                 'pregacao_manha': [preacherMorning.id],
                 'dirigente_noite': [leaderNight.id],
                 'pregacao_noite': [preacherNight.id],
                 'multimedia': [multimedia1.id, multimedia2.id],
-            }
+            } : {};
+
+        return {
+            date: date,
+            assignments,
         }
     });
 };
