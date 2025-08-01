@@ -30,6 +30,7 @@ interface ScheduleContextType {
   updateSong: (songId: string, updates: Partial<Song>) => void;
   removeSong: (songId: string) => void;
   addOrUpdateSongs: (songs: Song[]) => void;
+  addSongsFromImport: (songs: Omit<Song, 'id'>[]) => void;
   isLoading: boolean;
 }
 
@@ -53,14 +54,12 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
           fetchMonthlySchedules(),
         ]);
         
-        // Corrective filter: remove any schedules that are not Sunday (0)
         const correctedSchedules = loadedSchedules.filter(schedule => {
             const day = getDay(schedule.date);
             return day === 0;
         });
 
         if (correctedSchedules.length !== loadedSchedules.length) {
-            // If we filtered something, it means there was bad data, let's save the corrected version.
             await saveMonthlySchedules(correctedSchedules);
         }
         
@@ -136,7 +135,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const newMembers = members.filter(m => m.id !== memberId);
     setMembers(newMembers);
     saveMembers(newMembers);
-    // Also remove member from all assignments
     const updatedSchedules = monthlySchedules.map(schedule => {
       const newAssignments = { ...schedule.assignments };
       Object.keys(newAssignments).forEach(columnId => {
@@ -165,7 +163,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const newSongs = songs.filter(s => s.id !== songId);
     setSongs(newSongs);
     saveSongs(newSongs);
-    // Also remove song from all playlists
     const updatedSchedules = monthlySchedules.map(schedule => ({
       ...schedule,
       playlist_manha: schedule.playlist_manha?.filter(id => id !== songId),
@@ -196,6 +193,19 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     saveSongs(newSongs);
   };
 
+  const addSongsFromImport = (songsToAdd: Omit<Song, 'id'>[]) => {
+    let newSongs = [...songs];
+    const existingTitles = new Set(newSongs.map(s => s.title.toLowerCase()));
+
+    songsToAdd.forEach(song => {
+        if (!existingTitles.has(song.title.toLowerCase())) {
+            newSongs.push({ ...song, id: `s${Date.now()}${Math.random()}` });
+        }
+    });
+    setSongs(newSongs);
+    saveSongs(newSongs);
+  }
+
 
   return (
     <ScheduleContext.Provider value={{ 
@@ -214,6 +224,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       updateSong,
       removeSong,
       addOrUpdateSongs,
+      addSongsFromImport,
       isLoading,
     }}>
       {isLoading ? (

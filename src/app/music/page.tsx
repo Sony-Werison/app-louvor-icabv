@@ -6,14 +6,16 @@ import { MusicLibrary } from '@/components/music-library';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { SongImportDialog } from '@/components/song-import-dialog';
+import { SongImportTxtDialog } from '@/components/song-import-txt-dialog';
 import { SongFormDialog } from '@/components/song-form-dialog';
-import { Upload, Plus } from 'lucide-react';
+import { Upload, Plus, FileText } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import type { Song } from '@/types';
 
 export default function MusicPage() {
-  const { songs, addOrUpdateSongs, addSong } = useSchedule();
+  const { songs, addOrUpdateSongs, addSong, addSongsFromImport } = useSchedule();
   const [isImporting, setIsImporting] = useState(false);
+  const [isImportingTxt, setIsImportingTxt] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { can } = useAuth();
 
@@ -27,10 +29,14 @@ export default function MusicPage() {
       <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8 gap-4">
         <h1 className="text-3xl sm:text-4xl font-headline font-bold">Músicas</h1>
         {can('edit:songs') && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-end">
                 <Button onClick={() => setIsImporting(true)} size="sm" variant="outline" className="sm:size-auto">
                     <Upload className="mr-2 h-4 w-4"/>
                     Importar CSV
+                </Button>
+                <Button onClick={() => setIsImportingTxt(true)} size="sm" variant="outline" className="sm:size-auto">
+                    <FileText className="mr-2 h-4 w-4"/>
+                    Importar TXT
                 </Button>
                 <Button onClick={() => setIsFormOpen(true)} size="sm" className="sm:size-auto">
                     <Plus className="mr-2 h-4 w-4"/>
@@ -46,6 +52,15 @@ export default function MusicPage() {
             isOpen={isImporting}
             onOpenChange={setIsImporting}
             onSave={addOrUpdateSongs}
+            existingSongs={songs}
+          />
+      )}
+
+      {isImportingTxt && (
+          <SongImportTxtDialog
+            isOpen={isImportingTxt}
+            onOpenChange={setIsImportingTxt}
+            onSave={addSongsFromImport}
             existingSongs={songs}
           />
       )}
