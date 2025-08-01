@@ -15,10 +15,11 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { X, Music, GripVertical, Search } from 'lucide-react';
+import { X, Music, GripVertical, Search, ArrowDownUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator } from './ui/dropdown-menu';
 
 interface PlaylistDialogProps {
   schedule: Schedule;
@@ -26,6 +27,8 @@ interface PlaylistDialogProps {
   onSave: (scheduleId: string, newPlaylist: string[]) => void;
   onOpenChange: (open: boolean) => void;
 }
+
+type SortOrder = 'title_asc' | 'quarterly_desc' | 'quarterly_asc' | 'total_desc' | 'total_asc';
 
 const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
 const filterCategories: ('all' | SongCategory)[] = ['all', ...songCategories];
@@ -42,6 +45,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   const [currentPlaylist, setCurrentPlaylist] = useState<string[]>(schedule.playlist);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<'all' | SongCategory>('all');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('title_asc');
   
   const handleSave = () => {
     onSave(schedule.id, currentPlaylist);
@@ -69,14 +73,29 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     [currentPlaylist, allSongs]
   );
 
-  const availableSongs = useMemo(() => 
-    allSongs.filter(song => 
+  const availableSongs = useMemo(() => {
+    const sortedSongs = [...allSongs].sort((a, b) => {
+        switch (sortOrder) {
+            case 'quarterly_desc':
+                return (b.timesPlayedQuarterly ?? 0) - (a.timesPlayedQuarterly ?? 0);
+            case 'quarterly_asc':
+                return (a.timesPlayedQuarterly ?? 0) - (b.timesPlayedQuarterly ?? 0);
+            case 'total_desc':
+                return (b.timesPlayedTotal ?? 0) - (a.timesPlayedTotal ?? 0);
+            case 'total_asc':
+                return (a.timesPlayedTotal ?? 0) - (b.timesPlayedTotal ?? 0);
+            case 'title_asc':
+            default:
+                return a.title.localeCompare(b.title);
+        }
+    });
+
+    return sortedSongs.filter(song => 
       !currentPlaylist.includes(song.id) &&
       (activeCategory === 'all' || song.category === activeCategory) &&
       (song.title.toLowerCase().includes(searchTerm.toLowerCase()) || song.artist.toLowerCase().includes(searchTerm.toLowerCase()))
-    ),
-    [allSongs, currentPlaylist, searchTerm, activeCategory]
-  );
+    )
+  },[allSongs, currentPlaylist, searchTerm, activeCategory, sortOrder]);
   
   const groupedAvailableSongs = useMemo(() => 
     songCategories.reduce((acc, category) => {
@@ -128,6 +147,27 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                             ))}
                         </TabsList>
                     </Tabs>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="w-full sm:w-auto">
+                                <ArrowDownUp className="mr-2 h-4 w-4" />
+                                Ordenar
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-56">
+                            <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuRadioGroup value={sortOrder} onValueChange={(v) => setSortOrder(v as SortOrder)}>
+                                <DropdownMenuRadioItem value="title_asc">Padrão (A-Z)</DropdownMenuRadioItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuRadioItem value="quarterly_desc">Mais Tocadas (Trimestre)</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="quarterly_asc">Menos Tocadas (Trimestre)</DropdownMenuRadioItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuRadioItem value="total_desc">Mais Tocadas (Total)</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="total_asc">Menos Tocadas (Total)</DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
                 <ScrollArea className="flex-grow p-4">
                     <Accordion type="multiple" defaultValue={songCategories} className="w-full">
@@ -145,7 +185,12 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                                                 />
                                                 <Label htmlFor={`song-${song.id}`} className="flex flex-col cursor-pointer flex-grow">
                                                     <span>{song.title}</span>
-                                                    <span className="text-sm text-muted-foreground">{song.artist}</span>
+                                                    <span className="text-sm text-muted-foreground">
+                                                        {song.artist}
+                                                        <span className="ml-2 font-mono text-xs opacity-70">
+                                                            (T: {song.timesPlayedQuarterly ?? 0}, Total: {song.timesPlayedTotal ?? 0})
+                                                        </span>
+                                                    </span>
                                                 </Label>
                                             </div>
                                         ))}
