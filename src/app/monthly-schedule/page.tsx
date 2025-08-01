@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSchedule } from '@/context/schedule-context';
 import { MonthlyScheduleView } from '@/components/monthly-schedule-view';
 import type { MonthlySchedule } from '@/types';
@@ -14,12 +14,20 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function MonthlySchedulePage() {
     const { monthlySchedules, addSchedule, members, scheduleColumns } = useSchedule();
-    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [currentMonth, setCurrentMonth] = useState<Date | null>(null);
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const { toast } = useToast();
 
+    useEffect(() => {
+        setCurrentMonth(new Date());
+    }, []);
+
+    if (!currentMonth) {
+        return null; 
+    }
+
     const navigateMonths = (amount: number) => {
-        setCurrentMonth(prevMonth => addMonths(prevMonth, amount));
+        setCurrentMonth(prevMonth => prevMonth ? addMonths(prevMonth, amount) : null);
     };
 
     const handleAddDate = (date: Date | undefined) => {
