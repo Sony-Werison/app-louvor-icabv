@@ -170,7 +170,8 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
 
 
     return uniqueDates.map((date, index) => {
-        const isSunday = getDay(date) === 0;
+        const dayOfWeek = getDay(date);
+        const isWeekendService = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
 
         const leaderMorning = leaders[index % leaders.length];
         const leaderNight = leaders[(index + 1) % leaders.length];
@@ -179,8 +180,7 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
         const multimedia1 = multimedia[index % multimedia.length];
         const multimedia2 = multimedia[(index + 2) % multimedia.length];
         
-        // Only populate assignments for Sundays
-        const assignments = (isSunday && members.length > 0) ? {
+        const assignments = (isWeekendService && members.length > 0) ? {
                 'dirigente_manha': [leaderMorning.id],
                 'pregacao_manha': [preacherMorning.id],
                 'dirigente_noite': [leaderNight.id],
