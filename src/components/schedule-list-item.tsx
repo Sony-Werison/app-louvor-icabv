@@ -20,6 +20,8 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+
 
 const MemberSelector: React.FC<{
     assignedMemberId: string | null;
@@ -133,9 +135,25 @@ export function ScheduleListItem({
             ))}
             {!isReadOnly && (
                 <TableCell className="p-2 sticky right-0 z-10 bg-background group-hover:bg-muted/50">
-                    <Button variant="ghost" size="icon" onClick={() => handleRemoveDate(schedule.date)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Essa ação não pode ser desfeita. Isso excluirá permanentemente esta data e todas as suas atribuições.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleRemoveDate(schedule.date)}>Excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </TableCell>
             )}
         </TableRow>
@@ -163,9 +181,25 @@ export function ScheduleListItem({
                 </PopoverContent>
             </Popover>
             {!isReadOnly && (
-                <Button variant="ghost" size="icon" onClick={() => handleRemoveDate(schedule.date)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Essa ação não pode ser desfeita. Isso excluirá permanentemente esta data e todas as suas atribuições.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleRemoveDate(schedule.date)}>Excluir</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             )}
         </CardHeader>
         <CardContent className="p-0">
