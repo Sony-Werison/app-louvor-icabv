@@ -138,13 +138,10 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-none w-full h-full sm:h-[90vh] p-0 gap-0 flex flex-col">
-        <DialogHeader className="p-4 border-b shrink-0 relative flex-row items-center justify-center">
+        <DialogHeader className="p-4 border-b shrink-0 flex-row items-center justify-center">
             <DialogTitle className="text-base sm:text-lg font-bold text-center">
                 Gerenciar Repertório - <span className="text-muted-foreground font-medium">{schedule.name}</span>
             </DialogTitle>
-           <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0 absolute top-1/2 right-3 -translate-y-1/2 h-8 w-8">
-              <X className="h-5 w-5"/>
-           </Button>
         </DialogHeader>
         
         <Tabs defaultValue="available" className="flex-grow min-h-0 flex flex-col">
@@ -238,14 +235,14 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                           key={song.id}
                           className="flex items-center justify-between p-2 rounded-md hover:bg-muted bg-card"
                         >
-                          <div className="flex items-center gap-3 overflow-hidden">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
                             <span className="text-sm font-bold text-muted-foreground w-5 text-center">{index + 1}</span>
-                            <div className="truncate">
+                            <div className="flex-1 truncate">
                                 <p className="font-medium truncate">{song.title}</p>
                                 <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center shrink-0">
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
