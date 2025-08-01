@@ -65,7 +65,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
     const parts = line.split(chordRegex).filter(Boolean);
 
     return (
-      <div key={lineIndex} className="flex flex-wrap items-end leading-none">
+      <div key={lineIndex} className="flex flex-wrap items-end leading-tight">
         {parts.map((part, partIndex) => {
           if (part.match(chordRegex)) {
             const chord = part.substring(1, part.length - 1);
@@ -74,7 +74,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
             }
             const transposed = transposeChord(chord, transposeBy);
             return (
-              <div key={partIndex} className="flex flex-col-reverse">
+              <div key={partIndex} className="flex flex-col-reverse items-center">
                 <div className="opacity-0 select-none">-</div>
                 <b className="text-primary font-bold whitespace-nowrap self-end leading-none">
                   {transposed}
@@ -143,6 +143,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
         const currentLine = lines[i];
         
         let lineContent: React.ReactNode;
+        let wrapperClass = "mb-1";
 
         if (isSectionHeader(currentLine)) {
             lineContent = (
@@ -150,6 +151,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
                     {currentLine.replace(/[\[\]:]/g, '')}
                 </div>
             );
+            wrapperClass = ""; 
         } else if (isPureChordLineWithBrackets(currentLine) || isPureChordLineWithoutBrackets(currentLine)) {
             lineContent = renderPureChordLine(currentLine, i);
         } else if (currentLine.match(chordRegex)) {
@@ -160,10 +162,13 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
                     {currentLine}
                 </div>
             );
+             if (currentLine.trim()) {
+                wrapperClass="mb-4";
+            }
         }
         
         elements.push(
-            <div key={`line-wrapper-${i}`} className="pt-2 mb-4">
+            <div key={`line-wrapper-${i}`} className={wrapperClass}>
                 {lineContent}
             </div>
         );
