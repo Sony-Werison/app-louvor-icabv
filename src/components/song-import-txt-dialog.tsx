@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Song, SongCategory } from '@/types';
+import type { Song } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -28,73 +28,78 @@ interface SongImportTxtDialogProps {
 type ParsedSong = Omit<Song, 'id'>;
 
 export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSongs }: SongImportTxtDialogProps) {
-    const [file, setFile] = useState<File | null>(null);
+    const [files, setFiles] = useState<FileList | null>(null);
     const [songsToImport, setSongsToImport] = useState<ParsedSong[]>([]);
     const [conflicts, setConflicts] = useState<string[]>([]);
     const { toast } = useToast();
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files && event.target.files[0]) {
-            setFile(event.target.files[0]);
+        if (event.target.files) {
+            setFiles(event.target.files);
             setSongsToImport([]);
             setConflicts([]);
         }
     };
 
-    const processFile = () => {
-        if (!file) {
+    const processFiles = () => {
+        if (!files || files.length === 0) {
             toast({ title: 'Nenhum arquivo selecionado', variant: 'destructive' });
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const content = e.target?.result as string;
-            if (!content) return;
+        const parsed: ParsedSong[] = [];
+        const localConflicts: string[] = [];
+        const existingTitles = new Set(existingSongs.map(s => s.title.toLowerCase()));
 
-            const parsed: ParsedSong[] = [];
-            const localConflicts: string[] = [];
-            const existingTitles = new Set(existingSongs.map(s => s.title.toLowerCase()));
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target?.result as string;
+                if (!content) return;
 
-            const titleMatch = content.match(/Title:\s*(.*)/);
-            const artistMatch = content.match(/Artist:\s*(.*)/);
-            const keyMatch = content.match(/Key:\s*(.*)/);
-            const categoryMatch = content.match(/Category:\s*(.*)/);
-            
-            const title = titleMatch?.[1]?.trim() || file.name.replace('.txt', '');
-            const artist = artistMatch?.[1]?.trim() || 'Desconhecido';
-            const key = keyMatch?.[1]?.trim() || 'N/A';
-            const category = (categoryMatch?.[1]?.trim() as SongCategory) || 'Louvor';
-            
-            // Remove header lines to get chords/lyrics
-            const body = content.replace(/^(Title|Artist|Key|Category):.*$/gm, '').trim();
+                const titleMatch = content.match(/^(?:Título|Title):\s*(.*)/im);
+                const artistMatch = content.match(/^(?:Artista|Artist):\s*(.*)/im);
 
-            if (existingTitles.has(title.toLowerCase())) {
-                localConflicts.push(title);
-            } else {
-                parsed.push({
-                    title,
-                    artist,
-                    key,
-                    category,
-                    chords: body,
-                    lyrics: body.replace(/\[[^\]]+\]/g, ''), // Basic lyric extraction
-                });
-            }
-            
-            if (parsed.length === 0 && localConflicts.length > 0) {
-                 toast({ title: 'Nenhuma música nova para importar', description: `A música "${localConflicts[0]}" já existe.`, variant: 'default' });
-            } else if (parsed.length > 0) {
-                 toast({ title: 'Arquivo processado!', description: `Pronto para importar ${parsed.length} música(s).` });
-            }
+                const title = titleMatch?.[1]?.trim() || file.name.replace(/\.txt$/i, '');
+                const artist = artistMatch?.[1]?.trim() || 'Desconhecido';
+                
+                if (!title) return;
 
-            setSongsToImport(parsed);
-            setConflicts(localConflicts);
-        };
-        reader.onerror = () => {
-            toast({ title: 'Erro ao ler o arquivo', variant: 'destructive' });
-        };
-        reader.readAsText(file);
+                // Remove header lines to get chords/lyrics
+                const body = content
+                    .replace(/^(?:Título|Title|Artista|Artist|Key|Category):.*$/gim, '')
+                    .trim();
+
+                if (existingTitles.has(title.toLowerCase())) {
+                    localConflicts.push(title);
+                } else {
+                    parsed.push({
+                        title,
+                        artist,
+                        key: 'N/A', // Key is not in this new format
+                        category: 'Louvor', // Default category
+                        chords: body,
+                        lyrics: body.replace(/\[[^\]]+\]/g, ''), // Basic lyric extraction
+                    });
+                     existingTitles.add(title.toLowerCase()); // Avoid duplicate imports from the same batch
+                }
+
+                // Update state after the last file is read
+                if (file === files[files.length - 1]) {
+                    if (parsed.length === 0 && localConflicts.length > 0) {
+                        toast({ title: 'Nenhuma música nova para importar', description: `Todas as ${localConflicts.length} músicas encontradas já existem.`, variant: 'default' });
+                    } else if (parsed.length > 0) {
+                        toast({ title: 'Arquivos processados!', description: `Pronto para importar ${parsed.length} música(s).` });
+                    }
+                    setSongsToImport(parsed);
+                    setConflicts(localConflicts);
+                }
+            };
+            reader.onerror = () => {
+                toast({ title: `Erro ao ler o arquivo ${file.name}`, variant: 'destructive' });
+            };
+            reader.readAsText(file);
+        });
     };
 
     const handleFinalSave = () => {
@@ -103,21 +108,20 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
         onOpenChange(false);
     };
 
-
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Importar Música via TXT</DialogTitle>
+          <DialogTitle>Importar Músicas via TXT</DialogTitle>
           <DialogDescription>
-              Selecione um arquivo .txt. O arquivo deve ter um formato específico para ser importado corretamente.
+              Selecione um ou mais arquivos .txt. Cada arquivo deve conter "Título:" e "Artista:" nas primeiras linhas.
           </DialogDescription>
         </DialogHeader>
         
         {songsToImport.length === 0 && conflicts.length === 0 ? (
           <div className="space-y-4 py-4">
-              <Input type="file" accept=".txt" onChange={handleFileChange} />
-              {file && <p className="text-sm text-muted-foreground">Arquivo selecionado: {file.name}</p>}
+              <Input type="file" accept=".txt" onChange={handleFileChange} multiple />
+              {files && <p className="text-sm text-muted-foreground">{files.length} arquivo(s) selecionado(s).</p>}
           </div>
         ) : (
           <div className="py-4 space-y-4">
@@ -128,7 +132,7 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
                         Pronto para Importar
                     </AlertTitle>
                     <AlertDescription>
-                        <p className="mb-2">A seguinte música será adicionada:</p>
+                        <p className="mb-2">{songsToImport.length} música(s) serão adicionadas:</p>
                         <ScrollArea className="max-h-20 border rounded-md p-2">
                             <ul className="text-xs space-y-1">
                                 {songsToImport.map((song, i) => <li key={i} className="truncate">{song.title}</li>)}
@@ -144,7 +148,7 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
                         Conflitos Encontrados
                     </AlertTitle>
                     <AlertDescription>
-                        <p className="mb-2">As seguintes músicas já existem e serão ignoradas:</p>
+                        <p className="mb-2">{conflicts.length} música(s) já existem e serão ignoradas:</p>
                         <ScrollArea className="max-h-20 border rounded-md p-2">
                             <ul className="text-xs space-y-1">
                                 {conflicts.map((title, i) => <li key={i} className="truncate">{title}</li>)}
@@ -160,10 +164,12 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          {songsToImport.length > 0 ? (
-              <Button onClick={handleFinalSave}>Salvar</Button>
+          {songsToImport.length > 0 || conflicts.length > 0 ? (
+              <Button onClick={handleFinalSave} disabled={songsToImport.length === 0}>
+                Salvar {songsToImport.length > 0 ? songsToImport.length : ''} Música(s)
+              </Button>
           ) : (
-              <Button onClick={processFile} disabled={!file}>Processar</Button>
+              <Button onClick={processFiles} disabled={!files}>Processar</Button>
           )}
         </DialogFooter>
       </DialogContent>
