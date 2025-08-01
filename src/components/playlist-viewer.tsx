@@ -168,9 +168,8 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                           <div className="flex flex-col flex-1 min-w-0">
                             <h1 className="font-headline font-bold text-base sm:text-lg truncate leading-tight">{activeSong?.title || 'Repertório'}</h1>
                             <div className="flex items-center gap-2">
-                                <p className="text-xs sm:text-sm text-muted-foreground truncate leading-tight">{activeSong?.artist}</p>
-                                {activeSong?.key && <Badge variant="secondary" className="text-xs">{activeSong.key}</Badge>}
-                                {transpose !== 0 && transposedKey && <Badge className="text-xs">{transposedKey}</Badge>}
+                                {activeSong?.key && activeTab === 'chords' && <Badge variant="secondary" className="text-xs">{activeSong.key}</Badge>}
+                                {transpose !== 0 && transposedKey && activeTab === 'chords' && <Badge className="text-xs">{transposedKey}</Badge>}
                             </div>
                           </div>
                       </div>
@@ -181,15 +180,22 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                               <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
                           </TabsList>
                         </Tabs>
-                        <div className="flex items-center gap-1">
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose - 1)} disabled={activeTab !== 'chords'}>
-                                <Minus className="h-4 w-4"/>
-                            </Button>
-                            <span className="font-bold w-8 text-center text-sm">{transpose > 0 ? `+${transpose}` : transpose}</span>
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose + 1)} disabled={activeTab !== 'chords'}>
-                                <Plus className="h-4 w-4"/>
-                            </Button>
-                        </div>
+                        
+                        {activeTab === 'chords' && (
+                            <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose - 1)}>
+                                    <Minus className="h-4 w-4"/>
+                                </Button>
+                                <div className="flex flex-col items-center w-8">
+                                    <span className="text-[10px] text-muted-foreground -mb-1">Tom</span>
+                                    <span className="font-bold text-center text-sm">{transpose > 0 ? `+${transpose}` : transpose}</span>
+                                </div>
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose + 1)}>
+                                    <Plus className="h-4 w-4"/>
+                                </Button>
+                            </div>
+                        )}
+
                         <div className="flex items-center gap-1">
                             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
                                 <ZoomOut className="h-4 w-4" />
@@ -254,7 +260,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                   {activeSong && activeTab === 'chords' && (
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center gap-4 rounded-full border bg-background/80 px-3 py-1 shadow-lg backdrop-blur-sm">
                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
-                        <Turtle className="h-5 w-5" />
+                        <Turtle className="h-6 w-6" />
                     </Button>
                     <div className="flex flex-col items-center">
                       <button
@@ -274,7 +280,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                       </span>
                     </div>
                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
-                        <Rabbit className="h-5 w-5" />
+                        <Rabbit className="h-6 w-6" />
                     </Button>
                   </div>
                   )}
@@ -297,7 +303,6 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                                 <span className="text-sm font-bold text-muted-foreground w-4">{index + 1}</span>
                                 <div className="flex flex-col overflow-hidden">
                                     <span className="truncate">{s.title}</span>
-                                    <span className="text-xs text-muted-foreground truncate">{s.artist}</span>
                                 </div>
                             </div>
                         </Button>

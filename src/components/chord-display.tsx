@@ -22,10 +22,14 @@ const isSectionHeader = (line: string) => {
     if (!trimmed) return false;
 
     if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        // Exclude intensity markers from being treated as section headers
+        if (isIntensityMarker(line)) {
+            return false;
+        }
         return true;
     }
     
-    const sectionKeywords = ['intro', 'verso', 'refrão', 'ponte', 'solo', 'final', 'interlúdio', 'suave', 'forte', '+', '++', '+++'];
+    const sectionKeywords = ['intro', 'verso', 'refrão', 'ponte', 'solo', 'final', 'interlúdio', 'suave', 'forte'];
     // Check if the line *is* one of the keywords, optionally with a colon.
     const isKeyword = sectionKeywords.some(keyword => {
         const withColon = `${keyword}:`;
@@ -41,6 +45,16 @@ const isSectionHeader = (line: string) => {
 const isIntensityMarker = (line: string) => {
     const trimmed = line.trim();
     return trimmed === '[+]' || trimmed === '[++]' || trimmed === '[+++]';
+}
+
+const getIntensityClass = (line: string) => {
+    const trimmed = line.trim();
+    switch(trimmed) {
+        case '[+]': return 'bg-accent/30';
+        case '[++]': return 'bg-accent/60';
+        case '[+++]': return 'bg-accent/90';
+        default: return '';
+    }
 }
 
 const isPureChordLineWithBrackets = (line: string) => {
@@ -72,19 +86,25 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
     return (
         <div key={lineIndex} className="mb-2 leading-8">
             {parts.map((part, partIndex) => {
-                const previousPart = partIndex > 0 ? parts[partIndex - 1] : '';
                 const isLyricPart = !part.match(chordRegex);
 
                 if (!isLyricPart) {
                     return null;
                 }
-                
-                const hasPairedChord = previousPart.match(chordRegex);
-                let chord;
-                if (hasPairedChord) {
-                    chord = previousPart.substring(1, previousPart.length - 1);
+
+                // Find the chord that should be paired with this lyric part.
+                // It's the immediately preceding part if it's a chord.
+                let chord = null;
+                if (partIndex > 0) {
+                    const previousPart = parts[partIndex - 1];
+                    if (previousPart.match(chordRegex)) {
+                        chord = previousPart.substring(1, previousPart.length - 1);
+                    }
                 }
-                const transposed = chord ? transposeChord(chord, transposeBy) : '\u00A0'; // Non-breaking space
+                
+                // If the first part is lyrics, it has no preceding chord.
+                const hasPairedChord = chord !== null;
+                const transposed = hasPairedChord ? transposeChord(chord, transposeBy) : '\u00A0'; // Non-breaking space
                 
                 return (
                     <div key={partIndex} className="inline-flex flex-col-reverse align-bottom">
@@ -152,7 +172,10 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
 
         if (isIntensityMarker(currentLine)) {
             lineContent = (
-                <div className="inline-block font-bold bg-accent/80 text-accent-foreground rounded-md px-3 py-1 my-2">
+                <div className={cn(
+                    "inline-block font-bold text-accent-foreground rounded-md px-2 py-0.5 my-2 text-xs",
+                    getIntensityClass(currentLine)
+                )}>
                     {currentLine.replace(/[\[\]]/g, '')}
                 </div>
             );
