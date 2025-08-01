@@ -11,6 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { useAutoPairing } from '@/hooks/use-auto-pairing';
+import { useRef } from 'react';
 
 const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
 
@@ -41,6 +43,9 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
       chords: song.chords || '',
     },
   });
+
+  const chordsTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const { handleKeyDown } = useAutoPairing(chordsTextareaRef);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     onSave(values);
@@ -140,7 +145,13 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
                 <FormItem>
                   <FormLabel>Cifras</FormLabel>
                   <FormControl>
-                    <Textarea className="font-code" rows={15} {...field} />
+                    <Textarea 
+                      className="font-code" 
+                      rows={15} 
+                      {...field} 
+                      ref={chordsTextareaRef} 
+                      onKeyDown={handleKeyDown} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -114,8 +114,8 @@ export function ChordDisplay({ chordsText }: ChordDisplayProps) {
   }
 
   return (
-    <div className="font-code text-base leading-relaxed">
+    <pre className="whitespace-pre-wrap font-code text-base leading-relaxed">
       {renderPairedLines()}
-    </div>
+    </pre>
   );
 }

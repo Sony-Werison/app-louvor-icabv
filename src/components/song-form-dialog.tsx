@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { ScrollArea } from './ui/scroll-area';
+import { useRef } from 'react';
+import { useAutoPairing } from '@/hooks/use-auto-pairing';
 
 const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
 
@@ -45,6 +47,9 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
       chords: song?.chords || '',
     },
   });
+
+  const chordsTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const { handleKeyDown } = useAutoPairing(chordsTextareaRef);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     onSave(values);
@@ -150,7 +155,13 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
                             <FormItem>
                             <FormLabel>Cifras</FormLabel>
                             <FormControl>
-                                <Textarea className="font-code" rows={8} {...field} />
+                                <Textarea 
+                                  className="font-code" 
+                                  rows={8} 
+                                  {...field} 
+                                  ref={chordsTextareaRef}
+                                  onKeyDown={handleKeyDown}
+                                />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
