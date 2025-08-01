@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import {
   Dialog,
@@ -43,6 +43,16 @@ export function LoginDialog() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { toast } = useToast();
+  const isPasswordRequired = selectedRole !== 'viewer' && selectedRole !== '';
+
+  useEffect(() => {
+    // If role changes to viewer, clear password and error
+    if (selectedRole === 'viewer') {
+      setPassword('');
+      setError('');
+    }
+  }, [selectedRole]);
+
 
   const handleLogin = () => {
     if (!selectedRole) {
@@ -72,7 +82,7 @@ export function LoginDialog() {
         <DialogHeader>
           <DialogTitle>Bem-vindo!</DialogTitle>
           <DialogDescription>
-            Selecione seu perfil de acesso e insira a senha para continuar.
+            Selecione seu perfil de acesso para continuar.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -98,20 +108,22 @@ export function LoginDialog() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-              placeholder="Digite a senha"
-            />
-          </div>
+          {isPasswordRequired && (
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                placeholder="Digite a senha"
+              />
+            </div>
+          )}
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
-        <Button onClick={handleLogin}>Entrar</Button>
+        <Button onClick={handleLogin} disabled={!selectedRole}>Entrar</Button>
       </DialogContent>
     </Dialog>
   );

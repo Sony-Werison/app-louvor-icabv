@@ -8,7 +8,7 @@ import { LoginDialog } from '@/components/login-dialog';
 interface AuthContextType {
   role: Role | null;
   isAuthenticated: boolean;
-  login: (role: Role, password: string) => boolean;
+  login: (role: Role, password?: string) => boolean;
   logout: () => void;
   can: (permission: Permission) => boolean;
 }
@@ -26,7 +26,7 @@ const rolePermissions: Record<Role, Permission[]> = {
 const rolePasswords: Record<Role, string> = {
     admin: 'admin',
     dirigente: 'dirigente',
-    viewer: 'viewer'
+    viewer: '' // Viewer has no password
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -41,13 +41,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const login = (roleToSet: Role, password: string): boolean => {
-    if (rolePasswords[roleToSet] === password) {
+  const login = (roleToSet: Role, password?: string): boolean => {
+    // Viewer role doesn't need a password
+    if (roleToSet === 'viewer') {
+        setRole(roleToSet);
+        setIsAuthenticated(true);
+        sessionStorage.setItem('userRole', roleToSet);
+        return true;
+    }
+    
+    // For other roles, password is required
+    if (password && rolePasswords[roleToSet] === password) {
       setRole(roleToSet);
       setIsAuthenticated(true);
       sessionStorage.setItem('userRole', roleToSet);
       return true;
     }
+
     return false;
   };
 
