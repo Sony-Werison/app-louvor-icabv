@@ -151,9 +151,13 @@ export default function MembersPage() {
       <div className="space-y-8">
         {sortedRoles.map((role) => (
           <section key={role}>
-            <h2 className="text-xl sm:text-2xl font-headline font-semibold mb-4 border-b pb-2">{role}</h2>
+            <h2 className="text-xl sm:text-2xl font-headline font-semibold mb-4 border-b pb-2">
+                {role} <span className="text-lg font-normal text-muted-foreground">({groupedMembers[role as MemberRole].length})</span>
+            </h2>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-x-2 gap-y-4">
-              {groupedMembers[role as MemberRole].map((member) => (
+              {groupedMembers[role as MemberRole]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((member) => (
                 <div key={member.id} className="relative group">
                   <div className="flex flex-col items-center cursor-pointer" onClick={() => handleViewSchedule(member)}>
                     <Avatar className="w-14 h-14 sm:w-16 sm:h-16 mb-2">
