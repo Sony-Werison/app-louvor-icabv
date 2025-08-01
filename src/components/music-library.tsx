@@ -186,16 +186,16 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as any)}>
-            <TabsList className="grid w-full grid-cols-4 sm:w-auto">
+            <TabsList className="grid w-full h-12 grid-cols-4 sm:w-auto">
               {categories.map((cat) => (
-                <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm h-12 sm:h-10">
-                  <span className="hidden sm:inline">{categoryLabels[cat]}</span>
+                <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm h-auto flex-col sm:flex-row">
                   <div className="sm:hidden flex flex-col items-center justify-center">
                     <span>{categoryLabels[cat]}</span>
                     <span className="text-xs text-muted-foreground/80 font-mono">
                       {categoryCounts[cat]}
                     </span>
                   </div>
+                  <span className="hidden sm:inline">{categoryLabels[cat]}</span>
                    <span className="hidden sm:inline text-xs text-muted-foreground/80 font-mono ml-1.5">
                       {categoryCounts[cat]}
                     </span>
@@ -204,7 +204,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
             </TabsList>
           </Tabs>
            <Tabs value={chordFilter} onValueChange={(value) => setChordFilter(value as any)}>
-              <TabsList className="grid w-full grid-cols-3 sm:w-auto">
+              <TabsList className="grid w-full h-12 grid-cols-3 sm:w-auto">
                   {chordFilters.map(cat => (
                      <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{chordFilterLabels[cat]}</TabsTrigger>
                   ))}
