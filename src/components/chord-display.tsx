@@ -51,7 +51,7 @@ export function ChordDisplay({ chordsText }: ChordDisplayProps) {
     const parts = line.split(chordRegex).filter(Boolean);
 
     return (
-      <div key={lineIndex} className="mb-4">
+      <div key={lineIndex} className="mb-2">
         {parts.map((part, partIndex) => {
           if (part.match(chordRegex)) {
             const chord = part.substring(1, part.length - 1);
