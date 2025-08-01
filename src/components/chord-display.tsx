@@ -12,8 +12,9 @@ interface ChordDisplayProps {
 const chordRegex = /(\[.*?\])/g;
 // Regex to find chords in a string. It's not perfect but covers most cases.
 // It looks for a capital letter A-G, followed by optional 'b' or '#',
-// and then a series of common chord modifiers like 'm', 'maj', 'sus', 'dim', 'aug', '7', '9', etc.
-const unbracketedChordRegex = /([A-G][b#]?(?:m|maj|sus|dim|aug|add|M|º|°|\/)?\d?(?:sus\d|add\d|maj\d)?(?:[b#]\d{1,2})?)/g;
+// and then a series of common chord modifiers like 'm', 'maj', 'sus', 'dim', 'aug', 'add', 'M', 'º', '°', etc.
+// Note: The forward slash '/' is escaped as '\\/'.
+const unbracketedChordRegex = /([A-G][b#]?(?:m|maj|sus|dim|aug|add|M|º|°|\/)?\d*(?:sus\d*|add\d*|maj\d*)?(?:[b#]\d{1,2})?)/g;
 
 
 const isSectionHeader = (line: string) => {
