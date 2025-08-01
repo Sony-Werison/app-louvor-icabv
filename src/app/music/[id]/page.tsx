@@ -9,7 +9,7 @@ import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SongFormDialog } from '@/components/song-form-dialog';
+import { SongEditForm } from '@/components/song-edit-form';
 import { ChordDisplay } from '@/components/chord-display';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -47,7 +47,7 @@ export default function SongDetailPage() {
     );
   }
 
-  const handleSave = (updatedSong: Omit<Song, 'id'>) => {
+  const handleSave = (updatedSong: Partial<Song>) => {
     updateSong(songId, updatedSong);
     setIsEditing(false);
   };
@@ -56,6 +56,18 @@ export default function SongDetailPage() {
     removeSong(songId);
     router.push('/music');
   };
+
+  if (isEditing) {
+    return (
+        <div className="p-4 md:p-6">
+            <SongEditForm
+                song={song}
+                onSave={handleSave}
+                onCancel={() => setIsEditing(false)}
+            />
+        </div>
+    );
+  }
   
   return (
     <div className="p-4 md:p-6">
@@ -105,15 +117,6 @@ export default function SongDetailPage() {
             </Tabs>
           </CardContent>
         </Card>
-
-      {isEditing && can('edit:songs') && (
-         <SongFormDialog
-            isOpen={isEditing}
-            onOpenChange={setIsEditing}
-            onSave={handleSave}
-            song={song}
-        />
-      )}
 
       {isAlertOpen && (
           <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
