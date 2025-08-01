@@ -26,11 +26,12 @@ export function BottomNav() {
   }
 
   const visibleItems = navItems.filter(item => !item.permission || can(item.permission as any));
+  const gridColsClass = `grid-cols-${visibleItems.length}`;
 
   return (
     <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border md:hidden">
       <div className={cn("grid h-full max-w-lg mx-auto font-medium",
-        `grid-cols-${visibleItems.length}`
+        gridColsClass
       )}>
         {visibleItems.map((item) => {
           const isActive = pathname.startsWith(item.href);

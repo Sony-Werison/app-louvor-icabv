@@ -13,7 +13,7 @@ interface AuthContextType {
   logout: () => void;
   switchRole: (role: Role) => void;
   can: (permission: Permission) => boolean;
-  updatePassword: (roleToUpdate: Role, newPassword: string) => Promise<boolean>;
+  updatePassword: (roleToUpdate: Role, currentPassword: string, newPassword: string) => Promise<boolean>;
   isLoading: boolean;
 }
 
@@ -86,13 +86,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return rolePermissions[role].includes(permission);
   }
 
-  const updatePassword = async (roleToUpdate: Role, newPassword: string) => {
+  const updatePassword = async (roleToUpdate: Role, currentPassword: string, newPassword: string) => {
     if (role !== 'admin' || !rolePasswords) {
       toast({ title: 'Acesso Negado', description: 'Você não tem permissão para alterar senhas.', variant: 'destructive'});
       return false;
     }
     if (roleToUpdate === 'viewer') {
         toast({ title: 'Ação Inválida', description: 'O perfil de Visualização não pode ter uma senha.', variant: 'destructive'});
+        return false;
+    }
+    
+    if (rolePasswords[roleToUpdate] !== currentPassword) {
+        toast({ title: 'Senha Incorreta', description: `A senha atual para o perfil ${roleToUpdate} está incorreta.`, variant: 'destructive'});
         return false;
     }
 

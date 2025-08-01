@@ -28,12 +28,14 @@ export function AppNav() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
   const { can } = useAuth();
+  
+  const allNavItems = [...navItems, ...adminNavItems.filter(item => can(item.permission as any))];
 
   return (
     <>
       <SidebarContent className="pt-4">
         <SidebarMenu>
-          {navItems.map((item) => (
+          {allNavItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <Link href={item.href} passHref>
                 <SidebarMenuButton
@@ -47,23 +49,6 @@ export function AppNav() {
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
-          ))}
-           {adminNavItems.map((item) => (
-            can(item.permission as any) && (
-                 <SidebarMenuItem key={item.href}>
-                    <Link href={item.href} passHref>
-                        <SidebarMenuButton
-                        as="a"
-                        isActive={pathname.startsWith(item.href)}
-                        tooltip={item.label}
-                        onClick={() => setOpenMobile(false)}
-                        >
-                            <item.icon />
-                            <span>{item.label}</span>
-                        </SidebarMenuButton>
-                    </Link>
-                </SidebarMenuItem>
-            )
           ))}
         </SidebarMenu>
       </SidebarContent>
