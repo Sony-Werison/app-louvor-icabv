@@ -10,6 +10,11 @@ interface ChordDisplayProps {
 }
 
 const chordRegex = /(\[.*?\])/g;
+// Regex to find chords in a string. It's not perfect but covers most cases.
+// It looks for a capital letter A-G, followed by optional 'b' or '#',
+// and then a series of common chord modifiers like 'm', 'maj', 'sus', 'dim', 'aug', '7', '9', etc.
+const unbracketedChordRegex = /([A-G][b#]?(?:m|maj|sus|dim|aug|add|M|º|°|\/)?\d?(?:sus\d|add\d|maj\d)?(?:[b#]\d{1,2})?)/g;
+
 
 const isSectionHeader = (line: string) => {
     const trimmed = line.trim().toLowerCase();
@@ -20,19 +25,36 @@ const isSectionHeader = (line: string) => {
     }
     
     const sectionKeywords = ['intro', 'verso', 'refrão', 'ponte', 'solo', 'final', 'interlúdio', 'suave', 'forte', '+', '++', '+++'];
-    return sectionKeywords.some(keyword => {
+    // Check if the line *is* one of the keywords, optionally with a colon.
+    const isKeyword = sectionKeywords.some(keyword => {
         const withColon = `${keyword}:`;
         return trimmed === keyword || trimmed === withColon;
-    }) && !trimmed.match(/[a-g]/i);
+    });
+
+    // Ensure it doesn't contain chords, to avoid misinterpreting a line of chords as a section.
+    const hasNotes = trimmed.match(/[a-g]/i) && !isKeyword;
+
+    return isKeyword && !hasNotes;
 };
 
-const isPureChordLine = (line: string) => {
+const isPureChordLineWithBrackets = (line: string) => {
   const trimmed = line.trim();
   if (!trimmed) return false;
   // Check if the line consists only of bracketed chords `[C]` or spaces `[]`
   const sanitized = trimmed.replace(chordRegex, '');
   return sanitized.trim() === '';
 };
+
+const isPureChordLineWithoutBrackets = (line: string) => {
+    const trimmed = line.trim();
+    if (!trimmed || line.includes('[') || line.includes(']')) return false;
+
+    // Remove all identified chords from the line
+    const remaining = trimmed.replace(unbracketedChordRegex, '').trim();
+    
+    // If nothing remains, it's a pure chord line
+    return remaining === '' && trimmed !== '';
+}
 
 
 export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps) {
@@ -68,11 +90,17 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
   };
 
   const renderPureChordLine = (line: string, lineIndex: number) => {
-      const parts = line.split(chordRegex).filter(Boolean);
+      let chords: string[] = [];
+      if (isPureChordLineWithBrackets(line)) {
+          const parts = line.split(chordRegex).filter(Boolean);
+          chords = parts.map(p => p.substring(1, p.length - 1));
+      } else if (isPureChordLineWithoutBrackets(line)) {
+          chords = line.match(unbracketedChordRegex) || [];
+      }
+      
       return (
-          <div key={`chord-line-${lineIndex}`} className="flex items-end gap-x-1 mb-4 leading-normal">
-              {parts.map((part, index) => {
-                  const chord = part.substring(1, part.length - 1);
+          <div key={`chord-line-${lineIndex}`} className="flex items-end gap-x-4 mb-4 leading-normal">
+              {chords.map((chord, index) => {
                   if (chord) {
                       const transposed = transposeChord(chord, transposeBy);
                       return (
@@ -104,7 +132,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
             continue;
         }
         
-        if (isPureChordLine(currentLine)) {
+        if (isPureChordLineWithBrackets(currentLine) || isPureChordLineWithoutBrackets(currentLine)) {
             elements.push(renderPureChordLine(currentLine, i));
             i++;
             continue;
