@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -9,7 +10,8 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { CalendarDays, Library, Users, CalendarRange } from 'lucide-react';
+import { CalendarDays, Library, Users, CalendarRange, Settings } from 'lucide-react';
+import { useAuth } from '@/context/auth-context';
 
 const navItems = [
   { href: '/schedule', label: 'Reuniões', icon: CalendarDays },
@@ -18,9 +20,14 @@ const navItems = [
   { href: '/members', label: 'Membros', icon: Users },
 ];
 
+const adminNavItems = [
+    { href: '/settings', label: 'Configurações', icon: Settings, permission: 'manage:settings' },
+]
+
 export function AppNav() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
+  const { can } = useAuth();
 
   return (
     <>
@@ -40,6 +47,23 @@ export function AppNav() {
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
+          ))}
+           {adminNavItems.map((item) => (
+            can(item.permission as any) && (
+                 <SidebarMenuItem key={item.href}>
+                    <Link href={item.href} passHref>
+                        <SidebarMenuButton
+                        as="a"
+                        isActive={pathname.startsWith(item.href)}
+                        tooltip={item.label}
+                        onClick={() => setOpenMobile(false)}
+                        >
+                            <item.icon />
+                            <span>{item.label}</span>
+                        </SidebarMenuButton>
+                    </Link>
+                </SidebarMenuItem>
+            )
           ))}
         </SidebarMenu>
       </SidebarContent>

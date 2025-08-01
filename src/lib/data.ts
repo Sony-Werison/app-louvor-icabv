@@ -1,6 +1,6 @@
 
 
-import type { Member, Song, MonthlySchedule, ScheduleColumn, SongCategory } from '@/types';
+import type { Member, Song, MonthlySchedule, ScheduleColumn, SongCategory, Role } from '@/types';
 import { Tv, Sun, Moon, BookUser } from 'lucide-react';
 import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths } from 'date-fns';
 
@@ -132,6 +132,12 @@ export const scheduleColumns: ScheduleColumn[] = [
     { id: 'pregacao_noite', label: 'Pregação Noite', icon: BookUser, role: 'Pregador' },
     { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true, role: 'Multimídia' },
 ];
+
+export const passwords: Record<Role, string> = {
+    admin: 'admin',
+    dirigente: 'dirigente',
+    viewer: ''
+};
 
 const getSundays = (date: Date): Date[] => {
     const start = startOfMonth(date);

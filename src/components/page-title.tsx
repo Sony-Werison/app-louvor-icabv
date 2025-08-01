@@ -9,6 +9,7 @@ const routeTitles: { [key: string]: string } = {
     '/monthly-schedule': 'Escala Mensal',
     '/music': 'Biblioteca de Músicas',
     '/members': 'Membros',
+    '/settings': 'Configurações',
 };
 
 const getTitleFromPath = (path: string): string => {

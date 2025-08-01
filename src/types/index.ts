@@ -25,7 +25,7 @@ export type Song = {
 };
 
 export type Schedule = {
-  id: string;
+  id:string;
   name: string;
   date: Date;
   leaderId: string;

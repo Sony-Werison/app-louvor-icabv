@@ -4,15 +4,17 @@ import { put, list, del, head } from '@vercel/blob';
 import {
   songs as initialSongs,
   monthlySchedules as initialMonthlySchedules,
-  members as initialMembers
+  members as initialMembers,
+  passwords as initialPasswords,
 } from './data';
-import type { Member, Song, MonthlySchedule } from '@/types';
+import type { Member, Song, MonthlySchedule, Role } from '@/types';
 
 // Define keys for Vercel Blob (which are filenames)
 const KEYS = {
   MEMBERS: 'members.json',
   SONGS: 'songs.json',
   SCHEDULES: 'monthlySchedules.json',
+  PASSWORDS: 'passwords.json',
 };
 
 // --- Helper Functions ---
@@ -75,6 +77,11 @@ export async function fetchMonthlySchedules(): Promise<MonthlySchedule[]> {
   return schedules.map(s => ({ ...s, date: new Date(s.date) }));
 }
 
+export async function fetchPasswords(): Promise<Record<Role, string>> {
+    return await fetchData<Record<Role, string>>(KEYS.PASSWORDS, initialPasswords);
+}
+
+
 // --- Data Mutation Functions ---
 
 export async function saveMembers(members: Member[]): Promise<void> {
@@ -92,4 +99,8 @@ export async function saveMonthlySchedules(schedules: MonthlySchedule[]): Promis
     date: s.date.toISOString(),
   }));
   await saveData(KEYS.SCHEDULES, schedulesToStore);
+}
+
+export async function savePasswords(passwords: Record<Role, string>): Promise<void> {
+    await saveData(KEYS.PASSWORDS, passwords);
 }
