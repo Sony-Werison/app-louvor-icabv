@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Search } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 interface MusicLibraryProps {
   songs: Song[];
@@ -20,6 +21,20 @@ const categoryLabels: Record<SongCategory | 'all', string> = {
   Louvor: 'Louvores',
   Hino: 'Hinos',
   Infantil: 'Infantis'
+}
+
+const getQuarterlyColorClass = (count: number = 0) => {
+    if (count > 4) return 'bg-destructive/40';
+    if (count > 2) return 'bg-destructive/20';
+    if (count > 0) return 'bg-destructive/10';
+    return 'bg-transparent';
+}
+
+const getTotalColorClass = (count: number = 0) => {
+    if (count > 40) return 'bg-destructive/40';
+    if (count > 25) return 'bg-destructive/20';
+    if (count > 10) return 'bg-destructive/10';
+    return 'bg-transparent';
 }
 
 export function MusicLibrary({ songs }: MusicLibraryProps) {
@@ -86,10 +101,10 @@ export function MusicLibrary({ songs }: MusicLibraryProps) {
                   <TableCell className="text-center">
                     <Badge variant="outline">{song.key}</Badge>
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell text-center text-muted-foreground">
+                  <TableCell className={cn("hidden lg:table-cell text-center text-foreground font-medium", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
                     {song.timesPlayedQuarterly ?? 0}
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell text-center text-muted-foreground">
+                  <TableCell className={cn("hidden lg:table-cell text-center text-foreground font-medium", getTotalColorClass(song.timesPlayedTotal))}>
                     {song.timesPlayedTotal ?? 0}
                   </TableCell>
                 </TableRow>
