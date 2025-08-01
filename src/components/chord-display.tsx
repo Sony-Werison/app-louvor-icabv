@@ -65,29 +65,24 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
     const parts = line.split(chordRegex).filter(Boolean);
 
     return (
-      <div key={lineIndex} className="flex flex-wrap items-end leading-tight">
+      <div key={lineIndex} className="relative leading-tight">
         {parts.map((part, partIndex) => {
           if (part.match(chordRegex)) {
             const chord = part.substring(1, part.length - 1);
             if (chord === '') {
-              return null;
+              return <span key={partIndex} className="inline-block w-1">&nbsp;</span>;
             }
             const transposed = transposeChord(chord, transposeBy);
             return (
-              <div key={partIndex} className="flex flex-col-reverse items-center">
-                <div className="opacity-0 select-none">-</div>
-                <b className="text-primary font-bold whitespace-nowrap self-end leading-none">
-                  {transposed}
-                </b>
+               <div key={partIndex} className="inline-flex flex-col-reverse items-start leading-none -mb-1">
+                  <span className="opacity-0 select-none pointer-events-none">_</span>
+                  <b className="text-primary font-bold whitespace-nowrap">
+                    {transposed}
+                  </b>
               </div>
             );
           }
-          return (
-            <div key={partIndex} className="flex flex-col-reverse">
-                <span>{part}</span>
-                <div className="opacity-0 select-none">-</div>
-            </div>
-          );
+          return <span key={partIndex}>{part}</span>;
         })}
       </div>
     );
@@ -156,6 +151,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
             lineContent = renderPureChordLine(currentLine, i);
         } else if (currentLine.match(chordRegex)) {
             lineContent = renderTextWithChords(currentLine, i);
+            wrapperClass="mb-4";
         } else {
             lineContent = (
                 <div className={cn("leading-tight", !currentLine.trim() && "h-4")}>
