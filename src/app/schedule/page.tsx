@@ -1,3 +1,4 @@
+
 'use client';
 import { useSchedule } from '@/context/schedule-context';
 import { ScheduleView } from '@/components/schedule-view';
@@ -73,8 +74,8 @@ export default function SchedulePage() {
     const allSchedules = transformMonthlyToSchedule(monthlySchedules, songs);
 
     const today = new Date();
-    const startOfThisWeek = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
-    const endOfThisWeek = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
+    const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 }); // Monday
+    const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 }); // Sunday
 
     const filteredSchedules = allSchedules.filter(schedule => 
       isWithinInterval(schedule.date, { start: startOfThisWeek, end: endOfThisWeek })
