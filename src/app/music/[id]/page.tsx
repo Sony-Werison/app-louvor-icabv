@@ -5,19 +5,30 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSchedule } from '@/context/schedule-context';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SongEditForm } from '@/components/song-edit-form';
+import { SongFormDialog } from '@/components/song-form-dialog';
 import { ChordDisplay } from '@/components/chord-display';
 import { useAuth } from '@/context/auth-context';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function SongDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { songs, updateSong } = useSchedule();
+  const { songs, updateSong, removeSong } = useSchedule();
   const [isEditing, setIsEditing] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
   const { can } = useAuth();
 
   const songId = params.id as string;
@@ -39,6 +50,11 @@ export default function SongDetailPage() {
     updateSong(songId, updatedSong);
     setIsEditing(false);
   };
+
+  const handleDelete = () => {
+    removeSong(songId);
+    router.push('/music');
+  };
   
   return (
     <div className="p-4 md:p-6">
@@ -48,15 +64,26 @@ export default function SongDetailPage() {
           Voltar
         </Button>
         {can('edit:songs') && (
-            <Button size="sm" onClick={() => setIsEditing(!isEditing)}>
-            <Edit className="mr-2" />
-            {isEditing ? 'Cancelar' : 'Editar'}
-            </Button>
+            <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+                    <Edit className="mr-2" />
+                    Editar
+                </Button>
+                 <Button size="sm" variant="destructive" onClick={() => setIsAlertOpen(true)}>
+                    <Trash2 className="mr-2" />
+                    Excluir
+                </Button>
+            </div>
         )}
       </div>
 
       {isEditing && can('edit:songs') ? (
-        <SongEditForm song={song} onSave={handleSave} onCancel={() => setIsEditing(false)} />
+         <SongFormDialog
+            isOpen={isEditing}
+            onOpenChange={setIsEditing}
+            onSave={handleSave}
+            song={song}
+        />
       ) : (
         <Card>
           <CardHeader>
@@ -85,6 +112,23 @@ export default function SongDetailPage() {
             </Tabs>
           </CardContent>
         </Card>
+      )}
+
+      {isAlertOpen && (
+          <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+              <AlertDialogContent>
+                  <AlertDialogHeader>
+                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                          Essa ação não pode ser desfeita. Isso excluirá permanentemente a música da biblioteca.
+                      </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>
+                  </AlertDialogFooter>
+              </AlertDialogContent>
+          </AlertDialog>
       )}
     </div>
   );

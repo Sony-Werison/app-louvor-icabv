@@ -25,8 +25,10 @@ interface ScheduleContextType {
   addMember: (memberData: Omit<Member, 'id'>) => void;
   updateMember: (memberId: string, updates: Partial<Member>) => void;
   removeMember: (memberId: string) => void;
+  addSong: (songData: Omit<Song, 'id'>) => void;
   updateSong: (songId: string, updates: Partial<Song>) => void;
-  addOrUpdateSongs: (songsToAdd: Song[]) => void;
+  removeSong: (songId: string) => void;
+  addOrUpdateSongs: (songs: Song[]) => void;
   isLoading: boolean;
 }
 
@@ -104,14 +106,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addMember = (memberData: Omit<Member, 'id'>) => {
-    const newMember = { ...memberData, id: `m${Date.now()}` };
+    const newMember: Member = { ...memberData, id: `m${Date.now()}` };
     const newMembers = [...members, newMember];
     setMembers(newMembers);
     saveMembers(newMembers);
   };
 
   const updateMember = (memberId: string, updates: Partial<Member>) => {
-    const newMembers = members.map(m => m.id === memberId ? { ...m, ...updates } : m);
+    const newMembers = members.map(m => m.id === memberId ? { ...m, ...updates } as Member : m);
     setMembers(newMembers);
     saveMembers(newMembers);
   };
@@ -121,9 +123,22 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     setMembers(newMembers);
     saveMembers(newMembers);
   };
+  
+  const addSong = (songData: Omit<Song, 'id'>) => {
+    const newSong: Song = { ...songData, id: `s${Date.now()}` };
+    const newSongs = [...songs, newSong];
+    setSongs(newSongs);
+    saveSongs(newSongs);
+  };
 
   const updateSong = (songId: string, updates: Partial<Song>) => {
-    const newSongs = songs.map(s => s.id === songId ? { ...s, ...updates } : s);
+    const newSongs = songs.map(s => s.id === songId ? { ...s, ...updates } as Song : s);
+    setSongs(newSongs);
+    saveSongs(newSongs);
+  };
+
+  const removeSong = (songId: string) => {
+    const newSongs = songs.filter(s => s.id !== songId);
     setSongs(newSongs);
     saveSongs(newSongs);
   };
@@ -163,7 +178,9 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       addMember,
       updateMember,
       removeMember,
+      addSong,
       updateSong,
+      removeSong,
       addOrUpdateSongs,
       isLoading,
     }}>
