@@ -6,7 +6,7 @@ import { AppNav } from '@/components/app-nav';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/header';
 import { ScheduleProvider } from '@/context/schedule-context';
-import { AuthProvider } from '@/context/auth-context';
+import { AuthProvider, AuthGate } from '@/context/auth-context';
 import { ProfileSwitcher } from '@/components/profile-switcher';
 
 export const metadata: Metadata = {
@@ -28,22 +28,24 @@ export default function RootLayout({
       </head>
       <body className={cn('font-body antialiased', 'min-h-screen bg-background')}>
         <AuthProvider>
-          <ScheduleProvider>
-            <SidebarProvider>
-              <Sidebar>
-                <AppNav />
-              </Sidebar>
-              <SidebarInset>
-                <Header>
-                  <SidebarTrigger />
-                  <div className="ml-auto">
-                    <ProfileSwitcher />
-                  </div>
-                </Header>
-                <main>{children}</main>
-              </SidebarInset>
-            </SidebarProvider>
-          </ScheduleProvider>
+          <AuthGate>
+            <ScheduleProvider>
+              <SidebarProvider>
+                <Sidebar>
+                  <AppNav />
+                </Sidebar>
+                <SidebarInset>
+                  <Header>
+                    <SidebarTrigger />
+                    <div className="ml-auto">
+                      <ProfileSwitcher />
+                    </div>
+                  </Header>
+                  <main>{children}</main>
+                </SidebarInset>
+              </SidebarProvider>
+            </ScheduleProvider>
+          </AuthGate>
         </AuthProvider>
         <Toaster />
       </body>

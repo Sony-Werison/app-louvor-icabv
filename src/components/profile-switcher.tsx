@@ -3,14 +3,15 @@
 
 import { useAuth } from '@/context/auth-context';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import type { Role } from '@/types';
-import { Shield, Users, Eye } from 'lucide-react';
+import { Shield, Users, Eye, LogOut, ChevronDown } from 'lucide-react';
 import React from 'react';
 
 const roleIcons: Record<Role, React.ElementType> = {
@@ -26,32 +27,30 @@ const roleLabels: Record<Role, string> = {
 };
 
 export function ProfileSwitcher() {
-  const { role, setRole } = useAuth();
+  const { role, logout } = useAuth();
   
+  if (!role) return null;
+
   const Icon = roleIcons[role];
+  const label = roleLabels[role];
 
   return (
-    <Select value={role} onValueChange={(value) => setRole(value as Role)}>
-      <SelectTrigger className="w-48">
-        <div className="flex items-center gap-2">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="w-48 justify-between">
+          <div className="flex items-center gap-2">
             <Icon className="h-4 w-4 text-muted-foreground" />
-            <SelectValue placeholder="Selecionar Perfil" />
-        </div>
-      </SelectTrigger>
-      <SelectContent>
-        {Object.keys(roleLabels).map((key) => {
-          const roleKey = key as Role;
-          const RoleIcon = roleIcons[roleKey];
-          return (
-            <SelectItem key={roleKey} value={roleKey}>
-                <div className="flex items-center gap-2">
-                    <RoleIcon className="h-4 w-4 text-muted-foreground" />
-                    <span>{roleLabels[roleKey]}</span>
-                </div>
-            </SelectItem>
-          );
-        })}
-      </SelectContent>
-    </Select>
+            <span>{label}</span>
+          </div>
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-48">
+        <DropdownMenuItem onClick={logout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Trocar de Perfil</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
