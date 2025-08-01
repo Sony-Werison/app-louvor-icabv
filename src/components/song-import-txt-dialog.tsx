@@ -82,8 +82,8 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
                     artist,
                     key: 'N/A', // O Tom pode ser editado depois
                     category: category, // Usa a categoria selecionada no diálogo
-                    chords: body, // Salva o corpo completo com cifras
-                    lyrics: body.replace(/\[[^\]]+\]/g, ''), // Salva uma versão sem cifras para a letra
+                    chords: '', // NUNCA importar cifras de TXT
+                    lyrics: body, // Salva o corpo completo como letra
                 };
 
                 const existingSong = existingSongs.find(
