@@ -11,7 +11,7 @@ import {
   saveMembers,
   saveSongs,
   saveMonthlySchedules,
-} from '@/lib/kv';
+} from '@/lib/blob-storage';
 
 interface ScheduleContextType {
   monthlySchedules: MonthlySchedule[];
@@ -36,7 +36,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [scheduleColumns] = useState<ScheduleColumn[]>(initialScheduleColumns);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load data from KV store on initial render
+  // Load data from blob storage on initial render
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
@@ -50,7 +50,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setSongs(loadedSongs);
         setMonthlySchedules(loadedSchedules);
       } catch (error) {
-        console.error("Failed to load data from KV store:", error);
+        console.error("Failed to load data from blob store:", error);
         // Optionally handle error, e.g., show a toast
       } finally {
         setIsLoading(false);
