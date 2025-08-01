@@ -10,6 +10,7 @@ import { AuthProvider } from '@/context/auth-context';
 import { ProfileSwitcher } from '@/components/profile-switcher';
 import { BottomNav } from '@/components/bottom-nav';
 import { PageTitle } from '@/components/page-title';
+import { AppLogo } from '@/components/app-logo';
 
 export const metadata: Metadata = {
   title: 'Louvor ICABV',
@@ -37,7 +38,10 @@ export default function RootLayout({
                 </Sidebar>
                 <SidebarInset>
                   <Header>
-                    <PageTitle />
+                    <div className="flex items-center gap-2">
+                        <PageTitle />
+                        <AppLogo />
+                    </div>
                     <div className="ml-auto flex items-center gap-2">
                       <ProfileSwitcher />
                     </div>

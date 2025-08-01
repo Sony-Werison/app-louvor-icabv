@@ -26,7 +26,6 @@ export function PageTitle() {
   return (
     <div className="flex items-center gap-2">
         <SidebarTrigger/>
-        <h1 className="text-lg font-bold truncate">{title}</h1>
     </div>
   );
 }

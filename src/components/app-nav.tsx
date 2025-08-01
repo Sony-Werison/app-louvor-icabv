@@ -3,14 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  SidebarHeader,
   SidebarContent,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { AppLogo } from '@/components/app-logo';
 import { CalendarDays, Library, Users, CalendarRange } from 'lucide-react';
 
 const navItems = [
@@ -26,10 +24,7 @@ export function AppNav() {
 
   return (
     <>
-      <SidebarHeader>
-        <AppLogo />
-      </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="pt-4">
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>

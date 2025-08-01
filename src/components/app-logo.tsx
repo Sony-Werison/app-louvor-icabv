@@ -8,11 +8,11 @@ export function AppLogo({ className }: { className?: string }) {
       <Image 
         src="/logo.png" 
         alt="Logotipo ICABV" 
-        width={40} 
-        height={40}
+        width={32} 
+        height={32}
         className="rounded-full"
       />
-      <h1 className="text-lg font-headline font-bold text-primary-foreground">
+      <h1 className="text-lg font-headline font-bold text-foreground hidden sm:block">
         Louvor ICABV
       </h1>
     </div>
