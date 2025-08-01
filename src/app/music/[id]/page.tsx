@@ -162,29 +162,29 @@ export default function SongDetailPage() {
   const zoomPercentage = Math.round((fontSize / DEFAULT_FONT_SIZE) * 100);
   
   return (
-    <div className="h-[calc(100vh-var(--header-height))] flex flex-col" style={{'--header-height': '7rem'} as React.CSSProperties}>
+    <div className="h-[calc(100vh-var(--header-height)-1px)] flex flex-col" style={{'--header-height': '7rem'} as React.CSSProperties}>
         <header className="flex-shrink-0 bg-background/95 backdrop-blur-sm z-20 border-b">
              <div className="h-14 flex items-center justify-between px-2 sm:px-4">
-                <Button variant="outline" size="sm" onClick={() => router.push('/music')}>
+                <Button variant="ghost" size="sm" onClick={() => router.push('/music')}>
                     <ArrowLeft className="mr-2" />
                     Voltar
                 </Button>
-                <div className="flex flex-col items-center">
-                    <h1 className="font-headline font-bold text-base sm:text-lg truncate leading-tight">{song.title}</h1>
-                    <span className="text-sm text-muted-foreground">{song.artist}</span>
+                <div className="flex flex-col items-center text-center mx-2 flex-1 min-w-0">
+                    <h1 className="font-headline font-bold text-base sm:text-lg truncate leading-tight w-full">{song.title}</h1>
+                    <span className="text-sm text-muted-foreground truncate w-full">{song.artist}</span>
                 </div>
                 {can('edit:songs') ? (
-                    <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
-                            <Edit className="mr-2" />
-                            Editar
+                    <div className="flex gap-1 sm:gap-2">
+                        <Button size="icon" variant="ghost" className="h-8 w-8 sm:h-auto sm:w-auto sm:px-3 sm:py-1" onClick={() => setIsEditing(true)}>
+                            <Edit className="h-4 w-4 sm:mr-2"/>
+                            <span className="hidden sm:inline">Editar</span>
                         </Button>
-                        <Button size="sm" variant="destructive" onClick={() => setIsAlertOpen(true)}>
-                            <Trash2 className="mr-2" />
-                            Excluir
+                        <Button size="icon" variant="destructive" className="h-8 w-8 sm:h-auto sm:w-auto sm:px-3 sm:py-1" onClick={() => setIsAlertOpen(true)}>
+                            <Trash2 className="h-4 w-4 sm:mr-2" />
+                             <span className="hidden sm:inline">Excluir</span>
                         </Button>
                     </div>
-                ) : <div className="w-24"/>}
+                ) : <div className="w-10 sm:w-24"/>}
              </div>
              <div className="h-14 flex items-center justify-center px-2 sm:px-4 gap-2 py-2 border-t">
                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
@@ -232,7 +232,7 @@ export default function SongDetailPage() {
         <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
             <div className="p-4 sm:p-8 pb-28" style={{ fontSize: `${fontSize}rem` }}>
                  {activeTab === 'lyrics' ? (
-                    <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75', whiteSpace: 'pre-wrap'}}>
+                    <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75'}}>
                     {song.lyrics || 'Nenhuma letra disponível.'}
                     </pre>
                 ) : (
@@ -290,3 +290,5 @@ export default function SongDetailPage() {
     </div>
   );
 }
+
+    
