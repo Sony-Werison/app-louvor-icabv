@@ -1,22 +1,26 @@
 
 'use client';
 
+import React, { useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import type { Role } from '@/types';
-import { Shield, Users, Eye, LogOut, ChevronDown } from 'lucide-react';
-import React from 'react';
+import { Shield, Users, Eye, Check, ChevronDown } from 'lucide-react';
+import { LoginDialog } from './login-dialog';
 
-const roleIcons: Record<Exclude<Role, 'viewer'>, React.ElementType> = {
+
+const roleIcons: Record<Role, React.ElementType> = {
     admin: Shield,
     dirigente: Users,
+    viewer: Eye,
 };
 
 const roleLabels: Record<Role, string> = {
@@ -26,14 +30,24 @@ const roleLabels: Record<Role, string> = {
 };
 
 export function ProfileSwitcher() {
-  const { role, logout } = useAuth();
+  const { role, switchRole } = useAuth();
+  const [loginRole, setLoginRole] = useState<Role | null>(null);
   
   if (!role) return null;
 
-  const Icon = role === 'viewer' ? Eye : roleIcons[role];
+  const Icon = roleIcons[role];
   const label = roleLabels[role];
 
+  const handleRoleSelect = (selectedRole: Role) => {
+    if (selectedRole === 'viewer') {
+        switchRole('viewer');
+    } else {
+        setLoginRole(selectedRole);
+    }
+  }
+
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="w-48 justify-between">
@@ -45,11 +59,28 @@ export function ProfileSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-48">
-        <DropdownMenuItem onClick={logout}>
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Trocar de Perfil</span>
-        </DropdownMenuItem>
+        <DropdownMenuLabel>Trocar Perfil</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {(Object.keys(roleLabels) as Role[]).map((r) => {
+            const RoleIcon = roleIcons[r];
+            return (
+                 <DropdownMenuItem key={r} onClick={() => handleRoleSelect(r)}>
+                    <RoleIcon className="mr-2 h-4 w-4" />
+                    <span>{roleLabels[r]}</span>
+                    {role === r && <Check className="ml-auto h-4 w-4" />}
+                </DropdownMenuItem>
+            )
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
+
+    {loginRole && (
+        <LoginDialog
+            isOpen={!!loginRole}
+            onOpenChange={() => setLoginRole(null)}
+            roleToLogin={loginRole}
+        />
+    )}
+    </>
   );
 }

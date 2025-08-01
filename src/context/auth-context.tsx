@@ -3,13 +3,13 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import type { Role } from '@/types';
-import { LoginDialog } from '@/components/login-dialog';
 
 interface AuthContextType {
   role: Role | null;
   isAuthenticated: boolean;
   login: (role: Role, password?: string) => boolean;
   logout: () => void;
+  switchRole: (role: Role) => void;
   can: (permission: Permission) => boolean;
 }
 
@@ -31,40 +31,40 @@ const rolePasswords: Record<Role, string> = {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<Role | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // By default, the app is "authenticated" in viewer mode.
+  // The concept of isAuthenticated is now just about whether a role is set.
+  const isAuthenticated = !!role;
 
   useEffect(() => {
     const savedRole = sessionStorage.getItem('userRole') as Role;
     if (savedRole && rolePermissions[savedRole]) {
         setRole(savedRole);
-        setIsAuthenticated(true);
+    } else {
+        // Default to viewer if nothing is set
+        setRole('viewer');
+        sessionStorage.setItem('userRole', 'viewer');
     }
   }, []);
 
   const login = (roleToSet: Role, password?: string): boolean => {
-    // Viewer role doesn't need a password
-    if (roleToSet === 'viewer') {
-        setRole(roleToSet);
-        setIsAuthenticated(true);
-        sessionStorage.setItem('userRole', roleToSet);
-        return true;
-    }
-    
-    // For other roles, password is required
     if (password && rolePasswords[roleToSet] === password) {
       setRole(roleToSet);
-      setIsAuthenticated(true);
       sessionStorage.setItem('userRole', roleToSet);
       return true;
     }
-
     return false;
   };
+  
+  const switchRole = (newRole: Role) => {
+    setRole(newRole);
+    sessionStorage.setItem('userRole', newRole);
+  }
 
   const logout = () => {
-    setRole(null);
-    setIsAuthenticated(false);
-    sessionStorage.removeItem('userRole');
+    // In this new flow, "logout" means reverting to viewer mode
+    setRole('viewer');
+    sessionStorage.setItem('userRole', 'viewer');
   };
   
   const can = (permission: Permission) => {
@@ -75,22 +75,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ role, isAuthenticated, login, logout, can }}>
+    <AuthContext.Provider value={{ role, isAuthenticated, login, logout, switchRole, can }}>
       {children}
     </AuthContext.Provider>
   );
 };
-
-export const AuthGate = ({ children }: { children: ReactNode }) => {
-    const { isAuthenticated } = useAuth();
-
-    if (!isAuthenticated) {
-        return <LoginDialog />;
-    }
-
-    return <>{children}</>;
-}
-
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
