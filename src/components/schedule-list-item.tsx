@@ -64,7 +64,6 @@ const MemberSelector: React.FC<{
 
 export function ScheduleListItem({
   schedule,
-  members,
   columns,
   getFilteredMembers,
   getAssignedMemberIds,
@@ -84,7 +83,7 @@ export function ScheduleListItem({
         <div className={`flex gap-1 ${col.isMulti ? 'flex-col' : ''}`}>
             {slots.map(index => (
                 <MemberSelector
-                    key={index}
+                    key={`${col.id}-${index}`}
                     assignedMemberId={assignedMemberIds[index]}
                     filteredMembers={filteredMembersForColumn}
                     onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
