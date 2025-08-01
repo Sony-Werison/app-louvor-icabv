@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSchedule } from '@/context/schedule-context';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Trash2, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Plus, Minus, ZoomIn, ZoomOut } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,6 +25,12 @@ import {
 import type { Song } from '@/types';
 import { getTransposedKey } from '@/lib/transpose';
 
+const MIN_FONT_SIZE = 0.8;
+const MAX_FONT_SIZE = 2.5;
+const FONT_STEP = 0.1;
+const DEFAULT_FONT_SIZE = 1.1;
+
+
 export default function SongDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -32,6 +38,7 @@ export default function SongDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [transpose, setTranspose] = useState(0);
+  const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE); // em rem
   const { can } = useAuth();
 
   const songId = params.id as string;
@@ -71,7 +78,16 @@ export default function SongDetailPage() {
     );
   }
 
+  const changeFontSize = (delta: number) => {
+    setFontSize(prev => Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, prev + delta)));
+  }
+
+  const resetFontSize = () => {
+    setFontSize(DEFAULT_FONT_SIZE);
+  }
+
   const transposedKey = getTransposedKey(song.key, transpose);
+  const zoomPercentage = Math.round((fontSize / DEFAULT_FONT_SIZE) * 100);
   
   return (
     <div className="p-4 md:p-6">
@@ -109,30 +125,48 @@ export default function SongDetailPage() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="lyrics" className="mt-4">
-              <div className="flex justify-between items-center border-b">
+              <div className="flex justify-between items-center border-b flex-wrap gap-2">
                   <TabsList>
                     <TabsTrigger value="lyrics">Letra</TabsTrigger>
                     <TabsTrigger value="chords">Cifras</TabsTrigger>
                   </TabsList>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Tom</span>
-                     <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setTranspose(transpose - 1)}>
-                        <Minus className="h-4 w-4"/>
-                    </Button>
-                    <span className="font-bold w-10 text-center">{transpose > 0 ? `+${transpose}` : transpose}</span>
-                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setTranspose(transpose + 1)}>
-                        <Plus className="h-4 w-4"/>
-                    </Button>
+                  <div className="flex items-center gap-4">
+                     <div className="flex items-center gap-1">
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
+                            <ZoomOut className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" onClick={resetFontSize} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">
+                            {zoomPercentage}%
+                        </Button>
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
+                            <ZoomIn className="h-4 w-4" />
+                        </Button>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose - 1)}>
+                            <Minus className="h-4 w-4"/>
+                        </Button>
+                        <div className="flex flex-col items-center w-8">
+                            <span className="text-[10px] text-muted-foreground -mb-1">Tom</span>
+                            <span className="font-bold text-center text-sm">{transpose > 0 ? `+${transpose}` : transpose}</span>
+                        </div>
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose + 1)}>
+                            <Plus className="h-4 w-4"/>
+                        </Button>
+                    </div>
                   </div>
               </div>
-              <TabsContent value="lyrics" className="mt-4">
-                <pre className="whitespace-pre-wrap font-body text-sm sm:text-base leading-relaxed p-4 bg-muted/50 rounded-md">
-                  {song.lyrics || 'Nenhuma letra disponível.'}
-                </pre>
-              </TabsContent>
-              <TabsContent value="chords" className="mt-4 p-4 bg-muted/50 rounded-md">
-                <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose} />
-              </TabsContent>
+               <div style={{ fontSize: `${fontSize}rem` }}>
+                    <TabsContent value="lyrics" className="mt-4">
+                        <pre className="whitespace-pre-wrap font-body leading-relaxed p-4 bg-muted/50 rounded-md" style={{lineHeight: '1.75'}}>
+                        {song.lyrics || 'Nenhuma letra disponível.'}
+                        </pre>
+                    </TabsContent>
+                    <TabsContent value="chords" className="mt-4 p-4 bg-muted/50 rounded-md">
+                        <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose} />
+                    </TabsContent>
+               </div>
             </Tabs>
           </CardContent>
         </Card>
@@ -156,3 +190,4 @@ export default function SongDetailPage() {
     </div>
   );
 }
+
