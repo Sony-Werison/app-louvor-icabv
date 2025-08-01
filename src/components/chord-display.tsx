@@ -50,10 +50,9 @@ const isPureChordLineWithoutBrackets = (line: string) => {
     const trimmed = line.trim();
     if (!trimmed || line.includes('[') || line.includes(']')) return false;
 
-    // Check if every word in the line is a valid chord or a hyphen.
-    const words = trimmed.split(/\s+/);
-    const chordAloneRegex = new RegExp(`^${unbracketedChordRegex.source}$`);
-    return words.every(word => word === '-' || word.match(chordAloneRegex));
+    // A line is a pure chord line if it consists ONLY of chords and hyphens, with no other text.
+    const sanitized = trimmed.replace(unbracketedChordRegex, '').replace(/-/g, '');
+    return sanitized.trim() === '';
 }
 
 
@@ -94,7 +93,8 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
       if (isPureChordLineWithBrackets(line)) {
           parts = line.split(chordRegex).filter(Boolean);
       } else if (isPureChordLineWithoutBrackets(line)) {
-          parts = line.trim().split(/\s+/);
+          const chordOrHyphenRegex = new RegExp(`${unbracketedChordRegex.source}|-+`, 'g');
+          parts = line.match(chordOrHyphenRegex) || [];
       }
       
       return (
@@ -114,8 +114,8 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
                     return <span key={index} className="inline-block w-3">&nbsp;</span>;
                   }
                   
-                  if (part === '-') {
-                      return <span key={index} className="inline-block w-3 text-muted-foreground">&ndash;</span>;
+                  if (part.startsWith('-')) {
+                      return <span key={index} className="inline-block text-muted-foreground">{part.replace(/-/g, '–')}</span>;
                   }
 
                   if (part) {
