@@ -18,23 +18,27 @@ const KEYS = {
 // --- Helper Functions ---
 async function fetchData<T>(key: string, defaultValue: T): Promise<T> {
   try {
-    const blob = await head(key);
-    const response = await fetch(blob.url);
-     if (!response.ok) { 
-          console.error(`Failed to fetch ${key}, status: ${response.status}`);
-          // This might happen if the blob exists but is not accessible. Return default.
-          return defaultValue;
+    const blob = await head(key).catch((error) => {
+      if (error.status === 404) {
+        return null;
       }
+      throw error;
+    });
+
+    if (!blob) {
+        console.log(`Blob ${key} not found. Seeding with initial data.`);
+        await saveData(key, defaultValue);
+        return defaultValue;
+    }
+
+    const response = await fetch(blob.url);
+    if (!response.ok) { 
+        console.error(`Failed to fetch ${key}, status: ${response.status}`);
+        return defaultValue;
+    }
     return await response.json();
   } catch (error: any) {
-    // If the blob does not exist (404), create it with default data.
-    if (error?.status === 404) {
-      console.log(`Blob ${key} not found. Seeding with initial data.`);
-      await saveData(key, defaultValue);
-      return defaultValue;
-    }
-    // For any other error, log it and return the default value.
-    console.error(`Failed to fetch ${key}:`, error);
+    console.error(`Failed to fetch or seed ${key}:`, error);
     return defaultValue;
   }
 }
