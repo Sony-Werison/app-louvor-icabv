@@ -65,21 +65,31 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
     const parts = line.split(chordRegex).filter(Boolean);
 
     return (
-        <div key={lineIndex} className="pt-4 mb-4">
+        <div key={lineIndex} className="mb-2 leading-8">
             {parts.map((part, partIndex) => {
                 if (part.match(chordRegex)) {
                     const chord = part.substring(1, part.length - 1);
                     const transposed = transposeChord(chord, transposeBy);
-                    // This is a chord
-                    return (
-                        <div key={partIndex} className="relative inline-block h-0">
-                            <b className="absolute bottom-5 left-0 text-primary font-bold whitespace-nowrap">
-                                {transposed}
-                            </b>
-                        </div>
-                    );
+                    // This is a chord - it's paired with the next text part
+                    // so we render it with the text part. Here we return null.
+                    return null;
                 }
+                
                 // This is a lyric part
+                const previousPart = partIndex > 0 ? parts[partIndex - 1] : '';
+                const hasPairedChord = previousPart.match(chordRegex);
+
+                if (hasPairedChord) {
+                  const chord = previousPart.substring(1, previousPart.length - 1);
+                  const transposed = transposeChord(chord, transposeBy);
+                  return (
+                    <div key={partIndex} className="inline-flex flex-col-reverse align-bottom">
+                      <span className="leading-tight">{part}</span>
+                      <b className="text-primary font-bold leading-none">{transposed}</b>
+                    </div>
+                  );
+                }
+                
                 return <span key={partIndex}>{part}</span>;
             })}
         </div>
