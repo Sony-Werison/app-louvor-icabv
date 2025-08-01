@@ -128,21 +128,23 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
         </Tabs>
       </div>
 
-       {selectedSongs.length > 0 && !isReadOnly && (
-        <div className="flex justify-between items-center bg-muted/50 p-2 rounded-lg">
-          <span className="text-sm font-medium">{selectedSongs.length} música(s) selecionada(s)</span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={onBulkEdit}>
-                <Edit className="mr-2 h-4 w-4"/>
-                Editar
-            </Button>
-            <Button variant="destructive" size="sm" onClick={() => setIsAlertOpen(true)}>
-                <Trash2 className="mr-2 h-4 w-4"/>
-                Excluir
-            </Button>
+      <div className="h-10">
+        {selectedSongs.length > 0 && !isReadOnly && (
+          <div className="flex justify-between items-center bg-muted/50 p-2 rounded-lg">
+            <span className="text-sm font-medium">{selectedSongs.length} música(s) selecionada(s)</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={onBulkEdit}>
+                  <Edit className="mr-2 h-4 w-4"/>
+                  Editar
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setIsAlertOpen(true)}>
+                  <Trash2 className="mr-2 h-4 w-4"/>
+                  Excluir
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="rounded-lg border">
         <Table>
