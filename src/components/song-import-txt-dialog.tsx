@@ -80,10 +80,10 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
                 const songData: ParsedTxtSong = {
                     title,
                     artist,
-                    key: 'N/A',
-                    category: category,
-                    chords: body,
-                    lyrics: body.replace(/\[[^\]]+\]/g, ''),
+                    key: 'N/A', // O Tom pode ser editado depois
+                    category: category, // Usa a categoria selecionada no diálogo
+                    chords: body, // Salva o corpo completo com cifras
+                    lyrics: body.replace(/\[[^\]]+\]/g, ''), // Salva uma versão sem cifras para a letra
                 };
 
                 const existingSong = existingSongs.find(

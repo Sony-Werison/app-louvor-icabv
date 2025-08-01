@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Trash2, Edit } from 'lucide-react';
+import { Search, Trash2, Edit, Music } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Checkbox } from './ui/checkbox';
@@ -105,6 +105,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
   const isAnyFilteredSelected = selectedSongs.length > 0;
   const isIndeterminate = isAnyFilteredSelected && !isAllFilteredSelected;
 
+  const hasChords = (song: Song) => song.chords && song.chords.includes('[');
 
   return (
     <div className="space-y-4">
@@ -188,8 +189,11 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                     </TableCell>
                   )}
                   <TableCell className="font-medium">
-                    <div>{song.title}</div>
-                    <div className="text-muted-foreground text-xs sm:hidden">{song.artist}</div>
+                    <div className="flex items-center gap-2">
+                      {hasChords(song) && <Music className="h-3 w-3 text-muted-foreground" />}
+                      <span>{song.title}</span>
+                    </div>
+                    <div className="text-muted-foreground text-xs sm:hidden ml-5">{song.artist}</div>
                   </TableCell>
                   <TableCell className="text-muted-foreground hidden sm:table-cell">{song.artist}</TableCell>
                   <TableCell className="hidden md:table-cell">

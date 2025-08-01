@@ -134,6 +134,8 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     }, {} as Record<SongCategory, Song[]>),
   [availableSongs]);
   
+  const hasChords = (song: Song) => song.chords && song.chords.includes('[');
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-none w-full h-full sm:h-[90vh] p-0 gap-0 flex flex-col">
@@ -207,7 +209,10 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                                                     checked={currentPlaylist.includes(song.id)}
                                                 />
                                                 <div>
-                                                  <div className="font-medium">{song.title}</div>
+                                                  <div className="font-medium flex items-center gap-2">
+                                                    {hasChords(song) && <Music className="h-3 w-3 text-muted-foreground" />}
+                                                    <span>{song.title}</span>
+                                                  </div>
                                                   <div className="text-sm text-muted-foreground">{song.artist}</div>
                                                 </div>
                                                 <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-20", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
