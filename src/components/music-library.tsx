@@ -232,7 +232,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                  <SortableHeader sortKey="key" label="Tom" />
               </TableHead>
               <TableHead className="w-24 text-center">
-                  <div className="flex flex-col sm:flex-row items-center justify-center sm:gap-4">
+                  <div className="flex flex-col items-center justify-center -my-2 sm:flex-row sm:gap-4">
                         <SortableHeader sortKey="timesPlayedQuarterly" label="Trimestre" />
                         <SortableHeader sortKey="timesPlayedTotal" label="Total" />
                   </div>
@@ -282,7 +282,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                         </div>
                       </div>
                       <div className="text-center text-muted-foreground text-xs mt-1 sm:hidden">
-                        Trimestre / Total
+                        Tri / Total
                       </div>
                   </TableCell>
                 </TableRow>
@@ -315,5 +315,6 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     </div>
   );
 }
+
 
 
