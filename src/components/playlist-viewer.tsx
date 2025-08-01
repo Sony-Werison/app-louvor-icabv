@@ -61,23 +61,6 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
     }
   }, [schedule.id, songsInPlaylist, activeSongId]);
 
-  useEffect(() => {
-    return () => {
-      stopScrolling();
-    };
-  }, []);
-  
-  useEffect(() => {
-    setTranspose(0);
-  }, [activeSongId]);
-
-  useEffect(() => {
-    if (scrollViewportRef.current) {
-      scrollViewportRef.current.scrollTop = 0;
-    }
-    stopScrolling();
-  }, [activeSongId, activeTab]);
-
   const stopScrolling = () => {
     if (scrollIntervalRef.current) {
       clearInterval(scrollIntervalRef.current);
@@ -85,6 +68,23 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
     }
     setIsScrolling(false);
   };
+
+  useEffect(() => {
+    // Stop scrolling if component unmounts
+    return () => {
+      stopScrolling();
+    };
+  }, []);
+  
+  useEffect(() => {
+    // Reset transpose and scrolling when song or tab changes
+    setTranspose(0);
+    if (scrollViewportRef.current) {
+      scrollViewportRef.current.scrollTop = 0;
+    }
+    stopScrolling();
+  }, [activeSongId, activeTab]);
+
 
   const startScrolling = () => {
     stopScrolling();
@@ -121,7 +121,8 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
     const newSpeed = Math.max(MIN_SPEED, Math.min(MAX_SPEED, scrollSpeed + delta));
     setScrollSpeed(newSpeed);
     if (isScrolling) {
-      startScrolling(); // Restart with new speed
+      // Use a timeout to restart scrolling after the state has updated
+      setTimeout(startScrolling, 0);
     }
   }
 
@@ -219,7 +220,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                   {activeSong ? (
                       <div className="p-4 sm:p-8" style={{ fontSize: `${fontSize}rem` }}>
                           {activeTab === 'lyrics' ? (
-                              <pre className="whitespace-pre-wrap font-body leading-relaxed" style={{lineHeight: '1.75', whiteSpace: 'pre-wrap'}}>
+                              <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75', whiteSpace: 'pre-wrap'}}>
                                   {activeSong.lyrics || 'Nenhuma letra disponível.'}
                               </pre>
                           ) : (
@@ -243,20 +244,21 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                         </Button>
                       </div>
 
-                    {activeSong && (
-                      <div className="flex items-center justify-center gap-2 rounded-lg border bg-background/80 p-2 shadow-lg backdrop-blur-sm">
-                        <Button variant="ghost" size="icon" onClick={handleToggleScrolling}>
-                            {isScrolling ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                    {activeSong && activeTab === 'chords' && (
+                      <div className="flex flex-col items-center justify-center gap-1 rounded-lg border bg-background/80 p-2 shadow-lg backdrop-blur-sm">
+                        <Button variant="ghost" size="icon" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
+                           <Rabbit className="h-5 w-5" />
                         </Button>
-                        <div className="flex items-center gap-2">
-                           <Button variant="ghost" size="icon" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
-                               <Turtle className="h-5 w-5" />
-                           </Button>
-                           <div className="w-10 text-center font-bold text-sm">{scrollSpeed}</div>
-                           <Button variant="ghost" size="icon" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
-                               <Rabbit className="h-5 w-5" />
-                           </Button>
-                        </div>
+                        <Button
+                          variant={isScrolling ? "destructive" : "ghost"}
+                          className="w-10 h-10 rounded-full text-base font-bold"
+                          onClick={handleToggleScrolling}
+                        >
+                            {scrollSpeed}
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
+                           <Turtle className="h-5 w-5" />
+                        </Button>
                       </div>
                      )}
                   </div>

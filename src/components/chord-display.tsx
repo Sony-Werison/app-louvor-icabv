@@ -70,24 +70,24 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
           if (part.match(chordRegex)) {
             const chord = part.substring(1, part.length - 1);
             if (chord === '') {
-              // This is a space chord like `[]` over a space in lyrics.
-              // We'll let the lyric part handle the space.
               return null;
             }
             const transposed = transposeChord(chord, transposeBy);
             return (
-               // This is a chord associated with the *next* part of the lyrics
-               // We render it now, but it will be visually placed above the upcoming text.
-              <b key={partIndex} className="flex flex-col items-center self-end h-full">
-                <span className="text-primary font-bold whitespace-nowrap">
+              <div key={partIndex} className="flex flex-col-reverse">
+                <div className="opacity-0 select-none">-</div>
+                <b className="text-primary font-bold whitespace-nowrap self-end leading-none">
                   {transposed}
-                </span>
-                <span className="opacity-0 select-none">-</span>
-              </b>
+                </b>
+              </div>
             );
           }
-          // This is a piece of lyric
-          return <span key={partIndex} className="leading-tight">{part}</span>;
+          return (
+            <div key={partIndex} className="flex flex-col-reverse">
+                <span>{part}</span>
+                <div className="opacity-0 select-none">-</div>
+            </div>
+          );
         })}
       </div>
     );
