@@ -26,9 +26,10 @@ const MemberSelector: React.FC<{
     filteredMembers: Member[];
     onValueChange: (memberId: string) => void;
     onClear: () => void;
-}> = ({ assignedMemberId, filteredMembers, onValueChange, onClear }) => (
+    isReadOnly?: boolean;
+}> = ({ assignedMemberId, filteredMembers, onValueChange, onClear, isReadOnly }) => (
     <div className="flex items-center gap-1">
-        <Select value={assignedMemberId || ''} onValueChange={onValueChange}>
+        <Select value={assignedMemberId || ''} onValueChange={onValueChange} disabled={isReadOnly}>
             <SelectTrigger className={cn("h-9 text-xs sm:text-sm", !assignedMemberId && "text-muted-foreground/60")}>
                 <SelectValue placeholder="Selecione..." />
             </SelectTrigger>
@@ -40,7 +41,7 @@ const MemberSelector: React.FC<{
                 ))}
             </SelectContent>
         </Select>
-        {assignedMemberId && (
+        {assignedMemberId && !isReadOnly && (
             <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onClear}>
                 <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
             </Button>
@@ -60,6 +61,7 @@ export function ScheduleListItem({
   handleDateChange,
   handleRemoveDate,
   isDesktop = false,
+  isReadOnly = false,
 }: {
     schedule: MonthlySchedule;
     members: Member[];
@@ -71,6 +73,7 @@ export function ScheduleListItem({
     handleDateChange: (oldDate: Date, newDate: Date | undefined) => void;
     handleRemoveDate: (date: Date) => void;
     isDesktop?: boolean;
+    isReadOnly?: boolean;
 }) {
 
   const renderDesktopAssignment = (col: ScheduleColumn) => {
@@ -87,6 +90,7 @@ export function ScheduleListItem({
                     filteredMembers={filteredMembersForColumn}
                     onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
                     onClear={() => handleClearAssignment(schedule.date, col.id, index)}
+                    isReadOnly={isReadOnly}
                 />
             ))}
         </div>
@@ -98,7 +102,7 @@ export function ScheduleListItem({
         <TableRow key={schedule.date.toISOString()}>
             <TableCell className="font-medium p-2 sticky left-0 z-10 bg-background group-hover:bg-muted/50">
             <Popover>
-                <PopoverTrigger asChild>
+                <PopoverTrigger asChild disabled={isReadOnly}>
                     <Button variant="outline" size="sm" className="w-full justify-start font-normal capitalize h-9 text-xs sm:text-sm">
                         {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
                     </Button>
@@ -119,11 +123,13 @@ export function ScheduleListItem({
                     {renderDesktopAssignment(col)}
                 </TableCell>
             ))}
-            <TableCell className="p-2 sticky right-0 z-10 bg-background group-hover:bg-muted/50">
-                <Button variant="ghost" size="icon" onClick={() => handleRemoveDate(schedule.date)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-            </TableCell>
+            {!isReadOnly && (
+                <TableCell className="p-2 sticky right-0 z-10 bg-background group-hover:bg-muted/50">
+                    <Button variant="ghost" size="icon" onClick={() => handleRemoveDate(schedule.date)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                </TableCell>
+            )}
         </TableRow>
     )
   }
@@ -133,7 +139,7 @@ export function ScheduleListItem({
     <Card>
         <CardHeader className="flex flex-row items-center justify-between p-3 border-b">
              <Popover>
-                <PopoverTrigger asChild>
+                <PopoverTrigger asChild disabled={isReadOnly}>
                     <Button variant="outline" className="font-semibold capitalize text-base flex-grow justify-start">
                        {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
                     </Button>
@@ -148,9 +154,11 @@ export function ScheduleListItem({
                     />
                 </PopoverContent>
             </Popover>
-            <Button variant="ghost" size="icon" onClick={() => handleRemoveDate(schedule.date)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
+            {!isReadOnly && (
+                <Button variant="ghost" size="icon" onClick={() => handleRemoveDate(schedule.date)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+            )}
         </CardHeader>
         <CardContent className="p-0">
             <Accordion type="single" collapsible className="w-full">
@@ -178,6 +186,7 @@ export function ScheduleListItem({
                                                 filteredMembers={filteredMembersForColumn}
                                                 onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
                                                 onClear={() => handleClearAssignment(schedule.date, col.id, index)}
+                                                isReadOnly={isReadOnly}
                                             />
                                         ))}
                                     </div>

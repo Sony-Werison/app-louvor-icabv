@@ -11,12 +11,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { ptBR } from 'date-fns/locale';
 import { addMonths, format, startOfDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
 
 export default function MonthlySchedulePage() {
     const { monthlySchedules, addSchedule, members, scheduleColumns } = useSchedule();
     const [currentMonth, setCurrentMonth] = useState<Date | null>(null);
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const { toast } = useToast();
+    const { can } = useAuth();
 
     useEffect(() => {
         setCurrentMonth(new Date());
@@ -70,22 +72,24 @@ export default function MonthlySchedulePage() {
                         <ChevronRight className="h-4 w-4" />
                     </Button>
                 </div>
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                    <PopoverTrigger asChild>
-                        <Button size="sm" className="sm:size-auto w-full sm:w-auto">
-                            <Plus className="mr-2" />
-                            Adicionar Data
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            onSelect={handleAddDate}
-                            locale={ptBR}
-                            initialFocus
-                        />
-                    </PopoverContent>
-                </Popover>
+                {can('edit:schedule') && (
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                        <PopoverTrigger asChild>
+                            <Button size="sm" className="sm:size-auto w-full sm:w-auto">
+                                <Plus className="mr-2" />
+                                Adicionar Data
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                onSelect={handleAddDate}
+                                locale={ptBR}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                )}
             </div>
             <MonthlyScheduleView 
                 schedules={filteredSchedules}

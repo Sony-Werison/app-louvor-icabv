@@ -30,8 +30,10 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/context/auth-context';
 
 export default function MembersPage() {
+  const { can } = useAuth();
   const [members, setMembers] = useState<Member[]>(initialMembers);
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -141,10 +143,12 @@ export default function MembersPage() {
     <div className="p-4 md:p-6">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8 gap-4">
         <h1 className="text-3xl sm:text-4xl font-headline font-bold">Membros</h1>
-        <Button onClick={handleAddNew} size="sm" className="sm:size-auto">
-          <Plus className="mr-2" />
-          Novo Membro
-        </Button>
+        {can('edit:members') && (
+            <Button onClick={handleAddNew} size="sm" className="sm:size-auto">
+            <Plus className="mr-2" />
+            Novo Membro
+            </Button>
+        )}
       </div>
 
       <div className="space-y-8">
@@ -161,25 +165,27 @@ export default function MembersPage() {
                     </Avatar>
                     <p className="font-medium text-xs sm:text-sm w-full break-words">{member.name}</p>
                   </div>
-                   <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleEdit(member)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          <span>Editar</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteClick(member)} className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          <span>Excluir</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                  {can('edit:members') && (
+                    <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <MoreVertical className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleEdit(member)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Editar</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteClick(member)} className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Excluir</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

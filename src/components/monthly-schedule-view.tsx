@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { useSchedule } from '@/context/schedule-context';
 import { ScheduleListItem } from './schedule-list-item';
+import { useAuth } from '@/context/auth-context';
 
 interface MonthlyScheduleViewProps {
   schedules: MonthlySchedule[];
@@ -25,8 +26,11 @@ export function MonthlyScheduleView({
   columns,
 }: MonthlyScheduleViewProps) {
   const { updateSchedule, removeSchedule } = useSchedule();
+  const { can } = useAuth();
+  const isReadOnly = !can('edit:schedule');
 
   const handleMemberChange = (date: Date, columnId: string, memberId: string, index: number) => {
+    if (isReadOnly) return;
     const schedule = schedules.find((s) => s.date.getTime() === date.getTime());
     if (!schedule) return;
 
@@ -39,6 +43,7 @@ export function MonthlyScheduleView({
   };
 
   const handleClearAssignment = (date: Date, columnId: string, index: number) => {
+    if (isReadOnly) return;
     const schedule = schedules.find((s) => s.date.getTime() === date.getTime());
     if (!schedule) return;
     
@@ -50,10 +55,12 @@ export function MonthlyScheduleView({
   };
 
   const handleRemoveDate = (date: Date) => {
+    if (isReadOnly) return;
     removeSchedule(date);
   };
 
   const handleDateChange = (oldDate: Date, newDate: Date | undefined) => {
+    if (isReadOnly) return;
      if (newDate) {
         updateSchedule(oldDate, { date: newDate });
      }
@@ -89,6 +96,7 @@ export function MonthlyScheduleView({
             getAssignedMemberIds={getAssignedMemberIds}
             handleDateChange={handleDateChange}
             handleRemoveDate={handleRemoveDate}
+            isReadOnly={isReadOnly}
           />
         ))}
       </div>
@@ -107,7 +115,9 @@ export function MonthlyScheduleView({
                   </div>
                 </TableHead>
               ))}
-              <TableHead className="w-[50px] sticky right-0 z-20 bg-background">Ações</TableHead>
+              { !isReadOnly && (
+                <TableHead className="w-[50px] sticky right-0 z-20 bg-background">Ações</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -124,6 +134,7 @@ export function MonthlyScheduleView({
                  getAssignedMemberIds={getAssignedMemberIds}
                  handleDateChange={handleDateChange}
                  handleRemoveDate={handleRemoveDate}
+                 isReadOnly={isReadOnly}
                />
             ))}
           </TableBody>

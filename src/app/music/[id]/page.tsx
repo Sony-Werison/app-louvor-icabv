@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,12 +11,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SongEditForm } from '@/components/song-edit-form';
 import { ChordDisplay } from '@/components/chord-display';
+import { useAuth } from '@/context/auth-context';
 
 export default function SongDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { songs, updateSong } = useSchedule();
   const [isEditing, setIsEditing] = useState(false);
+  const { can } = useAuth();
 
   const songId = params.id as string;
   const song = songs.find((s) => s.id === songId);
@@ -44,13 +47,15 @@ export default function SongDetailPage() {
           <ArrowLeft className="mr-2" />
           Voltar
         </Button>
-        <Button size="sm" onClick={() => setIsEditing(!isEditing)}>
-          <Edit className="mr-2" />
-          {isEditing ? 'Cancelar' : 'Editar'}
-        </Button>
+        {can('edit:songs') && (
+            <Button size="sm" onClick={() => setIsEditing(!isEditing)}>
+            <Edit className="mr-2" />
+            {isEditing ? 'Cancelar' : 'Editar'}
+            </Button>
+        )}
       </div>
 
-      {isEditing ? (
+      {isEditing && can('edit:songs') ? (
         <SongEditForm song={song} onSave={handleSave} onCancel={() => setIsEditing(false)} />
       ) : (
         <Card>

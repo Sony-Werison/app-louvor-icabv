@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Schedule, Member, Song } from '@/types';
@@ -13,6 +14,7 @@ import { useSchedule } from '@/context/schedule-context';
 import { Separator } from './ui/separator';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAuth } from '@/context/auth-context';
 
 interface ScheduleViewProps {
   initialSchedules: Schedule[];
@@ -26,6 +28,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
   const { updateSchedulePlaylist } = useSchedule();
+  const { can } = useAuth();
   
   useEffect(() => {
     setSchedules(initialSchedules);
@@ -155,10 +158,12 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                     <Eye className="mr-2 h-3 w-3" />
                     Visualizar
                   </Button>
-                  <Button onClick={() => handleOpenPlaylist(schedule)} className="w-full h-8 text-xs">
-                    <ListMusic className="mr-2 h-3 w-3" />
-                    Gerenciar
-                  </Button>
+                  {can('manage:playlists') && (
+                    <Button onClick={() => handleOpenPlaylist(schedule)} className="w-full h-8 text-xs">
+                        <ListMusic className="mr-2 h-3 w-3" />
+                        Gerenciar
+                    </Button>
+                  )}
                 </CardFooter>
               </Card>
             );
