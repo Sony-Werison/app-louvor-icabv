@@ -40,6 +40,14 @@ const categoryLabels: Record<SongCategory | 'all', string> = {
   Infantil: 'Infantis'
 }
 
+type ChordFilter = 'all' | 'with' | 'without';
+const chordFilters: ChordFilter[] = ['all', 'with', 'without'];
+const chordFilterLabels: Record<ChordFilter, string> = {
+  all: 'Todas',
+  with: 'Com Cifras',
+  without: 'Sem Cifras'
+}
+
 type SortKey = 'title' | 'artist' | 'category' | 'key' | 'timesPlayedQuarterly' | 'timesPlayedTotal';
 type SortDirection = 'asc' | 'desc';
 
@@ -60,6 +68,7 @@ const getTotalColorClass = (count: number = 0) => {
 export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEdit, isReadOnly = false }: MusicLibraryProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<SongCategory | 'all'>('all');
+  const [chordFilter, setChordFilter] = useState<ChordFilter>('all');
   const [selectedSongs, setSelectedSongs] = useState<string[]>([]);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'title', direction: 'asc' });
@@ -73,12 +82,18 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     setSortConfig({ key, direction });
   };
 
+  const hasChords = (song: Song) => song.chords && song.chords.includes('[');
+
   const filteredSongs = useMemo(() => {
     const filtered = songs.filter(
         (song) =>
         (activeCategory === 'all' || song.category === activeCategory) &&
         (song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        song.artist.toLowerCase().includes(searchTerm.toLowerCase()))
+        song.artist.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (chordFilter === 'all' ||
+         (chordFilter === 'with' && hasChords(song)) ||
+         (chordFilter === 'without' && !hasChords(song))
+        )
     );
 
     return [...filtered].sort((a, b) => {
@@ -95,7 +110,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
         return (aVal as string).localeCompare(bVal as string) * dir;
     });
 
-  }, [songs, activeCategory, searchTerm, sortConfig]);
+  }, [songs, activeCategory, searchTerm, sortConfig, chordFilter]);
 
   useEffect(() => {
     onSelectionChange(selectedSongs);
@@ -143,8 +158,6 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
   const isAnyFilteredSelected = selectedSongs.length > 0;
   const isIndeterminate = isAnyFilteredSelected && !isAllFilteredSelected;
 
-  const hasChords = (song: Song) => song.chords && song.chords.includes('[');
-
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4">
@@ -158,13 +171,22 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as any)}>
-            <TabsList className="grid w-full grid-cols-4 sm:w-auto sm:grid-cols-4">
-                {categories.map(cat => (
-                   <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{categoryLabels[cat]}</TabsTrigger>
-                ))}
-            </TabsList>
-        </Tabs>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as any)}>
+              <TabsList className="grid w-full grid-cols-4 sm:w-auto sm:grid-cols-4">
+                  {categories.map(cat => (
+                     <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{categoryLabels[cat]}</TabsTrigger>
+                  ))}
+              </TabsList>
+          </Tabs>
+           <Tabs value={chordFilter} onValueChange={(value) => setChordFilter(value as any)}>
+              <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:grid-cols-3">
+                  {chordFilters.map(cat => (
+                     <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{chordFilterLabels[cat]}</TabsTrigger>
+                  ))}
+              </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       <div className="h-10">
