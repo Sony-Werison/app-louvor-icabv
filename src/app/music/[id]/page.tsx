@@ -186,44 +186,47 @@ export default function SongDetailPage() {
                     </div>
                 ) : <div className="w-10 sm:w-24"/>}
              </div>
-             <div className="h-14 flex items-center justify-center px-2 sm:px-4 gap-2 py-2 border-t">
-                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
-                    <TabsList>
-                        <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>
-                        <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
-                    </TabsList>
-                </Tabs>
-                
-                {activeTab === 'chords' && (
+             <div className="h-14 flex items-center justify-between px-2 sm:px-4 gap-2 py-2 border-t">
+                <div className="flex items-center gap-2">
+                    <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
+                        <TabsList>
+                            <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>
+                            <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                    
+                    {activeTab === 'chords' && (
+                        <>
+                            <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose - 1)}>
+                                    <Minus className="h-4 w-4"/>
+                                </Button>
+                                <div className="flex flex-col items-center w-8">
+                                    <span className="text-[10px] text-muted-foreground -mb-1">Tom</span>
+                                    <span className="font-bold text-center text-sm">{transpose > 0 ? `+${transpose}` : transpose}</span>
+                                </div>
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose + 1)}>
+                                    <Plus className="h-4 w-4"/>
+                                </Button>
+                            </div>
+                            {song.key && <Badge variant="secondary" className="text-sm sm:text-base">{song.key}</Badge>}
+                            {transpose !== 0 && <Badge className="text-sm sm:text-base">{transposedKey}</Badge>}
+                        </>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose - 1)}>
-                            <Minus className="h-4 w-4"/>
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
+                            <ZoomOut className="h-4 w-4" />
                         </Button>
-                        <div className="flex flex-col items-center w-8">
-                            <span className="text-[10px] text-muted-foreground -mb-1">Tom</span>
-                            <span className="font-bold text-center text-sm">{transpose > 0 ? `+${transpose}` : transpose}</span>
-                        </div>
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose + 1)}>
-                            <Plus className="h-4 w-4"/>
+                        <Button variant="ghost" onClick={resetFontSize} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">
+                            {zoomPercentage}%
+                        </Button>
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
+                            <ZoomIn className="h-4 w-4" />
                         </Button>
                     </div>
-                )}
-
-                <div className="flex items-center gap-1">
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
-                        <ZoomOut className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" onClick={resetFontSize} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">
-                        {zoomPercentage}%
-                    </Button>
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
-                        <ZoomIn className="h-4 w-4" />
-                    </Button>
-                </div>
-                
-                 <div className="flex items-center gap-2">
-                    {song.key && <Badge variant="secondary" className="text-sm sm:text-base">{song.key}</Badge>}
-                    {transpose !== 0 && activeTab === 'chords' && <Badge className="text-sm sm:text-base">{transposedKey}</Badge>}
                 </div>
              </div>
         </header>
@@ -290,5 +293,3 @@ export default function SongDetailPage() {
     </div>
   );
 }
-
-    
