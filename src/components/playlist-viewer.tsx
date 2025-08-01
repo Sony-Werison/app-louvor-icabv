@@ -111,8 +111,8 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                   <div className="h-16 flex items-center justify-between px-2 sm:px-4 gap-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                           <SheetTrigger asChild>
-                              <Button variant="ghost" size="icon" className="shrink-0">
-                                  <ListMusic />
+                              <Button variant="destructive" size="sm">
+                                  Ver Todas
                               </Button>
                           </SheetTrigger>
                           <div className="flex flex-col flex-1 min-w-0">
