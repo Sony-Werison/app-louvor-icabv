@@ -217,7 +217,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
               <main className="flex-grow min-h-0 relative group/main">
                   <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
                   {activeSong ? (
-                      <div className="p-4 sm:p-8 pb-24" style={{ fontSize: `${fontSize}rem` }}>
+                      <div className="p-4 sm:p-8 pb-28" style={{ fontSize: `${fontSize}rem` }}>
                           {activeTab === 'lyrics' ? (
                               <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75', whiteSpace: 'pre-wrap'}}>
                                   {activeSong.lyrics || 'Nenhuma letra disponível.'}
@@ -233,38 +233,49 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                       </div>
                   )}
                   </ScrollArea>
-                  {activeSong && activeTab === 'chords' && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center gap-4 rounded-full border bg-background/80 px-3 py-1 shadow-lg backdrop-blur-sm">
-                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
-                        <Turtle className="h-6 w-6" />
-                    </Button>
-                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigateSong('prev')} disabled={activeSongIndex === 0}>
-                        <SkipBack className="h-6 w-6 fill-current"/>
-                    </Button>
-                    <div className="flex flex-col items-center">
-                      <button
-                        onClick={handleToggleScrolling}
-                        className={cn("relative flex items-center justify-center w-10 h-10 text-foreground rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors",
-                          isScrolling && "bg-primary text-primary-foreground"
+                  
+                  {activeSong && (
+                    <>
+                        <div className="absolute bottom-4 left-4 z-10">
+                             <Button variant="ghost" size="icon" className="h-12 w-12 bg-background/60 backdrop-blur-sm rounded-full" onClick={() => navigateSong('prev')} disabled={activeSongIndex === 0}>
+                                <SkipBack className="h-7 w-7 fill-current"/>
+                            </Button>
+                        </div>
+
+                        {activeTab === 'chords' && (
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center gap-4 rounded-full border bg-background/80 px-3 py-1 shadow-lg backdrop-blur-sm">
+                                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
+                                    <Turtle className="h-6 w-6" />
+                                </Button>
+                                <div className="flex flex-col items-center">
+                                <button
+                                    onClick={handleToggleScrolling}
+                                    className={cn("relative flex items-center justify-center w-10 h-10 text-foreground rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors",
+                                    isScrolling && "bg-primary text-primary-foreground"
+                                    )}
+                                    aria-label={isScrolling ? "Pausar rolagem" : "Iniciar rolagem"}
+                                >
+                                    {isScrolling ? 
+                                    <Pause className="w-6 h-6 fill-current"/> :
+                                    <Play className="w-6 h-6 fill-current" />
+                                    }
+                                </button>
+                                <span className="text-xs font-bold w-6 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50">
+                                    {scrollSpeed}
+                                </span>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
+                                    <Rabbit className="h-6 w-6" />
+                                </Button>
+                            </div>
                         )}
-                        aria-label={isScrolling ? "Pausar rolagem" : "Iniciar rolagem"}
-                      >
-                        {isScrolling ? 
-                          <Pause className="w-6 h-6 fill-current"/> :
-                          <Play className="w-6 h-6 fill-current" />
-                        }
-                      </button>
-                      <span className="text-xs font-bold w-6 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50">
-                        {scrollSpeed}
-                      </span>
-                    </div>
-                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigateSong('next')} disabled={activeSongIndex === songsInPlaylist.length - 1}>
-                        <SkipForward className="h-6 w-6 fill-current"/>
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
-                        <Rabbit className="h-6 w-6" />
-                    </Button>
-                  </div>
+
+                        <div className="absolute bottom-4 right-4 z-10">
+                            <Button variant="ghost" size="icon" className="h-12 w-12 bg-background/60 backdrop-blur-sm rounded-full" onClick={() => navigateSong('next')} disabled={activeSongIndex === songsInPlaylist.length - 1}>
+                                <SkipForward className="h-7 w-7 fill-current"/>
+                            </Button>
+                        </div>
+                    </>
                   )}
               </main>
 
