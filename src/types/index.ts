@@ -1,5 +1,6 @@
 
 
+
 export type MemberRole = 'Dirigente' | 'Pregador' | 'Multimídia';
 export type SongCategory = 'Hino' | 'Louvor' | 'Infantil';
 
@@ -7,9 +8,8 @@ export type Member = {
   id: string;
   name: string;
   avatar: string;
-  role: MemberRole;
+  roles: MemberRole[];
   email: string;
-  phone: string;
 };
 
 export type Song = {

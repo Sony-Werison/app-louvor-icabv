@@ -1,29 +1,30 @@
 
+
 import type { Member, Song, MonthlySchedule, ScheduleColumn, SongCategory } from '@/types';
 import { Tv, Sun, Moon, BookUser } from 'lucide-react';
 import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths } from 'date-fns';
 
 export const members: Member[] = [
-  { id: '1', name: 'João Silva', avatar: 'https://i.pravatar.cc/150?u=joao', role: 'Dirigente', email: 'joao.silva@example.com', phone: '(11) 98765-4321' },
-  { id: '2', name: 'Maria Oliveira', avatar: 'https://i.pravatar.cc/150?u=maria', role: 'Dirigente', email: 'maria.oliveira@example.com', phone: '(11) 91234-5678' },
-  { id: '3', name: 'Pedro Santos', avatar: 'https://i.pravatar.cc/150?u=pedro', role: 'Multimídia', email: 'pedro.santos@example.com', phone: '(11) 95555-1234' },
-  { id: '4', name: 'Ana Costa', avatar: 'https://i.pravatar.cc/150?u=ana', role: 'Multimídia', email: 'ana.costa@example.com', phone: '(11) 94444-5678' },
-  { id: '5', name: 'Lucas Souza', avatar: 'https://i.pravatar.cc/150?u=lucas', role: 'Multimídia', email: 'lucas.souza@example.com', phone: '(11) 93333-8765' },
-  { id: '6', name: 'Carla Pereira', avatar: 'https://i.pravatar.cc/150?u=carla', role: 'Multimídia', email: 'carla.pereira@example.com', phone: '(11) 92222-4321' },
-  { id: '7', name: 'Marcella', avatar: 'https://i.pravatar.cc/150?u=marcella', role: 'Dirigente', email: 'marcella@example.com', phone: '(11) 98888-1111' },
-  { id: '8', name: 'Arthur', avatar: 'https://i.pravatar.cc/150?u=arthur', role: 'Multimídia', email: 'arthur@example.com', phone: '(11) 98888-2222' },
-  { id: '9', name: 'Júlio', avatar: 'https://i.pravatar.cc/150?u=julio', role: 'Multimídia', email: 'julio@example.com', phone: '(11) 98888-3333' },
-  { id: '10', name: 'Breno', avatar: 'https://i.pravatar.cc/150?u=breno', role: 'Multimídia', email: 'breno@example.com', phone: '(11) 98888-4444' },
-  { id: '11', name: 'Bruno', avatar: 'https://i.pravatar.cc/150?u=bruno', role: 'Multimídia', email: 'bruno@example.com', phone: '(11) 98888-5555' },
-  { id: '12', name: 'Werison', avatar: 'https://i.pravatar.cc/150?u=werison', role: 'Dirigente', email: 'werison@example.com', phone: '(11) 98888-6666' },
-  { id: '13', name: 'Marcos Diogo', avatar: 'https://i.pravatar.cc/150?u=marcos-diogo', role: 'Multimídia', email: 'marcos.diogo@example.com', phone: '(11) 98888-7777' },
-  { id: '14', name: 'Welton', avatar: 'https://i.pravatar.cc/150?u=welton', role: 'Dirigente', email: 'welton@example.com', phone: '(11) 98888-8888' },
-  { id: '15', name: 'Rudinei', avatar: 'https://i.pravatar.cc/150?u=rudinei', role: 'Dirigente', email: 'rudinei@example.com', phone: '(11) 98888-9999' },
-  { id: '16', name: 'Marcos Morazotti', avatar: 'https://i.pravatar.cc/150?u=marcos-morazotti', role: 'Dirigente', email: 'marcos.morazotti@example.com', phone: '(11) 97777-1111' },
-  { id: '17', name: 'Ricardo', avatar: 'https://i.pravatar.cc/150?u=ricardo', role: 'Dirigente', email: 'ricardo@example.com', phone: '(11) 97777-2222' },
-  { id: '18', name: 'Jônatas', avatar: 'https://i.pravatar.cc/150?u=jonatas', role: 'Pregador', email: 'jonatas@example.com', phone: '(11) 97777-3333' },
-  { id: '19', name: 'Davi', avatar: 'https://i.pravatar.cc/150?u=davi', role: 'Pregador', email: 'davi@example.com', phone: '(11) 97777-4444' },
-  { id: '20', name: 'Rafael', avatar: 'https://i.pravatar.cc/150?u=rafael', role: 'Pregador', email: 'rafael@example.com', phone: '(11) 97777-5555' },
+  { id: '1', name: 'João Silva', avatar: 'https://i.pravatar.cc/150?u=joao', roles: ['Dirigente'], email: 'joao.silva@example.com' },
+  { id: '2', name: 'Maria Oliveira', avatar: 'https://i.pravatar.cc/150?u=maria', roles: ['Dirigente'], email: 'maria.oliveira@example.com' },
+  { id: '3', name: 'Pedro Santos', avatar: 'https://i.pravatar.cc/150?u=pedro', roles: ['Multimídia'], email: 'pedro.santos@example.com' },
+  { id: '4', name: 'Ana Costa', avatar: 'https://i.pravatar.cc/150?u=ana', roles: ['Multimídia'], email: 'ana.costa@example.com' },
+  { id: '5', name: 'Lucas Souza', avatar: 'https://i.pravatar.cc/150?u=lucas', roles: ['Multimídia'], email: 'lucas.souza@example.com' },
+  { id: '6', name: 'Carla Pereira', avatar: 'https://i.pravatar.cc/150?u=carla', roles: ['Multimídia'], email: 'carla.pereira@example.com' },
+  { id: '7', name: 'Marcella', avatar: 'https://i.pravatar.cc/150?u=marcella', roles: ['Dirigente'], email: 'marcella@example.com' },
+  { id: '8', name: 'Arthur', avatar: 'https://i.pravatar.cc/150?u=arthur', roles: ['Multimídia'], email: 'arthur@example.com' },
+  { id: '9', name: 'Júlio', avatar: 'https://i.pravatar.cc/150?u=julio', roles: ['Multimídia'], email: 'julio@example.com' },
+  { id: '10', name: 'Breno', avatar: 'https://i.pravatar.cc/150?u=breno', roles: ['Multimídia'], email: 'breno@example.com' },
+  { id: '11', name: 'Bruno', avatar: 'https://i.pravatar.cc/150?u=bruno', roles: ['Multimídia'], email: 'bruno@example.com' },
+  { id: '12', name: 'Werison', avatar: 'https://i.pravatar.cc/150?u=werison', roles: ['Dirigente'], email: 'werison@example.com' },
+  { id: '13', name: 'Marcos Diogo', avatar: 'https://i.pravatar.cc/150?u=marcos-diogo', roles: ['Multimídia'], email: 'marcos.diogo@example.com' },
+  { id: '14', name: 'Welton', avatar: 'https://i.pravatar.cc/150?u=welton', roles: ['Dirigente'], email: 'welton@example.com' },
+  { id: '15', name: 'Rudinei', avatar: 'https://i.pravatar.cc/150?u=rudinei', roles: ['Dirigente'], email: 'rudinei@example.com' },
+  { id: '16', name: 'Marcos Morazotti', avatar: 'https://i.pravatar.cc/150?u=marcos-morazotti', roles: ['Dirigente'], email: 'marcos.morazotti@example.com' },
+  { id: '17', name: 'Ricardo', avatar: 'https://i.pravatar.cc/150?u=ricardo', roles: ['Dirigente'], email: 'ricardo@example.com' },
+  { id: '18', name: 'Jônatas', avatar: 'https://i.pravatar.cc/150?u=jonatas', roles: ['Pregador'], email: 'jonatas@example.com' },
+  { id: '19', name: 'Davi', avatar: 'https://i.pravatar.cc/150?u=davi', roles: ['Pregador'], email: 'davi@example.com' },
+  { id: '20', name: 'Rafael', avatar: 'https://i.pravatar.cc/150?u=rafael', roles: ['Pregador'], email: 'rafael@example.com' },
 ];
 
 export const songs: Song[] = [
@@ -177,13 +178,13 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
       })
       .sort((a,b) => a.getTime() - b.getTime());
 
-    const preachers = members.filter(m => m.role === 'Pregador');
-    const leaders = members.filter(m => m.role === 'Dirigente');
-    const musicians = members.filter(m => m.role === 'Multimídia');
+    const preachers = members.filter(m => m.roles.includes('Pregador'));
+    const leaders = members.filter(m => m.roles.includes('Dirigente'));
+    const multimedia = members.filter(m => m.roles.includes('Multimídia'));
 
     if (preachers.length === 0) preachers.push(members[0]);
     if (leaders.length === 0) leaders.push(members[0]);
-    if (musicians.length < 2) musicians.push(...members.slice(0, 2));
+    if (multimedia.length < 2) multimedia.push(...members.slice(0, 2));
 
 
     return uniqueDates.map((date, index) => {
@@ -193,8 +194,8 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
         const leaderNight = leaders[(index + 1) % leaders.length];
         const preacherMorning = preachers[index % preachers.length];
         const preacherNight = preachers[(index + 1) % preachers.length];
-        const multimedia1 = musicians[index % musicians.length];
-        const multimedia2 = musicians[(index + 2) % musicians.length];
+        const multimedia1 = multimedia[index % multimedia.length];
+        const multimedia2 = multimedia[(index + 2) % multimedia.length];
         
         // Only populate assignments for Sundays
         const assignments = isSunday ? {

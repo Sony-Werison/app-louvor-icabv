@@ -70,7 +70,7 @@ export function MonthlyScheduleView({
     if (!role) {
       return members;
     }
-    return members.filter(member => member.role === role);
+    return members.filter(member => member.roles.includes(role));
   };
 
   return (

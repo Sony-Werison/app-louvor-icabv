@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { Member } from '@/types';
+import type { Member, MemberRole } from '@/types';
 import { members as initialMembers } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -115,15 +115,18 @@ export default function MembersPage() {
   }, [memberToView, monthlySchedules, scheduleColumns]);
 
   const groupedMembers = members.reduce((acc, member) => {
-    const role = member.role;
-    if (!acc[role]) {
-      acc[role] = [];
-    }
-    acc[role].push(member);
+    member.roles.forEach(role => {
+        if (!acc[role]) {
+            acc[role] = [];
+        }
+        if (!acc[role].some(m => m.id === member.id)) {
+          acc[role].push(member);
+        }
+    });
     return acc;
-  }, {} as Record<Member['role'], Member[]>);
+  }, {} as Record<MemberRole, Member[]>);
 
-  const roleOrder: Member['role'][] = ['Dirigente', 'Pregador', 'Multimídia'];
+  const roleOrder: MemberRole[] = ['Dirigente', 'Pregador', 'Multimídia'];
   const sortedRoles = Object.keys(groupedMembers).sort((a,b) => {
     const aIndex = roleOrder.indexOf(a as any);
     const bIndex = roleOrder.indexOf(b as any);
@@ -149,7 +152,7 @@ export default function MembersPage() {
           <section key={role}>
             <h2 className="text-xl sm:text-2xl font-headline font-semibold mb-4 border-b pb-2">{role}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-6">
-              {groupedMembers[role as Member['role']].map((member) => (
+              {groupedMembers[role as MemberRole].map((member) => (
                 <div key={member.id} className="relative flex flex-col items-center text-center group">
                   <div className="cursor-pointer" onClick={() => handleViewSchedule(member)}>
                     <Avatar className="w-16 h-16 sm:w-20 sm:h-20 mb-2">

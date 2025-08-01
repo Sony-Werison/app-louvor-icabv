@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { Member } from '@/types';
+import type { Member, MemberRole } from '@/types';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Checkbox } from './ui/checkbox';
 
 interface MemberFormDialogProps {
   isOpen: boolean;
@@ -32,13 +32,14 @@ interface MemberFormDialogProps {
   member: Member | null;
 }
 
-const memberRoles = ['Dirigente', 'Pregador', 'Multimídia'] as const;
+const memberRoles: MemberRole[] = ['Dirigente', 'Pregador', 'Multimídia'];
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
-  role: z.enum(memberRoles, { required_error: 'Selecione uma função.' }),
+  roles: z.array(z.string()).refine(value => value.some(item => item), {
+    message: "Você deve selecionar pelo menos uma função.",
+  }),
   email: z.string().email({ message: 'Por favor, insira um e-mail válido.' }),
-  phone: z.string().min(10, { message: 'O telefone deve ter pelo menos 10 caracteres.' }),
   avatar: z.string().url({ message: 'Por favor, insira uma URL de avatar válida.' }).optional().or(z.literal('')),
 });
 
@@ -47,9 +48,8 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: member?.name || '',
-      role: member?.role,
+      roles: member?.roles || [],
       email: member?.email || '',
-      phone: member?.phone || '',
       avatar: member?.avatar || '',
     },
   });
@@ -57,9 +57,9 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const avatar = values.avatar || `https://i.pravatar.cc/150?u=${values.email}`;
     if (member) {
-      onSave({ ...values, avatar, id: member.id });
+      onSave({ ...values, roles: values.roles as MemberRole[], avatar, id: member.id });
     } else {
-      onSave({ ...values, avatar });
+      onSave({ ...values, roles: values.roles as MemberRole[], avatar });
     }
   };
 
@@ -87,28 +87,53 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
-              name="role"
-              render={({ field }) => (
+              name="roles"
+              render={() => (
                 <FormItem>
-                  <FormLabel>Função</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a função" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {memberRoles.map(role => (
-                        <SelectItem key={role} value={role}>{role}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Funções</FormLabel>
+                  <div className="space-y-2">
+                  {memberRoles.map((role) => (
+                    <FormField
+                      key={role}
+                      control={form.control}
+                      name="roles"
+                      render={({ field }) => {
+                        return (
+                          <FormItem
+                            key={role}
+                            className="flex flex-row items-start space-x-3 space-y-0"
+                          >
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(role)}
+                                onCheckedChange={(checked) => {
+                                  return checked
+                                    ? field.onChange([...field.value, role])
+                                    : field.onChange(
+                                        field.value?.filter(
+                                          (value) => value !== role
+                                        )
+                                      )
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {role}
+                            </FormLabel>
+                          </FormItem>
+                        )
+                      }}
+                    />
+                  ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="email"
@@ -122,19 +147,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone</FormLabel>
-                  <FormControl>
-                    <Input placeholder="(99) 99999-9999" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
             <FormField
               control={form.control}
               name="avatar"
