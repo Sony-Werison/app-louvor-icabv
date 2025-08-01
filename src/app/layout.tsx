@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
-import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { AppNav } from '@/components/app-nav';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/header';
 import { ScheduleProvider } from '@/context/schedule-context';
 import { AuthProvider } from '@/context/auth-context';
 import { ProfileSwitcher } from '@/components/profile-switcher';
+import { BottomNav } from '@/components/bottom-nav';
+import { PageTitle } from '@/components/page-title';
 
 export const metadata: Metadata = {
   title: 'Louvor ICABV',
@@ -35,12 +37,13 @@ export default function RootLayout({
                 </Sidebar>
                 <SidebarInset>
                   <Header>
-                    <SidebarTrigger />
+                    <PageTitle />
                     <div className="ml-auto">
                       <ProfileSwitcher />
                     </div>
                   </Header>
-                  <main>{children}</main>
+                  <main className="pb-20 md:pb-0">{children}</main>
+                  <BottomNav />
                 </SidebarInset>
               </SidebarProvider>
             </ScheduleProvider>
