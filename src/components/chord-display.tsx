@@ -65,28 +65,27 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
     const parts = line.split(chordRegex).filter(Boolean);
 
     return (
-      <div key={lineIndex} className="relative leading-tight">
-        {parts.map((part, partIndex) => {
-          if (part.match(chordRegex)) {
-            const chord = part.substring(1, part.length - 1);
-            if (chord === '') {
-              return <span key={partIndex} className="inline-block w-1">&nbsp;</span>;
-            }
-            const transposed = transposeChord(chord, transposeBy);
-            return (
-               <div key={partIndex} className="inline-flex flex-col-reverse items-start leading-none -mb-1">
-                  <span className="opacity-0 select-none pointer-events-none">_</span>
-                  <b className="text-primary font-bold whitespace-nowrap">
-                    {transposed}
-                  </b>
-              </div>
-            );
-          }
-          return <span key={partIndex}>{part}</span>;
-        })}
-      </div>
+        <div key={lineIndex} className="pt-4 mb-4">
+            {parts.map((part, partIndex) => {
+                if (part.match(chordRegex)) {
+                    const chord = part.substring(1, part.length - 1);
+                    const transposed = transposeChord(chord, transposeBy);
+                    // This is a chord
+                    return (
+                        <div key={partIndex} className="relative inline-block h-0">
+                            <b className="absolute bottom-0 left-0 text-primary font-bold whitespace-nowrap">
+                                {transposed}
+                            </b>
+                        </div>
+                    );
+                }
+                // This is a lyric part
+                return <span key={partIndex}>{part}</span>;
+            })}
+        </div>
     );
-  };
+};
+
 
   const renderPureChordLine = (line: string, lineIndex: number) => {
       let parts: string[] = [];
@@ -98,7 +97,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
       }
       
       return (
-          <div key={`chord-line-${lineIndex}`} className="flex items-end">
+          <div key={`chord-line-${lineIndex}`} className="flex items-end mb-1">
               {parts.map((part, index) => {
                   if (part.startsWith('[') && part.endsWith(']')) {
                     const chord = part.substring(1, part.length - 1);
