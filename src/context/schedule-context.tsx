@@ -53,10 +53,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
           fetchMonthlySchedules(),
         ]);
         
-        // Corrective filter: remove any schedules that are not Saturday (6) or Sunday (0)
+        // Corrective filter: remove any schedules that are not Sunday (0)
         const correctedSchedules = loadedSchedules.filter(schedule => {
             const day = getDay(schedule.date);
-            return day === 0 || day === 6;
+            return day === 0;
         });
 
         if (correctedSchedules.length !== loadedSchedules.length) {
@@ -136,6 +136,16 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const newMembers = members.filter(m => m.id !== memberId);
     setMembers(newMembers);
     saveMembers(newMembers);
+    // Also remove member from all assignments
+    const updatedSchedules = monthlySchedules.map(schedule => {
+      const newAssignments = { ...schedule.assignments };
+      Object.keys(newAssignments).forEach(columnId => {
+        newAssignments[columnId] = newAssignments[columnId].map(id => id === memberId ? null : id);
+      });
+      return { ...schedule, assignments: newAssignments };
+    });
+    setMonthlySchedules(updatedSchedules);
+    saveMonthlySchedules(updatedSchedules);
   };
   
   const addSong = (songData: Omit<Song, 'id'>) => {
@@ -155,6 +165,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const newSongs = songs.filter(s => s.id !== songId);
     setSongs(newSongs);
     saveSongs(newSongs);
+    // Also remove song from all playlists
+    const updatedSchedules = monthlySchedules.map(schedule => ({
+      ...schedule,
+      playlist_manha: schedule.playlist_manha?.filter(id => id !== songId),
+      playlist_noite: schedule.playlist_noite?.filter(id => id !== songId),
+    }));
+    setMonthlySchedules(updatedSchedules);
+    saveMonthlySchedules(updatedSchedules);
   };
   
   const addOrUpdateSongs = (songsToAdd: Song[]) => {

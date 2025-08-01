@@ -133,27 +133,24 @@ export const scheduleColumns: ScheduleColumn[] = [
     { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true, role: 'Multimídia' },
 ];
 
-const getWeekends = (date: Date): Date[] => {
+const getSundays = (date: Date): Date[] => {
     const start = startOfMonth(date);
     const end = endOfMonth(date);
     const days = eachDayOfInterval({ start, end });
-    // Retorna todos os sábados (6) e domingos (0)
-    return days.filter(day => {
-        const dayOfWeek = getDay(day);
-        return dayOfWeek === 6 || dayOfWeek === 0;
-    });
+    // Retorna todos os domingos (0)
+    return days.filter(day => getDay(day) === 0);
 };
 
 const generateInitialSchedules = (): MonthlySchedule[] => {
     const today = new Date();
     const monthsToGenerate = [addMonths(today, -1), today, addMonths(today, 1), addMonths(today, 2)];
-    let allWeekends: Date[] = [];
+    let allSundays: Date[] = [];
   
     monthsToGenerate.forEach(month => {
-      allWeekends.push(...getWeekends(month));
+      allSundays.push(...getSundays(month));
     });
     
-    const uniqueDates = Array.from(new Set(allWeekends.map(d => d.toISOString().split('T')[0])))
+    const uniqueDates = Array.from(new Set(allSundays.map(d => d.toISOString().split('T')[0])))
       .map(dateStr => {
         const date = new Date(dateStr);
         return new Date(date.valueOf() + date.getTimezoneOffset() * 60 * 1000);
@@ -170,8 +167,7 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
 
 
     return uniqueDates.map((date, index) => {
-        const dayOfWeek = getDay(date);
-        const isWeekendService = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+        const isSunday = getDay(date) === 0;
 
         const leaderMorning = leaders[index % leaders.length];
         const leaderNight = leaders[(index + 1) % leaders.length];
@@ -180,7 +176,7 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
         const multimedia1 = multimedia[index % multimedia.length];
         const multimedia2 = multimedia[(index + 2) % multimedia.length];
         
-        const assignments = (isWeekendService && members.length > 0) ? {
+        const assignments = (isSunday && members.length > 0) ? {
                 'dirigente_manha': [leaderMorning.id],
                 'pregacao_manha': [preacherMorning.id],
                 'dirigente_noite': [leaderNight.id],
