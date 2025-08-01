@@ -30,6 +30,7 @@ import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/auth-context';
+import { convertGoogleDriveUrl } from '@/lib/utils';
 
 export default function MembersPage() {
   const { can } = useAuth();
@@ -156,7 +157,7 @@ export default function MembersPage() {
                 <div key={member.id} className="relative flex flex-col items-center text-center group">
                   <div className="cursor-pointer" onClick={() => handleViewSchedule(member)}>
                     <Avatar className="w-16 h-16 sm:w-20 sm:h-20 mb-2">
-                      <AvatarImage src={member.avatar} alt={member.name} data-ai-hint="person portrait" />
+                      <AvatarImage src={convertGoogleDriveUrl(member.avatar)} alt={member.name} data-ai-hint="person portrait" />
                       <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <p className="font-medium text-xs sm:text-sm w-full break-words">{member.name}</p>
