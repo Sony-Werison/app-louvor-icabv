@@ -19,7 +19,6 @@ import { X, Music, GripVertical, Search, ArrowDownUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator } from './ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 
@@ -30,7 +29,8 @@ interface PlaylistDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type SortOrder = 'title_asc' | 'quarterly_desc' | 'quarterly_asc' | 'total_desc' | 'total_asc';
+type SortKey = 'title' | 'quarterly' | 'total';
+type SortDirection = 'asc' | 'desc';
 
 const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
 const filterCategories: ('all' | SongCategory)[] = ['all', ...songCategories];
@@ -55,14 +55,13 @@ const getTotalColorClass = (count: number = 0) => {
     return 'bg-transparent';
 }
 
-
 export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: PlaylistDialogProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [currentPlaylist, setCurrentPlaylist] = useState<string[]>(schedule.playlist);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<'all' | SongCategory>('all');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('title_asc');
-  
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'title', direction: 'asc' });
+
   const handleSave = () => {
     onSave(schedule.id, currentPlaylist);
     setIsOpen(false);
@@ -83,6 +82,14 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
 
     setCurrentPlaylist(items);
   };
+
+  const handleSort = (key: SortKey) => {
+    let direction: SortDirection = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
   
   const songsInPlaylist = useMemo(() => 
     currentPlaylist.map(id => allSongs.find(song => song.id === id)).filter((s): s is Song => !!s),
@@ -91,18 +98,17 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
 
   const availableSongs = useMemo(() => {
     const sortedSongs = [...allSongs].sort((a, b) => {
-        switch (sortOrder) {
-            case 'quarterly_desc':
-                return (b.timesPlayedQuarterly ?? 0) - (a.timesPlayedQuarterly ?? 0);
-            case 'quarterly_asc':
-                return (a.timesPlayedQuarterly ?? 0) - (b.timesPlayedQuarterly ?? 0);
-            case 'total_desc':
-                return (b.timesPlayedTotal ?? 0) - (a.timesPlayedTotal ?? 0);
-            case 'total_asc':
-                return (a.timesPlayedTotal ?? 0) - (b.timesPlayedTotal ?? 0);
-            case 'title_asc':
+        const { key, direction } = sortConfig;
+        const dir = direction === 'asc' ? 1 : -1;
+
+        switch (key) {
+            case 'quarterly':
+                return ((a.timesPlayedQuarterly ?? 0) - (b.timesPlayedQuarterly ?? 0)) * dir;
+            case 'total':
+                return ((a.timesPlayedTotal ?? 0) - (b.timesPlayedTotal ?? 0)) * dir;
+            case 'title':
             default:
-                return a.title.localeCompare(b.title);
+                return a.title.localeCompare(b.title) * dir;
         }
     });
 
@@ -111,7 +117,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
       (activeCategory === 'all' || song.category === activeCategory) &&
       (song.title.toLowerCase().includes(searchTerm.toLowerCase()) || song.artist.toLowerCase().includes(searchTerm.toLowerCase()))
     )
-  },[allSongs, currentPlaylist, searchTerm, activeCategory, sortOrder]);
+  },[allSongs, currentPlaylist, searchTerm, activeCategory, sortConfig]);
   
   const groupedAvailableSongs = useMemo(() => 
     songCategories.reduce((acc, category) => {
@@ -126,11 +132,9 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-none w-full h-full sm:h-[90vh] p-0 gap-0 flex flex-col">
-        <DialogHeader className="p-4 border-b shrink-0 relative">
-           <div className="flex flex-col">
-              <DialogTitle className="text-lg sm:text-xl font-bold">Gerenciar Repertório</DialogTitle>
-              <p className="text-sm text-muted-foreground">{schedule.name}</p>
-           </div>
+        <DialogHeader className="p-4 pt-6 border-b shrink-0 relative text-center">
+            <DialogTitle className="text-xl font-bold">Gerenciar Repertório</DialogTitle>
+            <p className="text-sm text-muted-foreground">{schedule.name}</p>
            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0 absolute top-3 right-3">
               <X/>
            </Button>
@@ -144,12 +148,12 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                 </TabsList>
             </div>
             <TabsContent value="available" className="flex-grow flex flex-col min-h-0 mt-0">
-                <div className="px-4 py-3 border-b flex flex-col sm:flex-row gap-2 shrink-0">
+                <div className="px-4 py-3 border-b flex flex-col gap-3 shrink-0">
                     <div className="relative flex-grow">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input 
                             placeholder="Buscar por título ou artista..." 
-                            className="pl-10" 
+                            className="pl-10 h-10" 
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
@@ -161,33 +165,20 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                             ))}
                         </TabsList>
                     </Tabs>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="w-full sm:w-auto">
-                                <ArrowDownUp className="mr-2 h-4 w-4" />
-                                Ordenar
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56">
-                            <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuRadioGroup value={sortOrder} onValueChange={(v) => setSortOrder(v as SortOrder)}>
-                                <DropdownMenuRadioItem value="title_asc">Padrão (A-Z)</DropdownMenuRadioItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuRadioItem value="quarterly_desc">Mais Tocadas (Trimestre)</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="quarterly_asc">Menos Tocadas (Trimestre)</DropdownMenuRadioItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuRadioItem value="total_desc">Mais Tocadas (Total)</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="total_asc">Menos Tocadas (Total)</DropdownMenuRadioItem>
-                            </DropdownMenuRadioGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
                 </div>
-                 <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground shrink-0">
-                    <div className="w-5"></div>
-                    <div>Música</div>
-                    <div className="text-center w-16">Trimestre</div>
-                    <div className="text-center w-16">Total</div>
+                 <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground shrink-0">
+                    <button onClick={() => handleSort('title')} className="flex items-center gap-1 text-left">
+                        Música 
+                        {sortConfig.key === 'title' && <ArrowDownUp className="h-3 w-3" />}
+                    </button>
+                    <button onClick={() => handleSort('quarterly')} className="w-20 text-center flex items-center justify-center gap-1">
+                        Trimestre
+                        {sortConfig.key === 'quarterly' && <ArrowDownUp className="h-3 w-3" />}
+                    </button>
+                    <button onClick={() => handleSort('total')} className="w-20 text-center flex items-center justify-center gap-1">
+                        Total
+                        {sortConfig.key === 'total' && <ArrowDownUp className="h-3 w-3" />}
+                    </button>
                 </div>
                 <ScrollArea className="flex-grow">
                     <Accordion type="multiple" defaultValue={songCategories} className="w-full">
@@ -213,10 +204,10 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                                                   <div className="font-medium">{song.title}</div>
                                                   <div className="text-sm text-muted-foreground">{song.artist}</div>
                                                 </div>
-                                                <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-16", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
+                                                <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-20", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
                                                     {song.timesPlayedQuarterly ?? 0}
                                                 </div>
-                                                 <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-16", getTotalColorClass(song.timesPlayedTotal))}>
+                                                 <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-20", getTotalColorClass(song.timesPlayedTotal))}>
                                                     {song.timesPlayedTotal ?? 0}
                                                 </div>
                                             </Label>
@@ -279,9 +270,9 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
             </TabsContent>
         </Tabs>
         
-        <DialogFooter className="p-4 border-t shrink-0 flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => { setIsOpen(false); onOpenChange(false); }} className="w-full sm:w-auto">Cancelar</Button>
-          <Button onClick={handleSave} className="w-full sm:w-auto">Salvar e Fechar</Button>
+        <DialogFooter className="p-3 border-t shrink-0 flex-row gap-2">
+          <Button variant="outline" onClick={() => { setIsOpen(false); onOpenChange(false); }} className="w-full">Cancelar</Button>
+          <Button onClick={handleSave} className="w-full">Salvar</Button>
         </DialogFooter>
 
       </DialogContent>
