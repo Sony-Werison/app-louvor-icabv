@@ -4,28 +4,7 @@ import type { Member, Song, MonthlySchedule, ScheduleColumn, SongCategory } from
 import { Tv, Sun, Moon, BookUser } from 'lucide-react';
 import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths } from 'date-fns';
 
-export const members: Member[] = [
-  { id: '1', name: 'João Silva', avatar: 'https://i.pravatar.cc/150?u=joao', roles: ['Dirigente'], email: 'joao.silva@example.com' },
-  { id: '2', name: 'Maria Oliveira', avatar: 'https://i.pravatar.cc/150?u=maria', roles: ['Dirigente'], email: 'maria.oliveira@example.com' },
-  { id: '3', name: 'Pedro Santos', avatar: 'https://i.pravatar.cc/150?u=pedro', roles: ['Multimídia'], email: 'pedro.santos@example.com' },
-  { id: '4', name: 'Ana Costa', avatar: 'https://i.pravatar.cc/150?u=ana', roles: ['Multimídia'], email: 'ana.costa@example.com' },
-  { id: '5', name: 'Lucas Souza', avatar: 'https://i.pravatar.cc/150?u=lucas', roles: ['Multimídia'], email: 'lucas.souza@example.com' },
-  { id: '6', name: 'Carla Pereira', avatar: 'https://i.pravatar.cc/150?u=carla', roles: ['Multimídia'], email: 'carla.pereira@example.com' },
-  { id: '7', name: 'Marcella', avatar: 'https://i.pravatar.cc/150?u=marcella', roles: ['Dirigente'], email: 'marcella@example.com' },
-  { id: '8', name: 'Arthur', avatar: 'https://i.pravatar.cc/150?u=arthur', roles: ['Multimídia'], email: 'arthur@example.com' },
-  { id: '9', name: 'Júlio', avatar: 'https://i.pravatar.cc/150?u=julio', roles: ['Multimídia'], email: 'julio@example.com' },
-  { id: '10', name: 'Breno', avatar: 'https://i.pravatar.cc/150?u=breno', roles: ['Multimídia'], email: 'breno@example.com' },
-  { id: '11', name: 'Bruno', avatar: 'https://i.pravatar.cc/150?u=bruno', roles: ['Multimídia'], email: 'bruno@example.com' },
-  { id: '12', name: 'Werison', avatar: 'https://i.pravatar.cc/150?u=werison', roles: ['Dirigente'], email: 'werison@example.com' },
-  { id: '13', name: 'Marcos Diogo', avatar: 'https://i.pravatar.cc/150?u=marcos-diogo', roles: ['Multimídia'], email: 'marcos.diogo@example.com' },
-  { id: '14', name: 'Welton', avatar: 'https://i.pravatar.cc/150?u=welton', roles: ['Dirigente'], email: 'welton@example.com' },
-  { id: '15', name: 'Rudinei', avatar: 'https://i.pravatar.cc/150?u=rudinei', roles: ['Dirigente'], email: 'rudinei@example.com' },
-  { id: '16', name: 'Marcos Morazotti', avatar: 'https://i.pravatar.cc/150?u=marcos-morazotti', roles: ['Dirigente'], email: 'marcos.morazotti@example.com' },
-  { id: '17', name: 'Ricardo', avatar: 'https://i.pravatar.cc/150?u=ricardo', roles: ['Dirigente'], email: 'ricardo@example.com' },
-  { id: '18', name: 'Jônatas', avatar: 'https://i.pravatar.cc/150?u=jonatas', roles: ['Pregador'], email: 'jonatas@example.com' },
-  { id: '19', name: 'Davi', avatar: 'https://i.pravatar.cc/150?u=davi', roles: ['Pregador'], email: 'davi@example.com' },
-  { id: '20', name: 'Rafael', avatar: 'https://i.pravatar.cc/150?u=rafael', roles: ['Pregador'], email: 'rafael@example.com' },
-];
+export const members: Member[] = [];
 
 export const songs: Song[] = [
   { 
@@ -198,7 +177,7 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
         const multimedia2 = multimedia[(index + 2) % multimedia.length];
         
         // Only populate assignments for Sundays
-        const assignments = isSunday ? {
+        const assignments = (isSunday && members.length > 0) ? {
                 'dirigente_manha': [leaderMorning.id],
                 'pregacao_manha': [preacherMorning.id],
                 'dirigente_noite': [leaderNight.id],

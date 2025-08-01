@@ -26,7 +26,7 @@ async function initializeDatabase() {
         saveMembers(initialMembers),
         saveSongs(initialSongs),
         saveMonthlySchedules(initialMonthlySchedules),
-        put(KEYS.INITIALIZED, 'true'),
+        put(KEYS.INITIALIZED, 'true', { access: 'public' }),
       ]);
       console.log('Database seeded successfully.');
     } else {
@@ -44,6 +44,10 @@ async function fetchData<T>(key: string, defaultValue: T): Promise<T> {
     const blob = await list({ prefix: key, limit: 1 });
     if (blob.blobs.length > 0) {
       const response = await fetch(blob.blobs[0].url);
+      if (!response.ok) { // Check for HTTP errors
+          console.error(`Failed to fetch ${key}, status: ${response.status}`);
+          return defaultValue;
+      }
       return await response.json();
     }
     return defaultValue;
@@ -68,15 +72,18 @@ async function saveData<T>(key: string, data: T): Promise<void> {
 // --- Data Fetching Functions ---
 
 export async function fetchMembers(): Promise<Member[]> {
-  return fetchData<Member[]>(KEYS.MEMBERS, []);
+  const members = await fetchData<Member[]>(KEYS.MEMBERS, []);
+  return members || [];
 }
 
 export async function fetchSongs(): Promise<Song[]> {
-  return fetchData<Song[]>(KEYS.SONGS, []);
+  const songs = await fetchData<Song[]>(KEYS.SONGS, []);
+  return songs || [];
 }
 
 export async function fetchMonthlySchedules(): Promise<MonthlySchedule[]> {
   const schedules = await fetchData<any[]>(KEYS.SCHEDULES, []);
+  if (!schedules) return [];
   // Deserialize dates from string
   return schedules.map(s => ({ ...s, date: new Date(s.date) }));
 }
