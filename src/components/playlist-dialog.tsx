@@ -208,10 +208,10 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                                                   <div className="font-medium">{song.title}</div>
                                                   <div className="text-sm text-muted-foreground">{song.artist}</div>
                                                 </div>
-                                                 <div className={cn("text-center font-medium p-2 rounded-md transition-colors", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
+                                                 <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-16", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
                                                     {song.timesPlayedQuarterly ?? 0}
                                                 </div>
-                                                <div className="text-center text-muted-foreground font-medium p-2">
+                                                <div className="text-center text-muted-foreground font-medium p-2 w-16">
                                                     {song.timesPlayedTotal ?? 0}
                                                 </div>
                                             </Label>
@@ -283,3 +283,5 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     </Dialog>
   );
 }
+
+    
