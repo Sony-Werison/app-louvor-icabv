@@ -238,38 +238,38 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                           layout
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          transition={{ duration: 0.2 }}
+                          exit={{ opacity: 0, x: -20, transition: { duration: 0.15 } }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                           className="flex items-center justify-between gap-2 p-2 rounded-md hover:bg-muted bg-card"
                         >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="flex flex-col shrink-0">
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    onClick={() => handleMoveSong(index, 'up')}
-                                    disabled={index === 0}
-                                    className="h-6 w-6"
-                                >
-                                    <ArrowUp className="h-4 w-4"/>
-                                </Button>
-                                 <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    onClick={() => handleMoveSong(index, 'down')}
-                                    disabled={index === songsInPlaylist.length - 1}
-                                    className="h-6 w-6"
-                                >
-                                    <ArrowDown className="h-4 w-4"/>
-                                </Button>
-                            </div>
+                           <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className="flex flex-col shrink-0">
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        onClick={() => handleMoveSong(index, 'up')}
+                                        disabled={index === 0}
+                                        className="h-6 w-6"
+                                    >
+                                        <ArrowUp className="h-4 w-4"/>
+                                    </Button>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        onClick={() => handleMoveSong(index, 'down')}
+                                        disabled={index === songsInPlaylist.length - 1}
+                                        className="h-6 w-6"
+                                    >
+                                        <ArrowDown className="h-4 w-4"/>
+                                    </Button>
+                                </div>
 
-                            <span className="text-sm font-bold text-muted-foreground w-5 text-center shrink-0">{index + 1}</span>
-                            
-                            <div className="flex-1 truncate">
-                                <p className="font-medium truncate">{song.title}</p>
-                                <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
-                            </div>
+                                <span className="text-sm font-bold text-muted-foreground w-5 text-center shrink-0">{index + 1}</span>
+                                
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium truncate">{song.title}</p>
+                                    <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
+                                </div>
                           </div>
 
                           <Button variant="ghost" size="icon" onClick={() => handleCheckedChange(song.id, false)} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive">
