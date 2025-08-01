@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from './ui/select';
 import { Input } from './ui/input';
+import { Checkbox } from './ui/checkbox';
 
 const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
 
@@ -37,12 +38,13 @@ const formSchema = z.object({
   category: z.enum(songCategories).optional(),
   artist: z.string().optional(),
   key: z.string().optional(),
-}).refine(data => !!data.category || !!data.artist || !!data.key, {
-  message: 'Pelo menos um campo deve ser preenchido para salvar.',
+  deleteChords: z.boolean().optional(),
+}).refine(data => !!data.category || !!data.artist || !!data.key || data.deleteChords, {
+  message: 'Pelo menos um campo deve ser preenchido ou a exclusão de cifras marcada para salvar.',
   path: ['category'], 
 });
 
-export type BulkEditData = Partial<Pick<Song, 'category' | 'artist' | 'key'>>;
+export type BulkEditData = Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords'>>;
 
 interface SongBulkEditDialogProps {
   isOpen: boolean;
@@ -61,7 +63,8 @@ export function SongBulkEditDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
         artist: '',
-        key: ''
+        key: '',
+        deleteChords: false,
     }
   });
 
@@ -70,6 +73,7 @@ export function SongBulkEditDialog({
     if (values.category) dataToSave.category = values.category;
     if (values.artist) dataToSave.artist = values.artist;
     if (values.key) dataToSave.key = values.key;
+    if (values.deleteChords) dataToSave.chords = '';
     onSave(dataToSave);
   };
 
@@ -134,6 +138,28 @@ export function SongBulkEditDialog({
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="deleteChords"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 shadow-sm">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Excluir Cifras
+                    </FormLabel>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+
             <FormMessage>
                 {form.formState.errors.category?.message}
             </FormMessage>
