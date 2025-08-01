@@ -10,18 +10,15 @@ interface ChordDisplayProps {
 }
 
 const chordRegex = /(\[.*?\])/g;
+const simpleChordRegex = /([A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add|m|M|º|ª|\+|-|°|\/|\d)*)/g;
+
 
 const isLinePurelyChords = (line: string) => {
     const trimmed = line.trim();
     if (!trimmed) return false;
-    const chords = trimmed.match(chordRegex);
-    const textOnly = trimmed.replace(chordRegex, '').trim();
-    if (!chords || textOnly) return false;
-    
-    return chords.every(part => {
-        const chord = part.substring(1, part.length - 1);
-        return true; 
-    });
+    // Test if the line contains only valid chord characters and spaces.
+    // This regex allows chord names, numbers, slashes for bass notes, and spaces.
+    return /^[A-G#bmsuadigc\d\s\/\(\)]+$/.test(trimmed) && /[A-G]/.test(trimmed) && !trimmed.match(/[H-Z]/i);
 };
 
 const isSectionHeader = (line: string) => {
@@ -33,7 +30,8 @@ const isSectionHeader = (line: string) => {
     }
 
     const sectionKeywords = ['intro', 'verso', 'refrão', 'ponte', 'solo', 'final', 'interlúdio', 'suave', 'forte', '+', '++', '+++'];
-    return sectionKeywords.some(keyword => trimmed.includes(keyword)) && !trimmed.match(/[a-gA-G]/);
+    // Check if the trimmed line is one of the keywords, possibly with a colon
+    return sectionKeywords.some(keyword => trimmed === keyword || trimmed === `${keyword}:`) && !trimmed.match(/[a-g]/i);
 };
 
 
@@ -67,6 +65,19 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
       </div>
     );
   };
+
+  const renderPureChordLine = (line: string, lineIndex: number) => {
+      const chords = line.trim().split(/\s+/);
+      return (
+          <div key={`chord-line-${lineIndex}`} className="flex gap-4 mb-2">
+              {chords.map((chord, chordIndex) => (
+                  <b key={chordIndex} className="text-primary font-bold">
+                      {transposeChord(chord, transposeBy)}
+                  </b>
+              ))}
+          </div>
+      );
+  }
   
   const renderPairedLines = () => {
     const elements: React.ReactNode[] = [];
@@ -85,7 +96,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
         }
 
         if (isLinePurelyChords(currentLine)) {
-            elements.push(renderTextWithChords(currentLine, i));
+            elements.push(renderPureChordLine(currentLine, i));
             i++;
             continue;
         }
