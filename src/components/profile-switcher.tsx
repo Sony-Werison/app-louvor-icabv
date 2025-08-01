@@ -14,10 +14,9 @@ import type { Role } from '@/types';
 import { Shield, Users, Eye, LogOut, ChevronDown } from 'lucide-react';
 import React from 'react';
 
-const roleIcons: Record<Role, React.ElementType> = {
+const roleIcons: Record<Exclude<Role, 'viewer'>, React.ElementType> = {
     admin: Shield,
     dirigente: Users,
-    viewer: Eye,
 };
 
 const roleLabels: Record<Role, string> = {
@@ -31,7 +30,7 @@ export function ProfileSwitcher() {
   
   if (!role) return null;
 
-  const Icon = roleIcons[role];
+  const Icon = role === 'viewer' ? Eye : roleIcons[role];
   const label = roleLabels[role];
 
   return (

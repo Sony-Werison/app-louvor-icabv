@@ -93,14 +93,13 @@ export function LoginDialog() {
                 <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
               <SelectContent>
-                {Object.keys(roleLabels).map((key) => {
-                  const roleKey = key as Role;
-                  const RoleIcon = roleIcons[roleKey];
+                {(Object.keys(roleLabels) as Role[]).map((key) => {
+                  const RoleIcon = roleIcons[key];
                   return (
-                    <SelectItem key={roleKey} value={roleKey}>
+                    <SelectItem key={key} value={key}>
                       <div className="flex items-center gap-2">
                         <RoleIcon className="h-4 w-4 text-muted-foreground" />
-                        <span>{roleLabels[roleKey]}</span>
+                        <span>{roleLabels[key]}</span>
                       </div>
                     </SelectItem>
                   );
