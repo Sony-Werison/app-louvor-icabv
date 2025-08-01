@@ -218,7 +218,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                                                 <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-16", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
                                                     {song.timesPlayedQuarterly ?? 0}
                                                 </div>
-                                                <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-16", getTotalColorClass(song.timesPlayedTotal))}>
+                                                 <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-16", getTotalColorClass(song.timesPlayedTotal))}>
                                                     {song.timesPlayedTotal ?? 0}
                                                 </div>
                                             </Label>
