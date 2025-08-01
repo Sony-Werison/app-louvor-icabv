@@ -146,12 +146,10 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
   }
   
   const SortableHeader = ({ sortKey, label, className }: {sortKey: SortKey, label: string, className?: string}) => (
-      <TableHead className={className}>
-        <Button variant="ghost" onClick={() => handleSort(sortKey)} className="px-2 py-1 h-auto -ml-2">
-          {label}
-          {sortConfig.key === sortKey && <ArrowDownUp className="ml-2 h-3 w-3" />}
-        </Button>
-      </TableHead>
+      <Button variant="ghost" onClick={() => handleSort(sortKey)} className={cn("px-2 py-1 h-auto -ml-2", className)}>
+        {label}
+        {sortConfig.key === sortKey && <ArrowDownUp className="ml-2 h-3 w-3" />}
+      </Button>
   );
 
   const isAllFilteredSelected = selectedSongs.length > 0 && selectedSongs.length === filteredSongs.length && filteredSongs.length > 0;
@@ -221,19 +219,22 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                   />
                 </TableHead>
               )}
-              <SortableHeader sortKey="title" label="Título" />
-              <SortableHeader sortKey="artist" label="Artista" className="hidden sm:table-cell" />
-              <SortableHeader sortKey="category" label="Categoria" className="hidden md:table-cell" />
-              <SortableHeader sortKey="key" label="Tom" className="hidden sm:table-cell text-center" />
+              <TableHead>
+                 <SortableHeader sortKey="title" label="Título" />
+              </TableHead>
+              <TableHead className="hidden sm:table-cell">
+                <SortableHeader sortKey="artist" label="Artista" />
+              </TableHead>
+              <TableHead className="hidden md:table-cell">
+                <SortableHeader sortKey="category" label="Categoria" />
+              </TableHead>
+              <TableHead className="hidden sm:table-cell text-center">
+                 <SortableHeader sortKey="key" label="Tom" />
+              </TableHead>
               <TableHead className="w-24 text-center">
                   <div className="flex flex-col sm:flex-row items-center justify-center sm:gap-4">
-                      <div className="flex flex-col items-center">
-                        <span className="text-xs font-bold sm:hidden">Freq.</span>
-                        <SortableHeader sortKey="timesPlayedQuarterly" label="Tri" />
-                      </div>
-                       <div className="flex flex-col items-center">
+                        <SortableHeader sortKey="timesPlayedQuarterly" label="Trimestre" />
                         <SortableHeader sortKey="timesPlayedTotal" label="Total" />
-                      </div>
                   </div>
               </TableHead>
             </TableRow>
@@ -281,7 +282,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                         </div>
                       </div>
                       <div className="text-center text-muted-foreground text-xs mt-1 sm:hidden">
-                        Tri / Total
+                        Trimestre / Total
                       </div>
                   </TableCell>
                 </TableRow>
@@ -314,4 +315,5 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     </div>
   );
 }
+
 
