@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'framer-motion';
 
 
 interface PlaylistDialogProps {
@@ -230,11 +231,43 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                 <ScrollArea className="h-full flex-grow p-4">
                   {songsInPlaylist.length > 0 ? (
                       <div className="space-y-2">
+                      <AnimatePresence>
                       {songsInPlaylist.map((song, index) => (
-                        <div 
+                        <motion.div 
                           key={song.id}
-                          className="flex items-center justify-between p-2 rounded-md hover:bg-muted bg-card"
+                          layout
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.2 }}
+                          className="flex items-center gap-2 p-2 rounded-md hover:bg-muted bg-card"
                         >
+                          <div className="flex items-center shrink-0">
+                              <div className="flex flex-col">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    onClick={() => handleMoveSong(index, 'up')}
+                                    disabled={index === 0}
+                                    className="h-6 w-6"
+                                >
+                                    <ArrowUp className="h-4 w-4"/>
+                                </Button>
+                                 <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    onClick={() => handleMoveSong(index, 'down')}
+                                    disabled={index === songsInPlaylist.length - 1}
+                                    className="h-6 w-6"
+                                >
+                                    <ArrowDown className="h-4 w-4"/>
+                                </Button>
+                              </div>
+                            <Button variant="ghost" size="icon" onClick={() => handleCheckedChange(song.id, false)} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive">
+                                <X className="h-4 w-4"/>
+                            </Button>
+                          </div>
+
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <span className="text-sm font-bold text-muted-foreground w-5 text-center">{index + 1}</span>
                             <div className="flex-1 truncate">
@@ -242,31 +275,9 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                                 <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
                             </div>
                           </div>
-                          <div className="flex items-center shrink-0">
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => handleMoveSong(index, 'up')}
-                                disabled={index === 0}
-                                className="h-8 w-8"
-                            >
-                                <ArrowUp className="h-4 w-4"/>
-                            </Button>
-                             <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => handleMoveSong(index, 'down')}
-                                disabled={index === songsInPlaylist.length - 1}
-                                className="h-8 w-8"
-                            >
-                                <ArrowDown className="h-4 w-4"/>
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleCheckedChange(song.id, false)} className="shrink-0 h-8 w-8">
-                                <X className="h-4 w-4"/>
-                            </Button>
-                          </div>
-                        </div>
+                        </motion.div>
                       ))}
+                      </AnimatePresence>
                       </div>
                   ) : (
                       <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
@@ -288,4 +299,3 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     </Dialog>
   );
 }
-
