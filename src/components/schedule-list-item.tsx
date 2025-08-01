@@ -21,19 +21,6 @@ import React from 'react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 
-interface ScheduleListItemProps {
-    schedule: MonthlySchedule;
-    members: Member[];
-    columns: ScheduleColumn[];
-    getFilteredMembers: (role: MemberRole | undefined) => Member[];
-    getAssignedMemberIds: (date: Date, columnId: string) => (string | null)[];
-    handleMemberChange: (date: Date, columnId: string, memberId: string, index: number) => void;
-    handleClearAssignment: (date: Date, columnId: string, index: number) => void;
-    handleDateChange: (oldDate: Date, newDate: Date | undefined) => void;
-    handleRemoveDate: (date: Date) => void;
-    isDesktop?: boolean;
-}
-
 const MemberSelector: React.FC<{
     assignedMemberId: string | null;
     filteredMembers: Member[];
@@ -64,6 +51,7 @@ const MemberSelector: React.FC<{
 
 export function ScheduleListItem({
   schedule,
+  members,
   columns,
   getFilteredMembers,
   getAssignedMemberIds,
@@ -72,7 +60,18 @@ export function ScheduleListItem({
   handleDateChange,
   handleRemoveDate,
   isDesktop = false,
-}: ScheduleListItemProps) {
+}: {
+    schedule: MonthlySchedule;
+    members: Member[];
+    columns: ScheduleColumn[];
+    getFilteredMembers: (role: MemberRole | undefined) => Member[];
+    getAssignedMemberIds: (date: Date, columnId: string) => (string | null)[];
+    handleMemberChange: (date: Date, columnId: string, memberId: string, index: number) => void;
+    handleClearAssignment: (date: Date, columnId: string, index: number) => void;
+    handleDateChange: (oldDate: Date, newDate: Date | undefined) => void;
+    handleRemoveDate: (date: Date) => void;
+    isDesktop?: boolean;
+}) {
 
   const renderDesktopAssignment = (col: ScheduleColumn) => {
     const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);

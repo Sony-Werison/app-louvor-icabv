@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { MonthlySchedule, Member, ScheduleColumn, MemberRole } from '@/types';
@@ -77,24 +78,24 @@ export function MonthlyScheduleView({
     }
     return members.filter(member => member.role === role);
   };
-  
-  const commonProps = {
-    members,
-    columns,
-    getFilteredMembers,
-    handleMemberChange,
-    handleClearAssignment,
-    getAssignedMemberIds,
-    handleDateChange,
-    handleRemoveDate,
-  };
 
   return (
     <>
       {/* Mobile View */}
       <div className="space-y-3 md:hidden">
         {sortedSchedules.map((schedule) => (
-          <ScheduleListItem key={schedule.date.toISOString()} schedule={schedule} {...commonProps} />
+          <ScheduleListItem 
+            key={schedule.date.toISOString()} 
+            schedule={schedule}
+            members={members}
+            columns={columns}
+            getFilteredMembers={getFilteredMembers}
+            handleMemberChange={handleMemberChange}
+            handleClearAssignment={handleClearAssignment}
+            getAssignedMemberIds={getAssignedMemberIds}
+            handleDateChange={handleDateChange}
+            handleRemoveDate={handleRemoveDate}
+          />
         ))}
       </div>
 
@@ -117,7 +118,19 @@ export function MonthlyScheduleView({
           </TableHeader>
           <TableBody>
             {sortedSchedules.map((schedule) => (
-               <ScheduleListItem key={schedule.date.toISOString()} schedule={schedule} {...commonProps} isDesktop />
+               <ScheduleListItem 
+                 key={schedule.date.toISOString()}
+                 schedule={schedule}
+                 isDesktop 
+                 members={members}
+                 columns={columns}
+                 getFilteredMembers={getFilteredMembers}
+                 handleMemberChange={handleMemberChange}
+                 handleClearAssignment={handleClearAssignment}
+                 getAssignedMemberIds={getAssignedMemberIds}
+                 handleDateChange={handleDateChange}
+                 handleRemoveDate={handleRemoveDate}
+               />
             ))}
           </TableBody>
         </Table>
