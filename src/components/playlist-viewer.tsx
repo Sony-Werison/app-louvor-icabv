@@ -242,20 +242,26 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                       </div>
                   )}
                   </ScrollArea>
-                  {activeSong && activeTab === 'chords' && (
-                  <div className="absolute bottom-4 right-4 z-10 flex flex-col items-center justify-center gap-1 rounded-lg border bg-background/80 p-2 shadow-lg backdrop-blur-sm">
-                    <Button variant="ghost" size="icon" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
-                        <Rabbit className="h-5 w-5" />
-                    </Button>
-                    <Button
-                      variant={isScrolling ? "destructive" : "ghost"}
-                      className="w-12 h-12 rounded-full text-base font-bold"
-                      onClick={handleToggleScrolling}
-                    >
-                        {scrollSpeed}
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
+                   {activeSong && activeTab === 'chords' && (
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center gap-2 rounded-full border bg-background/80 p-1 shadow-lg backdrop-blur-sm">
+                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
                         <Turtle className="h-5 w-5" />
+                    </Button>
+                    <button
+                      onClick={handleToggleScrolling}
+                      className="relative flex items-center justify-center w-12 h-12 text-foreground focus:outline-none"
+                      aria-label={isScrolling ? "Pausar rolagem" : "Iniciar rolagem"}
+                    >
+                      {isScrolling ? 
+                        <Pause className="w-8 h-8"/> :
+                        <svg viewBox="0 0 100 100" className="w-14 h-14 fill-current">
+                            <path d="M 30 20 L 80 50 L 30 80 Z" />
+                            <text x="50" y="59" fontSize="32" fill="hsl(var(--background))" textAnchor="middle" dy=".3em">{scrollSpeed}</text>
+                        </svg>
+                      }
+                    </button>
+                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
+                        <Rabbit className="h-5 w-5" />
                     </Button>
                   </div>
                   )}
