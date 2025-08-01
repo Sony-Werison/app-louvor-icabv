@@ -186,20 +186,22 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as any)}>
-              <TabsList className="grid w-full grid-cols-4 sm:w-auto">
-                  {categories.map(cat => (
-                     <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">
-                        <div className="hidden sm:flex items-center gap-1.5">
-                          <span>{categoryLabels[cat]}</span>
-                          <span className="text-xs text-muted-foreground/80 font-mono">{categoryCounts[cat]}</span>
-                        </div>
-                        <div className="sm:hidden text-center pb-1">
-                          <div>{categoryLabels[cat]}</div>
-                          <div className="text-xs text-muted-foreground/80 font-mono">{categoryCounts[cat]}</div>
-                        </div>
-                     </TabsTrigger>
-                  ))}
-              </TabsList>
+            <TabsList className="grid w-full grid-cols-4 sm:w-auto">
+              {categories.map((cat) => (
+                <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm h-12 sm:h-10">
+                  <span className="hidden sm:inline">{categoryLabels[cat]}</span>
+                  <div className="sm:hidden flex flex-col items-center justify-center">
+                    <span>{categoryLabels[cat]}</span>
+                    <span className="text-xs text-muted-foreground/80 font-mono">
+                      {categoryCounts[cat]}
+                    </span>
+                  </div>
+                   <span className="hidden sm:inline text-xs text-muted-foreground/80 font-mono ml-1.5">
+                      {categoryCounts[cat]}
+                    </span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
           </Tabs>
            <Tabs value={chordFilter} onValueChange={(value) => setChordFilter(value as any)}>
               <TabsList className="grid w-full grid-cols-3 sm:w-auto">
@@ -339,5 +341,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     </div>
   );
 }
+
+    
 
     
