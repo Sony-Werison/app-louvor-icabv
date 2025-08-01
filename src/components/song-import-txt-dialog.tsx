@@ -16,9 +16,11 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { UploadCloud, FileDiff, AlertCircle } from 'lucide-react';
+import { UploadCloud, FileDiff, AlertCircle, ChevronsUpDown } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
+import { Checkbox } from './ui/checkbox';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 
 export type ParsedTxtSong = Omit<Song, 'id'>;
 const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
@@ -33,18 +35,45 @@ interface SongImportTxtDialogProps {
 
 export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSongs }: SongImportTxtDialogProps) {
     const [files, setFiles] = useState<FileList | null>(null);
-    const [songsToCreate, setSongsToCreate] = useState<ParsedTxtSong[]>([]);
-    const [songsToUpdate, setSongsToUpdate] = useState<ParsedTxtSong[]>([]);
-    const [conflicts, setConflicts] = useState<string[]>([]);
     const [category, setCategory] = useState<SongCategory>('Louvor');
+    const [isProcessed, setIsProcessed] = useState(false);
+    
+    // State to hold the parsed songs
+    const [potentialCreates, setPotentialCreates] = useState<ParsedTxtSong[]>([]);
+    const [potentialUpdates, setPotentialUpdates] = useState<ParsedTxtSong[]>([]);
+    const [conflicts, setConflicts] = useState<string[]>([]);
+    
+    // State for user selections
+    const [selectedToCreate, setSelectedToCreate] = useState<string[]>([]);
+    const [selectedToUpdate, setSelectedToUpdate] = useState<string[]>([]);
+
     const { toast } = useToast();
+
+    const resetState = () => {
+        setFiles(null);
+        setCategory('Louvor');
+        setIsProcessed(false);
+        setPotentialCreates([]);
+        setPotentialUpdates([]);
+        setConflicts([]);
+        setSelectedToCreate([]);
+        setSelectedToUpdate([]);
+    };
+    
+    const handleOpenChange = (open: boolean) => {
+        if (!open) {
+            resetState();
+        }
+        onOpenChange(open);
+    }
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
             setFiles(event.target.files);
-            setSongsToCreate([]);
-            setSongsToUpdate([]);
-            setConflicts([]);
+            if (isProcessed) {
+              resetState();
+              setFiles(event.target.files);
+            }
         }
     };
 
@@ -54,12 +83,13 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
             return;
         }
 
-        const toCreate: ParsedTxtSong[] = [];
-        const toUpdate: ParsedTxtSong[] = [];
+        const creates: ParsedTxtSong[] = [];
+        const updates: ParsedTxtSong[] = [];
         const newConflicts: string[] = [];
         const processedTitles = new Set<string>();
+        let filesProcessed = 0;
 
-        Array.from(files).forEach((file, fileIndex) => {
+        Array.from(files).forEach((file) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const content = e.target?.result as string;
@@ -71,7 +101,10 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
                 const title = titleMatch?.[1]?.trim() || file.name.replace(/\.txt$/i, '');
                 const artist = artistMatch?.[1]?.trim() || 'Desconhecido';
                 
-                if (!title || processedTitles.has(title.toLowerCase())) return;
+                if (!title || processedTitles.has(title.toLowerCase())) {
+                    if (title) newConflicts.push(title);
+                    return;
+                }
 
                 const body = content
                     .replace(/^(?:Título|Title|Artista|Artist|Key|Category):.*$/gim, '')
@@ -80,37 +113,38 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
                 const songData: ParsedTxtSong = {
                     title,
                     artist,
-                    key: 'N/A', // O Tom pode ser editado depois
-                    category: category, // Usa a categoria selecionada no diálogo
-                    chords: '', // NUNCA importar cifras de TXT
-                    lyrics: body, // Salva o corpo completo como letra
+                    key: 'N/A', 
+                    category: category,
+                    chords: '',
+                    lyrics: body,
                 };
+                
+                processedTitles.add(title.toLowerCase());
 
                 const existingSong = existingSongs.find(
                     s => s.title.toLowerCase() === title.toLowerCase() && s.artist.toLowerCase() === artist.toLowerCase()
                 );
 
                 if (existingSong) {
-                    toUpdate.push(songData);
+                    updates.push(songData);
                 } else {
-                    const alreadyInCreateList = toCreate.some(s => s.title.toLowerCase() === title.toLowerCase());
-                    if (alreadyInCreateList) {
-                        newConflicts.push(title);
-                    } else {
-                        toCreate.push(songData);
-                    }
+                    creates.push(songData);
                 }
-                processedTitles.add(title.toLowerCase());
-                
 
-                if (fileIndex === files.length - 1) {
-                    setSongsToCreate(toCreate);
-                    setSongsToUpdate(toUpdate);
+                filesProcessed++;
+                if (filesProcessed === files.length) {
+                    setPotentialCreates(creates);
+                    setPotentialUpdates(updates);
                     setConflicts(newConflicts);
-                    
-                    const total = toCreate.length + toUpdate.length;
+                    setIsProcessed(true);
+
+                    // Pre-select all by default
+                    setSelectedToCreate(creates.map(s => s.title));
+                    setSelectedToUpdate(updates.map(s => s.title));
+
+                    const total = creates.length + updates.length;
                     if (total > 0) {
-                        toast({ title: 'Arquivos processados!', description: `Pronto para importar/atualizar ${total} música(s).` });
+                        toast({ title: 'Arquivos processados!', description: `Revise e selecione as músicas para importar.` });
                     } else {
                          toast({ title: 'Nenhuma música nova encontrada', description: `Nenhuma música para criar ou atualizar.`, variant: 'default' });
                     }
@@ -119,28 +153,92 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
             reader.onerror = () => {
                 toast({ title: `Erro ao ler o arquivo ${file.name}`, variant: 'destructive' });
             };
-            reader.readAsText(file);
+            reader.readAsText(file, "UTF-8");
         });
     };
 
     const handleFinalSave = () => {
-        onSave({ toCreate: songsToCreate, toUpdate: songsToUpdate });
-        const total = songsToCreate.length + songsToUpdate.length;
+        const toCreate = potentialCreates.filter(s => selectedToCreate.includes(s.title));
+        const toUpdate = potentialUpdates.filter(s => selectedToUpdate.includes(s.title));
+        onSave({ toCreate, toUpdate });
+        const total = toCreate.length + toUpdate.length;
         toast({ title: 'Importação bem-sucedida!', description: `${total} música(s) foram processada(s).` });
         onOpenChange(false);
     };
 
+    const toggleSelection = (list: 'create' | 'update', title: string) => {
+        const setter = list === 'create' ? setSelectedToCreate : setSelectedToUpdate;
+        setter(prev => prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]);
+    }
+    
+    const toggleSelectAll = (list: 'create' | 'update') => {
+        const source = list === 'create' ? potentialCreates : potentialUpdates;
+        const selected = list === 'create' ? selectedToCreate : selectedToUpdate;
+        const setter = list === 'create' ? setSelectedToCreate : setSelectedToUpdate;
+
+        if (selected.length === source.length) {
+            setter([]); // Deselect all
+        } else {
+            setter(source.map(s => s.title)); // Select all
+        }
+    }
+
+    const renderSongList = (songs: ParsedTxtSong[], type: 'create' | 'update') => {
+        const selected = type === 'create' ? selectedToCreate : selectedToUpdate;
+        const allSelected = songs.length > 0 && selected.length === songs.length;
+        const isIndeterminate = selected.length > 0 && !allSelected;
+
+        return (
+            <div className="space-y-2">
+                <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+                     <Checkbox 
+                        id={`select-all-${type}`}
+                        checked={allSelected || isIndeterminate}
+                        onCheckedChange={() => toggleSelectAll(type)}
+                        data-state={isIndeterminate ? 'indeterminate' : (allSelected ? 'checked' : 'unchecked')}
+                    />
+                    <Label htmlFor={`select-all-${type}`} className="text-sm font-medium">
+                        Selecionar Todos ({selected.length}/{songs.length})
+                    </Label>
+                </div>
+                <ScrollArea className="h-40 border rounded-md">
+                    <div className="p-2 space-y-1">
+                    {songs.map((song) => (
+                        <div key={song.title} className="flex items-center gap-3 p-2 rounded hover:bg-muted/30">
+                            <Checkbox 
+                                id={`${type}-${song.title}`}
+                                checked={selected.includes(song.title)}
+                                onCheckedChange={() => toggleSelection(type, song.title)}
+                            />
+                            <Label htmlFor={`${type}-${song.title}`} className="flex flex-col cursor-pointer">
+                                <span className="font-medium">{song.title}</span>
+                                <span className="text-xs text-muted-foreground">{song.artist}</span>
+                            </Label>
+                        </div>
+                    ))}
+                    </div>
+                </ScrollArea>
+            </div>
+        )
+    }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>Importar Músicas via TXT</DialogTitle>
-          <DialogDescription>
-              Selecione um ou mais arquivos .txt. O arquivo deve ter "Título:" e "Artista:". Se a música já existir, a letra será atualizada.
-          </DialogDescription>
+           {!isProcessed ? (
+            <DialogDescription>
+                Selecione um ou mais arquivos .txt. O título e artista serão lidos do conteúdo. Se a música já existir, a letra será atualizada.
+            </DialogDescription>
+           ) : (
+            <DialogDescription>
+                Revise as listas abaixo e selecione quais músicas você deseja criar ou atualizar.
+            </DialogDescription>
+           )}
         </DialogHeader>
         
-        {songsToCreate.length === 0 && songsToUpdate.length === 0 && conflicts.length === 0 ? (
+        {!isProcessed ? (
           <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="category-select">Categoria para Novas Músicas</Label>
@@ -162,66 +260,68 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
               </div>
           </div>
         ) : (
-          <div className="py-4 space-y-4">
-              {songsToCreate.length > 0 && (
-                <Alert variant="default">
-                    <AlertTitle className="flex items-center gap-2">
-                        <UploadCloud className="h-5 w-5 text-green-500"/>
-                        Músicas a Criar ({songsToCreate.length})
-                    </AlertTitle>
-                    <AlertDescription>
-                        <ScrollArea className="max-h-20 border rounded-md p-2 mt-2">
-                            <ul className="text-xs space-y-1">
-                                {songsToCreate.map((song, i) => <li key={i} className="truncate">{song.title}</li>)}
-                            </ul>
-                        </ScrollArea>
-                    </AlertDescription>
-                </Alert>
-              )}
-               {songsToUpdate.length > 0 && (
-                <Alert variant="default">
-                    <AlertTitle className="flex items-center gap-2">
-                        <FileDiff className="h-5 w-5 text-blue-500"/>
-                        Músicas a Atualizar ({songsToUpdate.length})
-                    </AlertTitle>
-                    <AlertDescription>
-                        <ScrollArea className="max-h-20 border rounded-md p-2 mt-2">
-                            <ul className="text-xs space-y-1">
-                                {songsToUpdate.map((song, i) => <li key={i} className="truncate">{song.title}</li>)}
-                            </ul>
-                        </ScrollArea>
-                    </AlertDescription>
-                </Alert>
-              )}
-               {conflicts.length > 0 && (
-                <Alert variant="destructive">
-                    <AlertTitle className="flex items-center gap-2">
-                        <AlertCircle className="h-5 w-5"/>
-                        Conflitos Encontrados
-                    </AlertTitle>
-                    <AlertDescription>
-                        <p className="mb-2">{conflicts.length} música(s) com títulos duplicados no lote de importação foram ignoradas:</p>
-                        <ScrollArea className="max-h-20 border rounded-md p-2">
-                            <ul className="text-xs space-y-1">
-                                {conflicts.map((title, i) => <li key={i} className="truncate">{title}</li>)}
-                            </ul>
-                        </ScrollArea>
-                    </AlertDescription>
-                </Alert>
-              )}
+          <div className="py-2 space-y-4">
+              <Accordion type="multiple" defaultValue={['create', 'update', 'conflicts']} className="w-full">
+                {potentialCreates.length > 0 && (
+                    <AccordionItem value="create">
+                        <AccordionTrigger>
+                            <div className="flex items-center gap-2">
+                                <UploadCloud className="h-5 w-5 text-green-500"/>
+                                <span>Novas Músicas ({potentialCreates.length})</span>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            {renderSongList(potentialCreates, 'create')}
+                        </AccordionContent>
+                    </AccordionItem>
+                )}
+                {potentialUpdates.length > 0 && (
+                     <AccordionItem value="update">
+                        <AccordionTrigger>
+                            <div className="flex items-center gap-2">
+                                <FileDiff className="h-5 w-5 text-blue-500"/>
+                                <span>Atualizar Letras ({potentialUpdates.length})</span>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            {renderSongList(potentialUpdates, 'update')}
+                        </AccordionContent>
+                    </AccordionItem>
+                )}
+                {conflicts.length > 0 && (
+                     <AccordionItem value="conflicts">
+                        <AccordionTrigger>
+                            <div className="flex items-center gap-2">
+                                <AlertCircle className="h-5 w-5 text-destructive"/>
+                                <span>Conflitos ({conflicts.length})</span>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                           <AlertDescription>
+                                <p className="mb-2 text-sm">As seguintes músicas foram ignoradas por terem títulos duplicados no lote de importação:</p>
+                                <ScrollArea className="max-h-20 border rounded-md p-2">
+                                    <ul className="text-xs space-y-1">
+                                        {conflicts.map((title, i) => <li key={i} className="truncate">{title}</li>)}
+                                    </ul>
+                                </ScrollArea>
+                            </AlertDescription>
+                        </AccordionContent>
+                    </AccordionItem>
+                )}
+              </Accordion>
           </div>
         )}
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={handleOpenChange.bind(null, false)}>
             Cancelar
           </Button>
-          {songsToCreate.length > 0 || songsToUpdate.length > 0 || conflicts.length > 0 ? (
-              <Button onClick={handleFinalSave} disabled={songsToCreate.length === 0 && songsToUpdate.length === 0}>
-                Salvar Alterações
-              </Button>
-          ) : (
+          {!isProcessed ? (
               <Button onClick={processFiles} disabled={!files}>Processar</Button>
+          ) : (
+             <Button onClick={handleFinalSave} disabled={selectedToCreate.length === 0 && selectedToUpdate.length === 0}>
+                Importar Selecionadas ({selectedToCreate.length + selectedToUpdate.length})
+              </Button>
           )}
         </DialogFooter>
       </DialogContent>

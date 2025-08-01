@@ -202,25 +202,23 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const importSongsFromTxt = (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
     let newSongs = [...songs];
 
-    // Update existing songs
-    songsToUpdate.forEach(songData => {
-        const index = newSongs.findIndex(s => 
-            s.title.toLowerCase() === songData.title.toLowerCase() && 
-            s.artist.toLowerCase() === songData.artist.toLowerCase()
-        );
-        if (index !== -1) {
-            newSongs[index] = { 
-                ...newSongs[index], 
-                lyrics: songData.lyrics, 
-                chords: songData.chords 
-            };
-        }
+    // Update existing songs' lyrics
+    const updateMap = new Map(songsToUpdate.map(s => [s.title.toLowerCase(), s]));
+    newSongs = newSongs.map(existingSong => {
+      const newVersion = updateMap.get(existingSong.title.toLowerCase());
+      if (newVersion && newVersion.artist.toLowerCase() === existingSong.artist.toLowerCase()) {
+        return { ...existingSong, lyrics: newVersion.lyrics };
+      }
+      return existingSong;
     });
 
     // Add new songs
-    songsToCreate.forEach(songData => {
-        newSongs.push({ ...songData, id: `s${Date.now()}${Math.random()}` });
-    });
+    const newSongsToAdd = songsToCreate.map(songData => ({
+        ...songData,
+        id: `s${Date.now()}${Math.random().toString(36).substring(2, 9)}`
+    }));
+
+    newSongs.push(...newSongsToAdd);
 
     setSongs(newSongs);
     saveSongs(newSongs);
