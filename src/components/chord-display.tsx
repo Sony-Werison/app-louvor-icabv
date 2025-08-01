@@ -38,6 +38,11 @@ const isSectionHeader = (line: string) => {
     return isKeyword && !hasNotes;
 };
 
+const isIntensityMarker = (line: string) => {
+    const trimmed = line.trim();
+    return trimmed === '[+]' || trimmed === '[++]' || trimmed === '[+++]';
+}
+
 const isPureChordLineWithBrackets = (line: string) => {
   const trimmed = line.trim();
   if (!trimmed) return false;
@@ -67,16 +72,14 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
     return (
         <div key={lineIndex} className="mb-2 leading-8">
             {parts.map((part, partIndex) => {
-                if (part.match(chordRegex)) {
-                    // This is a chord - it's paired with the next text part
-                    // so we render it with the text part. Here we return null.
+                const previousPart = partIndex > 0 ? parts[partIndex - 1] : '';
+                const isLyricPart = !part.match(chordRegex);
+
+                if (!isLyricPart) {
                     return null;
                 }
                 
-                // This is a lyric part
-                const previousPart = partIndex > 0 ? parts[partIndex - 1] : '';
                 const hasPairedChord = previousPart.match(chordRegex);
-
                 let chord;
                 if (hasPairedChord) {
                     chord = previousPart.substring(1, previousPart.length - 1);
@@ -147,7 +150,13 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
         let lineContent: React.ReactNode;
         let wrapperClass = "mb-1";
 
-        if (isSectionHeader(currentLine)) {
+        if (isIntensityMarker(currentLine)) {
+            lineContent = (
+                <div className="inline-block font-bold bg-accent/80 text-accent-foreground rounded-md px-3 py-1 my-2">
+                    {currentLine.replace(/[\[\]]/g, '')}
+                </div>
+            );
+        } else if (isSectionHeader(currentLine)) {
             lineContent = (
                 <div className="font-bold text-muted-foreground mt-4 mb-1">
                     {currentLine.replace(/[\[\]:]/g, '')}
