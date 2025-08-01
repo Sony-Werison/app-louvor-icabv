@@ -44,7 +44,7 @@ export default function MusicPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8 gap-4">
-        <h1 className="text-3xl sm:text-4xl font-headline font-bold">Músicas</h1>
+        <div/>
         {can('edit:songs') && (
             <TooltipProvider>
                 <div className="flex gap-2 flex-wrap justify-end">

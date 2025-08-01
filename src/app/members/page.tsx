@@ -138,7 +138,7 @@ export default function MembersPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8 gap-4">
-        <h1 className="text-3xl sm:text-4xl font-headline font-bold">Membros</h1>
+        <div/>
         {can('edit:members') && (
             <Button onClick={handleAddNew} size="sm" className="sm:size-auto">
             <Plus className="mr-2" />

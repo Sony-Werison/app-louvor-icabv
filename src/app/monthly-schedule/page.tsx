@@ -65,9 +65,9 @@ export default function MonthlySchedulePage() {
                     <Button variant="outline" size="icon" onClick={() => navigateMonths(-1)}>
                         <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold text-center w-48 sm:w-64 capitalize">
+                    <h2 className="text-xl sm:text-2xl font-headline font-bold text-center w-48 sm:w-64 capitalize">
                         {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
-                    </h1>
+                    </h2>
                     <Button variant="outline" size="icon" onClick={() => navigateMonths(1)}>
                         <ChevronRight className="h-4 w-4" />
                     </Button>

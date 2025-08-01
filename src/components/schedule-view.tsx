@@ -61,12 +61,8 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
 
   return (
     <TooltipProvider>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl sm:text-3xl font-headline font-bold">Reuniões da Semana</h1>
-      </div>
-
       {schedules.length === 0 ? (
-         <div className="flex flex-col items-center justify-center text-center text-muted-foreground bg-card border rounded-lg p-8 sm:p-12">
+         <div className="flex flex-col items-center justify-center text-center text-muted-foreground bg-card border rounded-lg p-8 sm:p-12 h-[calc(100vh-10rem)]">
             <Users className="w-12 h-12 sm:w-16 sm:h-16 mb-4" />
             <h2 className="text-xl sm:text-2xl font-bold mb-2">Nenhuma reunião esta semana</h2>
             <p className="text-sm sm:text-base">Vá para a página "Escala Mensal" para planejar.</p>
