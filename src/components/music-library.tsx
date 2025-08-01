@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Trash2, Edit, Music } from 'lucide-react';
+import { Search, Trash2, Edit, Music, ArrowDownUp } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Checkbox } from './ui/checkbox';
@@ -40,6 +40,9 @@ const categoryLabels: Record<SongCategory | 'all', string> = {
   Infantil: 'Infantis'
 }
 
+type SortKey = 'title' | 'artist' | 'category' | 'key' | 'timesPlayedQuarterly' | 'timesPlayedTotal';
+type SortDirection = 'asc' | 'desc';
+
 const getQuarterlyColorClass = (count: number = 0) => {
     if (count > 4) return 'bg-destructive/40';
     if (count > 2) return 'bg-destructive/20';
@@ -59,14 +62,40 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
   const [activeCategory, setActiveCategory] = useState<SongCategory | 'all'>('all');
   const [selectedSongs, setSelectedSongs] = useState<string[]>([]);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'title', direction: 'asc' });
   const router = useRouter();
 
-  const filteredSongs = useMemo(() => songs.filter(
-    (song) =>
-      (activeCategory === 'all' || song.category === activeCategory) &&
-      (song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      song.artist.toLowerCase().includes(searchTerm.toLowerCase()))
-  ), [songs, activeCategory, searchTerm]);
+  const handleSort = (key: SortKey) => {
+    let direction: SortDirection = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const filteredSongs = useMemo(() => {
+    const filtered = songs.filter(
+        (song) =>
+        (activeCategory === 'all' || song.category === activeCategory) &&
+        (song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        song.artist.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
+    return [...filtered].sort((a, b) => {
+        const { key, direction } = sortConfig;
+        const dir = direction === 'asc' ? 1 : -1;
+
+        const aVal = a[key] ?? (typeof a[key] === 'number' ? 0 : '');
+        const bVal = b[key] ?? (typeof b[key] === 'number' ? 0 : '');
+        
+        if (key === 'timesPlayedQuarterly' || key === 'timesPlayedTotal') {
+            return ((aVal as number) - (bVal as number)) * dir;
+        }
+        
+        return (aVal as string).localeCompare(bVal as string) * dir;
+    });
+
+  }, [songs, activeCategory, searchTerm, sortConfig]);
 
   useEffect(() => {
     onSelectionChange(selectedSongs);
@@ -100,6 +129,15 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     setSelectedSongs([]);
     setIsAlertOpen(false);
   }
+  
+  const SortableHeader = ({ sortKey, label, className }: {sortKey: SortKey, label: string, className?: string}) => (
+      <TableHead className={className}>
+        <Button variant="ghost" onClick={() => handleSort(sortKey)} className="px-2 py-1 h-auto -ml-2">
+          {label}
+          {sortConfig.key === sortKey && <ArrowDownUp className="ml-2 h-3 w-3" />}
+        </Button>
+      </TableHead>
+  );
 
   const isAllFilteredSelected = selectedSongs.length > 0 && selectedSongs.length === filteredSongs.length && filteredSongs.length > 0;
   const isAnyFilteredSelected = selectedSongs.length > 0;
@@ -161,12 +199,12 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                   />
                 </TableHead>
               )}
-              <TableHead>Título</TableHead>
-              <TableHead className="hidden sm:table-cell">Artista</TableHead>
-              <TableHead className="hidden md:table-cell">Categoria</TableHead>
-              <TableHead className="text-center">Tom</TableHead>
-              <TableHead className="hidden lg:table-cell text-center w-24">Trimestre</TableHead>
-              <TableHead className="hidden lg:table-cell text-center w-24">Total</TableHead>
+              <SortableHeader sortKey="title" label="Título" />
+              <SortableHeader sortKey="artist" label="Artista" className="hidden sm:table-cell" />
+              <SortableHeader sortKey="category" label="Categoria" className="hidden md:table-cell" />
+              <SortableHeader sortKey="key" label="Tom" className="text-center" />
+              <SortableHeader sortKey="timesPlayedQuarterly" label="Trimestre" className="hidden lg:table-cell text-center w-24" />
+              <SortableHeader sortKey="timesPlayedTotal" label="Total" className="hidden lg:table-cell text-center w-24" />
             </TableRow>
           </TableHeader>
           <TableBody>
