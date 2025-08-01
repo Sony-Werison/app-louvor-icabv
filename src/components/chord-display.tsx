@@ -8,6 +8,39 @@ interface ChordDisplayProps {
 }
 
 const chordRegex = /(\[.*?\])/g;
+// Regex para acordes válidos
+const validChordRegex = /^[A-G](b|#)?(m|maj|min|dim|aug|sus|add|m|M|º|ª|\+|-|°|\/|\d)*$/;
+
+const isLinePurelyChords = (line: string) => {
+    const trimmed = line.trim();
+    if (!trimmed) return false;
+    // Pega todas as partes entre colchetes
+    const chords = trimmed.match(chordRegex);
+    // Pega o texto fora dos colchetes
+    const textOnly = trimmed.replace(chordRegex, '').trim();
+    // Se não há acordes ou existe texto fora, não é uma linha de acordes
+    if (!chords || textOnly) return false;
+    
+    // Verifica se tudo dentro dos colchetes parece um acorde válido
+    return chords.every(part => {
+        const chord = part.substring(1, part.length - 1);
+        return chord === '' || validChordRegex.test(chord);
+    });
+};
+
+const isSectionHeader = (line: string) => {
+    const trimmed = line.trim();
+    if (!trimmed) return false;
+
+    // Se a linha tem colchetes, verifica se NÃO é uma linha de acordes puros
+    if (trimmed.includes('[') || trimmed.includes(']')) {
+        return !isLinePurelyChords(trimmed);
+    }
+    
+    // Se não tem colchetes, consideramos que é um cabeçalho de seção.
+    // Isso cobre casos como "Intro", "suave", "+", etc.
+    return true;
+};
 
 export function ChordDisplay({ chordsText }: ChordDisplayProps) {
   if (!chordsText) return null;
@@ -40,56 +73,49 @@ export function ChordDisplay({ chordsText }: ChordDisplayProps) {
     );
   };
   
-  const isSectionHeader = (line: string) => {
-    const trimmed = line.trim();
-    return (
-        trimmed.startsWith('[') &&
-        trimmed.endsWith(']') &&
-        !trimmed.substring(1, trimmed.length-1).includes('[')
-    );
-  };
-  
-  const isJustChordsLine = (line: string) => {
-     if (!line.trim().startsWith('[')) return false;
-     
-     const parts = line.split(chordRegex).filter(p => p.trim() !== '');
-     return parts.every(p => p.match(chordRegex));
-  };
+  const renderPairedLines = () => {
+    const elements: React.ReactNode[] = [];
+    let i = 0;
+    while (i < lines.length) {
+        const currentLine = lines[i];
+        
+        if (isSectionHeader(currentLine) && !currentLine.includes('[')) {
+            elements.push(
+                <div key={`section-${i}`} className="font-bold text-muted-foreground mt-4 mb-2">
+                    {currentLine}
+                </div>
+            );
+            i++;
+            continue;
+        }
 
+        if (isLinePurelyChords(currentLine)) {
+            elements.push(renderTextWithChords(currentLine, i));
+            i++;
+            continue;
+        }
+
+        // Linha com letra e acordes embutidos
+        if (currentLine.match(chordRegex)) {
+            elements.push(renderTextWithChords(currentLine, i));
+            i++;
+            continue;
+        }
+
+        // Linha de letra normal
+        elements.push(
+            <div key={`lyrics-${i}`} className={cn(!currentLine.trim() && "h-4")}>
+                {currentLine}
+            </div>
+        );
+        i++;
+    }
+    return elements;
+  }
 
   return (
     <div className="font-code text-base leading-relaxed">
-      {lines.map((line, lineIndex) => {
-
-        if (isSectionHeader(line)) {
-           const sectionName = line.substring(1, line.length - 1);
-           const isChordLine = /^[A-Ga-g](#|b|sus|maj|min|aug|dim|\d|\/|\s)*$/.test(sectionName) && sectionName.length > 0;
-           
-           if (!isChordLine) {
-            return (
-                <div key={lineIndex} className="font-bold text-muted-foreground mt-4 mb-2">
-                    {sectionName}
-                </div>
-            );
-           }
-        }
-        
-        if (isJustChordsLine(line)) {
-            return renderTextWithChords(line, lineIndex);
-        }
-
-        const hasLyricsAndChords = line.match(chordRegex);
-
-        if (hasLyricsAndChords) {
-          return renderTextWithChords(line, lineIndex);
-        }
-        
-        return (
-          <div key={lineIndex} className={cn(!line.trim() && "h-4")}>
-            {line}
-          </div>
-        );
-      })}
+      {renderPairedLines()}
     </div>
   );
 }
