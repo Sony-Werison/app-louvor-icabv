@@ -164,8 +164,8 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
               <TableHead className="hidden sm:table-cell">Artista</TableHead>
               <TableHead className="hidden md:table-cell">Categoria</TableHead>
               <TableHead className="text-center">Tom</TableHead>
-              <TableHead className="hidden lg:table-cell text-center">Trimestre</TableHead>
-              <TableHead className="hidden lg:table-cell text-center">Total</TableHead>
+              <TableHead className="hidden lg:table-cell text-center w-24">Trimestre</TableHead>
+              <TableHead className="hidden lg:table-cell text-center w-24">Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -198,10 +198,10 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                   <TableCell className="text-center">
                     <Badge variant="outline">{song.key}</Badge>
                   </TableCell>
-                  <TableCell className={cn("hidden lg:table-cell text-center text-foreground font-medium", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
+                  <TableCell className={cn("hidden lg:table-cell text-center text-foreground font-medium w-24", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
                     {song.timesPlayedQuarterly ?? 0}
                   </TableCell>
-                  <TableCell className={cn("hidden lg:table-cell text-center text-foreground font-medium", getTotalColorClass(song.timesPlayedTotal))}>
+                  <TableCell className={cn("hidden lg:table-cell text-center text-foreground font-medium w-24", getTotalColorClass(song.timesPlayedTotal))}>
                     {song.timesPlayedTotal ?? 0}
                   </TableCell>
                 </TableRow>
