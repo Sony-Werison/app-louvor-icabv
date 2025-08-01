@@ -240,9 +240,9 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, x: -20, transition: { duration: 0.15 } }}
                           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                          className="flex items-center justify-between gap-2 p-2 rounded-md hover:bg-muted bg-card"
+                          className="relative flex items-center gap-2 p-2 pr-10 rounded-md hover:bg-muted bg-card"
                         >
-                           <div className="flex items-center gap-3 flex-1 min-w-0">
+                           <div className="flex items-center gap-3">
                                 <div className="flex flex-col shrink-0">
                                     <Button 
                                         variant="ghost" 
@@ -272,7 +272,12 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                                 </div>
                           </div>
 
-                          <Button variant="ghost" size="icon" onClick={() => handleCheckedChange(song.id, false)} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive">
+                          <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleCheckedChange(song.id, false)} 
+                              className="absolute top-1/2 right-1 -translate-y-1/2 h-8 w-8 rounded-full text-muted-foreground hover:text-destructive bg-background/30 hover:bg-background/70 backdrop-blur-sm"
+                          >
                               <X className="h-4 w-4"/>
                           </Button>
                         </motion.div>
