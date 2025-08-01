@@ -29,7 +29,7 @@ const isSectionHeader = (line: string) => {
         return true;
     }
     
-    const sectionKeywords = ['intro', 'verso', 'refrão', 'ponte', 'solo', 'final', 'interlúdio', 'suave', 'forte'];
+    const sectionKeywords = ['intro', 'verso', 'refrão', 'ponte', 'solo', 'final', 'interlúdio', 'forte'];
     // Check if the line *is* one of the keywords, optionally with a colon.
     const isKeyword = sectionKeywords.some(keyword => {
         const withColon = `${keyword}:`;
@@ -44,15 +44,16 @@ const isSectionHeader = (line: string) => {
 
 const isIntensityMarker = (line: string) => {
     const trimmed = line.trim();
-    return trimmed === '[+]' || trimmed === '[++]' || trimmed === '[+++]';
+    return ['[suave]', '[+]', '[++]', '[+++]'].includes(trimmed);
 }
 
 const getIntensityClass = (line: string) => {
     const trimmed = line.trim();
     switch(trimmed) {
-        case '[+]': return 'bg-accent/30';
-        case '[++]': return 'bg-accent/60';
-        case '[+++]': return 'bg-accent/90';
+        case '[suave]': return 'bg-accent/20';
+        case '[+]': return 'bg-accent/40';
+        case '[++]': return 'bg-accent/70';
+        case '[+++]': return 'bg-accent';
         default: return '';
     }
 }
