@@ -18,10 +18,9 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ListMusic, Play, Pause, FileText, Music, X, ChevronLeft, ChevronRight, Plus, Minus } from 'lucide-react';
+import { ListMusic, Play, Pause, FileText, Music, X, ChevronLeft, ChevronRight, Plus, Minus, Rabbit, Turtle, ZoomIn, ZoomOut } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChordDisplay } from './chord-display';
-import { Slider } from './ui/slider';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { getTransposedKey } from '@/lib/transpose';
@@ -32,15 +31,22 @@ interface PlaylistViewerProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const MIN_FONT_SIZE = 0.8;
+const MAX_FONT_SIZE = 2.5;
+const FONT_STEP = 0.1;
+const MIN_SPEED = 1;
+const MAX_SPEED = 10;
+
 export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewerProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'lyrics' | 'chords'>('lyrics');
   const [activeSongId, setActiveSongId] = useState<string | null>(null);
   const [transpose, setTranspose] = useState(0);
+  const [fontSize, setFontSize] = useState(1.25); // em rem, default é text-lg (1.125rem)
 
   const [isScrolling, setIsScrolling] = useState(false);
-  const [scrollSpeed, setScrollSpeed] = useState(50);
+  const [scrollSpeed, setScrollSpeed] = useState(5); // 1 to 10
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -90,6 +96,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
       scrollViewportRef.current.scrollTop = 0;
     }
 
+    const interval = 151 - (scrollSpeed * 13);
     scrollIntervalRef.current = setInterval(() => {
       if (scrollViewportRef.current) {
         const currentMaxScroll = scrollViewportRef.current.scrollHeight - scrollViewportRef.current.clientHeight;
@@ -99,7 +106,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
           stopScrolling();
         }
       }
-    }, 151 - (scrollSpeed * 1.3));
+    }, interval);
   };
 
   const handleToggleScrolling = () => {
@@ -109,6 +116,18 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
       startScrolling();
     }
   };
+
+  const changeSpeed = (delta: number) => {
+    const newSpeed = Math.max(MIN_SPEED, Math.min(MAX_SPEED, scrollSpeed + delta));
+    setScrollSpeed(newSpeed);
+    if (isScrolling) {
+      startScrolling(); // Restart with new speed
+    }
+  }
+
+  const changeFontSize = (delta: number) => {
+    setFontSize(prev => Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, prev + delta)));
+  }
   
   const handleSelectSong = (songId: string) => {
     setActiveSongId(songId);
@@ -198,9 +217,9 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                   </Button>
                   <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
                   {activeSong ? (
-                      <div className="p-4 sm:p-8 text-lg md:text-xl">
+                      <div className="p-4 sm:p-8" style={{ fontSize: `${fontSize}rem` }}>
                           {activeTab === 'lyrics' ? (
-                              <pre className="whitespace-pre-wrap font-body leading-relaxed">
+                              <pre className="whitespace-pre-wrap font-body leading-relaxed" style={{whiteSpace: 'pre-wrap'}}>
                                   {activeSong.lyrics || 'Nenhuma letra disponível.'}
                               </pre>
                           ) : (
@@ -214,30 +233,33 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                       </div>
                   )}
                   </ScrollArea>
-                  {activeTab === 'chords' && activeSong && (
-                  <div className="absolute bottom-4 right-4 z-10">
+                  <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2">
+                     <div className="flex items-center justify-center gap-2 rounded-lg border bg-background/80 p-2 shadow-lg backdrop-blur-sm">
+                        <Button variant="ghost" size="icon" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
+                            <ZoomOut className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
+                            <ZoomIn className="h-5 w-5" />
+                        </Button>
+                      </div>
+
+                    {activeSong && (
                       <div className="flex items-center justify-center gap-2 rounded-lg border bg-background/80 p-2 shadow-lg backdrop-blur-sm">
-                      <Button variant="ghost" size="icon" onClick={handleToggleScrolling}>
-                          {isScrolling ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-                      </Button>
-                      <div className="flex items-center gap-2 w-24 sm:w-32">
-                          <Slider
-                          value={[scrollSpeed]}
-                          onValueChange={(value) => {
-                              setScrollSpeed(value[0]);
-                              if (isScrolling) {
-                              stopScrolling();
-                              setTimeout(() => startScrolling(), 0);
-                              }
-                          }}
-                          min={1}
-                          max={100}
-                          step={1}
-                          />
+                        <Button variant="ghost" size="icon" onClick={handleToggleScrolling}>
+                            {isScrolling ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                        </Button>
+                        <div className="flex items-center gap-2">
+                           <Button variant="ghost" size="icon" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
+                               <Turtle className="h-5 w-5" />
+                           </Button>
+                           <div className="w-10 text-center font-bold text-sm">{scrollSpeed}</div>
+                           <Button variant="ghost" size="icon" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
+                               <Rabbit className="h-5 w-5" />
+                           </Button>
+                        </div>
                       </div>
-                      </div>
+                     )}
                   </div>
-                  )}
               </main>
 
               <SheetContent side="left" className="p-0 flex flex-col">
@@ -270,3 +292,5 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
     </Dialog>
   );
 }
+
+    

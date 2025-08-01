@@ -170,8 +170,10 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
   }
 
   return (
-    <pre className="whitespace-pre-wrap font-code text-base">
+    <pre className="whitespace-pre-wrap font-code" style={{whiteSpace: 'pre-wrap'}}>
       {renderPairedLines()}
     </pre>
   );
 }
+
+    
