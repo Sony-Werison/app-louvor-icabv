@@ -21,6 +21,8 @@ export type Song = {
   youtubeUrl?: string;
   lyrics?: string;
   chords?: string;
+  timesPlayedQuarterly?: number;
+  timesPlayedTotal?: number;
 };
 
 export type Schedule = {

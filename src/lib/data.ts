@@ -33,6 +33,8 @@ export const songs: Song[] = [
     artist: 'Soraya Moraes', 
     key: 'G',
     category: 'Louvor',
+    timesPlayedQuarterly: 5,
+    timesPlayedTotal: 25,
     lyrics: `Com esplendor de um rei
 Em majestade e luz
 Faz a Terra se alegrar
@@ -89,6 +91,8 @@ Quão [D]grande é o meu [G]Deus`
     artist: 'Hillsong United', 
     key: 'D',
     category: 'Louvor',
+    timesPlayedQuarterly: 2,
+    timesPlayedTotal: 15,
     lyrics: `You call me out upon the waters
 The great unknown where feet may fail
 And there I find You in the mystery
@@ -127,18 +131,18 @@ And [G]keep my eyes a[D]bove the [A]waves
 When oceans [G]rise, my [D]soul will rest in [A]Your embrace
 For [G]I am [A]Yours and [Bm]You are mine`
   },
-  { id: 's3', title: 'Amazing Grace (My Chains Are Gone)', artist: 'Chris Tomlin', key: 'G', category: 'Hino' },
-  { id: 's4', title: 'Te Agradeço', artist: 'Diante do Trono', key: 'A', category: 'Louvor' },
-  { id: 's5', title: 'What a Beautiful Name', artist: 'Hillsong Worship', key: 'D', category: 'Louvor' },
-  { id: 's6', title: 'Grandes Coisas', artist: 'Fernandinho', key: 'C', category: 'Louvor' },
-  { id: 's7', title: 'Aquieta Minh\'alma', artist: 'Ministério Zoe', key: 'Em', category: 'Louvor' },
-  { id: 's8', title: 'Reckless Love', artist: 'Cory Asbury', key: 'F#m', category: 'Louvor' },
-  { id: 's9', title: '10,000 Reasons (Bless the Lord)', artist: 'Matt Redman', key: 'G', category: 'Louvor' },
-  { id: 's10', title: 'Em Teus Braços', artist: 'Laura Souguellis', key: 'C', category: 'Louvor' },
-  { id: 's11', title: 'A Benção', artist: 'Gateway Worship', key: 'B', category: 'Louvor' },
-  { id: 's12', title: 'Rude Cruz', artist: 'Harpa Cristã', key: 'A', category: 'Hino' },
-  { id: 's13', title: 'Três Palavrinhas', artist: 'Turma do Cristãozinho', key: 'C', category: 'Infantil' },
-  { id: 's14', title: 'Soldado de Cristo', artist: '3 Palavrinhas', key: 'G', category: 'Infantil' },
+  { id: 's3', title: 'Amazing Grace (My Chains Are Gone)', artist: 'Chris Tomlin', key: 'G', category: 'Hino', timesPlayedQuarterly: 1, timesPlayedTotal: 30 },
+  { id: 's4', title: 'Te Agradeço', artist: 'Diante do Trono', key: 'A', category: 'Louvor', timesPlayedQuarterly: 3, timesPlayedTotal: 12 },
+  { id: 's5', title: 'What a Beautiful Name', artist: 'Hillsong Worship', key: 'D', category: 'Louvor', timesPlayedQuarterly: 4, timesPlayedTotal: 22 },
+  { id: 's6', title: 'Grandes Coisas', artist: 'Fernandinho', key: 'C', category: 'Louvor', timesPlayedQuarterly: 6, timesPlayedTotal: 18 },
+  { id: 's7', title: 'Aquieta Minh\'alma', artist: 'Ministério Zoe', key: 'Em', category: 'Louvor', timesPlayedQuarterly: 1, timesPlayedTotal: 9 },
+  { id: 's8', title: 'Reckless Love', artist: 'Cory Asbury', key: 'F#m', category: 'Louvor', timesPlayedQuarterly: 2, timesPlayedTotal: 11 },
+  { id: 's9', title: '10,000 Reasons (Bless the Lord)', artist: 'Matt Redman', key: 'G', category: 'Louvor', timesPlayedQuarterly: 3, timesPlayedTotal: 28 },
+  { id: 's10', title: 'Em Teus Braços', artist: 'Laura Souguellis', key: 'C', category: 'Louvor', timesPlayedQuarterly: 0, timesPlayedTotal: 8 },
+  { id: 's11', title: 'A Benção', artist: 'Gateway Worship', key: 'B', category: 'Louvor', timesPlayedQuarterly: 7, timesPlayedTotal: 14 },
+  { id: 's12', title: 'Rude Cruz', artist: 'Harpa Cristã', key: 'A', category: 'Hino', timesPlayedQuarterly: 0, timesPlayedTotal: 40 },
+  { id: 's13', title: 'Três Palavrinhas', artist: 'Turma do Cristãozinho', key: 'C', category: 'Infantil', timesPlayedQuarterly: 8, timesPlayedTotal: 50 },
+  { id: 's14', title: 'Soldado de Cristo', artist: '3 Palavrinhas', key: 'G', category: 'Infantil', timesPlayedQuarterly: 5, timesPlayedTotal: 35 },
 ];
 
 export const scheduleColumns: ScheduleColumn[] = [

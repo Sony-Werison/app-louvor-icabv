@@ -67,6 +67,8 @@ export function MusicLibrary({ songs }: MusicLibraryProps) {
               <TableHead className="hidden sm:table-cell">Artista</TableHead>
               <TableHead className="hidden md:table-cell">Categoria</TableHead>
               <TableHead className="text-center">Tom</TableHead>
+              <TableHead className="hidden lg:table-cell text-center">Trimestre</TableHead>
+              <TableHead className="hidden lg:table-cell text-center">Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -84,11 +86,17 @@ export function MusicLibrary({ songs }: MusicLibraryProps) {
                   <TableCell className="text-center">
                     <Badge variant="outline">{song.key}</Badge>
                   </TableCell>
+                  <TableCell className="hidden lg:table-cell text-center text-muted-foreground">
+                    {song.timesPlayedQuarterly ?? 0}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell text-center text-muted-foreground">
+                    {song.timesPlayedTotal ?? 0}
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   Nenhuma música encontrada.
                 </TableCell>
               </TableRow>
