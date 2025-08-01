@@ -160,7 +160,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                             <h3 className="font-semibold mb-2 flex items-center gap-1.5 text-xs"><ListMusic className="w-3 h-3"/>Repertório</h3>
                             <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1 ml-1">
                                 {playlistSongs.map(song => (
-                                    <li key={song.id} className="truncate">{song.title} - <span className="opacity-80">{song.artist}</span></li>
+                                    <li key={song.id} className="truncate">{song.title}</li>
                                 ))}
                             </ul>
                         </div>
