@@ -12,22 +12,12 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, UploadCloud, FileDiff } from 'lucide-react';
 
 interface SongImportDialogProps {
   isOpen: boolean;
@@ -42,15 +32,17 @@ const requiredHeaders = ['title', 'artist', 'category', 'timesPlayedQuarterly', 
 
 export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }: SongImportDialogProps) {
     const [file, setFile] = useState<File | null>(null);
-    const [parsedSongs, setParsedSongs] = useState<ParsedSong[]>([]);
-    const [conflicts, setConflicts] = useState<ParsedSong[]>([]);
-    const [songsToImport, setSongsToImport] = useState<Song[]>([]);
-    const [isConflictAlertOpen, setIsConflictAlertOpen] = useState(false);
+    const [songsToCreate, setSongsToCreate] = useState<Song[]>([]);
+    const [songsToUpdate, setSongsToUpdate] = useState<Song[]>([]);
+    const [isProcessed, setIsProcessed] = useState(false);
     const { toast } = useToast();
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
             setFile(event.target.files[0]);
+            setIsProcessed(false);
+            setSongsToCreate([]);
+            setSongsToUpdate([]);
         }
     };
 
@@ -77,17 +69,33 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
                 }
                 
                 const data = result.data as ParsedSong[];
-                setParsedSongs(data);
-
                 const existingTitles = new Set(existingSongs.map(s => s.title.toLowerCase()));
-                const newConflicts = data.filter(s => existingTitles.has(s.title.toLowerCase()));
+                const toCreate: Song[] = [];
+                const toUpdate: Song[] = [];
 
-                if (newConflicts.length > 0) {
-                    setConflicts(newConflicts);
-                    setIsConflictAlertOpen(true);
-                } else {
-                    prepareAndSave(data, []);
-                }
+                data.forEach(parsedSong => {
+                    const songData: Song = {
+                        ...parsedSong,
+                        id: '', // será gerado no contexto
+                        key: parsedSong.key || 'N/A', 
+                        category: parsedSong.category as SongCategory,
+                        timesPlayedQuarterly: Number(parsedSong.timesPlayedQuarterly) || 0,
+                        timesPlayedTotal: Number(parsedSong.timesPlayedTotal) || 0,
+                    };
+                    
+                    if (existingTitles.has(songData.title.toLowerCase())) {
+                        toUpdate.push(songData);
+                    } else {
+                        toCreate.push(songData);
+                        existingTitles.add(songData.title.toLowerCase()); // Evitar duplicatas no mesmo lote
+                    }
+                });
+
+                setSongsToCreate(toCreate);
+                setSongsToUpdate(toUpdate);
+                setIsProcessed(true);
+                toast({ title: "Arquivo processado!", description: `Pronto para importar ${toCreate.length + toUpdate.length} músicas.`});
+
             },
             error: (error) => {
                 toast({ title: 'Erro ao processar o arquivo', description: error.message, variant: 'destructive' });
@@ -95,55 +103,29 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
         });
     };
     
-    const prepareAndSave = (allSongs: ParsedSong[], songsToOverwrite: ParsedSong[]) => {
-        const overwriteTitles = new Set(songsToOverwrite.map(s => s.title.toLowerCase()));
-        
-        const finalSongs = allSongs
-            .filter(song => {
-                const isConflict = conflicts.some(c => c.title.toLowerCase() === song.title.toLowerCase());
-                return !isConflict || overwriteTitles.has(song.title.toLowerCase());
-            })
-            .map(s => ({
-                ...s,
-                key: 'N/A', // Key is not in CSV
-                category: s.category as SongCategory, // Assuming category is valid
-                timesPlayedQuarterly: Number(s.timesPlayedQuarterly) || 0,
-                timesPlayedTotal: Number(s.timesPlayedTotal) || 0,
-            }));
-        
-        const nonConflictSongs = allSongs
-             .filter(song => !conflicts.some(c => c.title.toLowerCase() === song.title.toLowerCase()));
-        
-        setSongsToImport([...nonConflictSongs, ...songsToOverwrite].map(s => ({
-                ...s,
-                id: '', // Will be generated in context
-                key: 'N/A', 
-                category: s.category as SongCategory,
-                timesPlayedQuarterly: Number(s.timesPlayedQuarterly) || 0,
-                timesPlayedTotal: Number(s.timesPlayedTotal) || 0,
-        })));
-    };
-
-    const handleConfirmOverwrite = () => {
-        prepareAndSave(parsedSongs, conflicts);
-        setIsConflictAlertOpen(false);
-    };
-
-    const handleDeclineOverwrite = () => {
-        prepareAndSave(parsedSongs, []);
-        setIsConflictAlertOpen(false);
-    };
-
     const handleFinalSave = () => {
-        onSave(songsToImport);
-        toast({ title: 'Importação bem-sucedida!', description: `${songsToImport.length} músicas foram importadas/atualizadas.` });
+        const allSongs = [...songsToCreate, ...songsToUpdate];
+        onSave(allSongs);
+        toast({ title: 'Importação bem-sucedida!', description: `${allSongs.length} músicas foram importadas/atualizadas.` });
         onOpenChange(false);
     };
 
+    const resetState = () => {
+        setFile(null);
+        setIsProcessed(false);
+        setSongsToCreate([]);
+        setSongsToUpdate([]);
+    }
+
+    const handleOpenChange = (open: boolean) => {
+        if (!open) {
+            resetState();
+        }
+        onOpenChange(open);
+    }
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Importar Músicas via CSV</DialogTitle>
@@ -152,27 +134,54 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
             </DialogDescription>
           </DialogHeader>
           
-          {songsToImport.length === 0 ? (
+          {!isProcessed ? (
             <div className="space-y-4 py-4">
                 <Input type="file" accept=".csv" onChange={handleFileChange} />
                 {file && <p className="text-sm text-muted-foreground">Arquivo selecionado: {file.name}</p>}
             </div>
           ) : (
-            <div className="py-4">
-                <Alert>
-                    <AlertTitle className="flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5 text-green-500"/>
-                        Pronto para Importar
-                    </AlertTitle>
-                    <AlertDescription>
-                        <p className="mb-2">{songsToImport.length} músicas serão importadas ou atualizadas.</p>
-                        <ScrollArea className="max-h-60 border rounded-md p-2">
-                            <ul className="text-xs space-y-1">
-                                {songsToImport.map((song, i) => <li key={i} className="truncate">{song.title}</li>)}
-                            </ul>
-                        </ScrollArea>
-                    </AlertDescription>
-                </Alert>
+            <div className="py-4 space-y-4">
+                {songsToCreate.length > 0 && (
+                    <Alert>
+                        <AlertTitle className="flex items-center gap-2">
+                            <UploadCloud className="h-5 w-5 text-green-500"/>
+                            Músicas a Criar ({songsToCreate.length})
+                        </AlertTitle>
+                        <AlertDescription>
+                            <ScrollArea className="max-h-24 border rounded-md p-2 mt-2">
+                                <ul className="text-xs space-y-1">
+                                    {songsToCreate.map((song, i) => <li key={i} className="truncate">{song.title}</li>)}
+                                </ul>
+                            </ScrollArea>
+                        </AlertDescription>
+                    </Alert>
+                )}
+                {songsToUpdate.length > 0 && (
+                     <Alert>
+                        <AlertTitle className="flex items-center gap-2">
+                            <FileDiff className="h-5 w-5 text-blue-500"/>
+                            Músicas a Atualizar ({songsToUpdate.length})
+                        </AlertTitle>
+                        <AlertDescription>
+                             <ScrollArea className="max-h-24 border rounded-md p-2 mt-2">
+                                <ul className="text-xs space-y-1">
+                                    {songsToUpdate.map((song, i) => <li key={i} className="truncate">{song.title}</li>)}
+                                </ul>
+                            </ScrollArea>
+                        </AlertDescription>
+                    </Alert>
+                )}
+                 {songsToCreate.length === 0 && songsToUpdate.length === 0 && (
+                     <Alert variant="destructive">
+                        <AlertTitle className="flex items-center gap-2">
+                            <CheckCircle className="h-5 w-5"/>
+                            Nenhuma Alteração
+                        </AlertTitle>
+                        <AlertDescription>
+                            Não foram encontradas músicas novas para criar ou dados de frequência para atualizar.
+                        </AlertDescription>
+                    </Alert>
+                 )}
             </div>
           )}
 
@@ -180,36 +189,15 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            {songsToImport.length > 0 ? (
-                <Button onClick={handleFinalSave}>Salvar</Button>
+            {isProcessed ? (
+                <Button onClick={handleFinalSave} disabled={songsToCreate.length === 0 && songsToUpdate.length === 0}>
+                    Confirmar Importação
+                </Button>
             ) : (
                 <Button onClick={processFile} disabled={!file}>Processar</Button>
             )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      {isConflictAlertOpen && (
-          <AlertDialog open={isConflictAlertOpen} onOpenChange={setIsConflictAlertOpen}>
-              <AlertDialogContent>
-                  <AlertDialogHeader>
-                      <AlertDialogTitle>Conflitos Encontrados</AlertDialogTitle>
-                      <AlertDialogDescription>
-                          Encontramos {conflicts.length} música(s) no CSV que já existem na sua biblioteca. Deseja sobrescrever os dados de frequência (trimestral e total)?
-                      </AlertDialogDescription>
-                  </AlertDialogHeader>
-                   <ScrollArea className="max-h-40 border rounded-md p-2">
-                        <ul className="text-sm space-y-1">
-                            {conflicts.map((song, i) => <li key={i}>{song.title}</li>)}
-                        </ul>
-                    </ScrollArea>
-                  <AlertDialogFooter>
-                      <AlertDialogCancel onClick={handleDeclineOverwrite}>Não, manter existentes</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleConfirmOverwrite}>Sim, sobrescrever</AlertDialogAction>
-                  </AlertDialogFooter>
-              </AlertDialogContent>
-          </AlertDialog>
-      )}
-    </>
   );
 }
