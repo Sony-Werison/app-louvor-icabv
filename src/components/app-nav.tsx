@@ -8,6 +8,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { AppLogo } from '@/components/app-logo';
 import { CalendarDays, Library, Users, CalendarRange } from 'lucide-react';
@@ -21,6 +22,7 @@ const navItems = [
 
 export function AppNav() {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
 
   return (
     <>
@@ -36,6 +38,7 @@ export function AppNav() {
                   as="a"
                   isActive={pathname.startsWith(item.href)}
                   tooltip={item.label}
+                  onClick={() => setOpenMobile(false)}
                 >
                     <item.icon />
                     <span>{item.label}</span>
