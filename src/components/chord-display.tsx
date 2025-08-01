@@ -51,7 +51,7 @@ const isPureChordLineWithoutBrackets = (line: string) => {
     if (!trimmed || line.includes('[') || line.includes(']')) return false;
 
     // A line is a pure chord line if it consists ONLY of chords and hyphens, with no other text.
-    const sanitized = trimmed.replace(unbracketedChordRegex, '').replace(/-/g, '');
+    const sanitized = trimmed.replace(unbracketedChordRegex, '').replace(/-/g, '').replace(/\s/g, '');
     return sanitized.trim() === '';
 }
 
@@ -98,30 +98,29 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
       }
       
       return (
-          <div key={`chord-line-${lineIndex}`} className="flex items-end gap-x-4 mb-4 leading-normal">
+          <div key={`chord-line-${lineIndex}`} className="flex items-end mb-4 leading-normal">
               {parts.map((part, index) => {
                   if (part.startsWith('[') && part.endsWith(']')) {
                     const chord = part.substring(1, part.length - 1);
                     if (chord) {
                         const transposed = transposeChord(chord, transposeBy);
                         return (
-                            <b key={index} className="text-primary font-bold">
+                            <b key={index} className="text-primary font-bold px-2">
                                 {transposed}
                             </b>
                         );
                     }
-                    // Render a non-breaking space for empty brackets `[]` to maintain spacing
-                    return <span key={index} className="inline-block w-3">&nbsp;</span>;
+                    return <span key={index} className="inline-block w-4">&nbsp;</span>;
                   }
                   
                   if (part.startsWith('-')) {
-                      return <span key={index} className="inline-block text-muted-foreground">{part.replace(/-/g, '–')}</span>;
+                      return part.split('').map((_, i) => <span key={`${index}-${i}`} className="inline-block w-4">&nbsp;</span>);
                   }
 
                   if (part) {
                       const transposed = transposeChord(part, transposeBy);
                       return (
-                          <b key={index} className="text-primary font-bold">
+                          <b key={index} className="text-primary font-bold px-2">
                               {transposed}
                           </b>
                       );
