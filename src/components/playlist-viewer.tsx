@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ListMusic, Play, Pause, FileText, Music, X, ChevronLeft, ChevronRight, Plus, Minus, Rabbit, Turtle, ZoomIn, ZoomOut } from 'lucide-react';
+import { ListMusic, Play, Pause, FileText, Music, X, ChevronLeft, ChevronRight, Rabbit, Turtle, ZoomIn, ZoomOut } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Badge } from './ui/badge';
@@ -252,11 +252,11 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                   )}
                   </ScrollArea>
                    {activeSong && activeTab === 'chords' && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center gap-2 rounded-full border bg-background/80 p-1 shadow-lg backdrop-blur-sm">
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center gap-4 rounded-full border bg-background/80 px-3 py-1 shadow-lg backdrop-blur-sm">
                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
                         <Turtle className="h-5 w-5" />
                     </Button>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col items-center">
                       <button
                         onClick={handleToggleScrolling}
                         className={cn("relative flex items-center justify-center w-10 h-10 text-foreground rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors",
@@ -269,7 +269,9 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                           <Play className="w-6 h-6 fill-current" />
                         }
                       </button>
-                      <span className="font-bold w-6 text-center text-sm tabular-nums">{scrollSpeed}</span>
+                      <span className="text-xs font-bold w-6 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50">
+                        {scrollSpeed}
+                      </span>
                     </div>
                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
                         <Rabbit className="h-5 w-5" />
@@ -308,5 +310,3 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
     </Dialog>
   );
 }
-
-    
