@@ -6,12 +6,14 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
-  SheetTitle,
+  SheetTitle as SheetTitleComponent,
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
@@ -107,6 +109,9 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-none w-full h-full p-0 gap-0 flex flex-col">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Visualizador de Repertório</DialogTitle>
+          </DialogHeader>
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <header className="flex-shrink-0 bg-background/95 backdrop-blur-sm z-20 border-b">
                   <div className="h-16 flex items-center justify-between px-2 sm:px-4 gap-2">
@@ -183,7 +188,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
 
               <SheetContent side="left" className="p-0 flex flex-col">
                 <SheetHeader className="p-4 border-b">
-                    <SheetTitle>Repertório - {schedule.name}</SheetTitle>
+                    <SheetTitleComponent>Repertório - {schedule.name}</SheetTitleComponent>
                 </SheetHeader>
                 <ScrollArea className="flex-grow">
                     <div className="p-2 space-y-1">
