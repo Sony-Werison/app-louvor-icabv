@@ -85,13 +85,18 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
 
   const handleSort = (key: SortKey) => {
     if (key === 'title') {
-        setSortConfig({ key: 'title', direction: 'asc' });
-        return;
+      setSortConfig(current => ({
+        key: 'title',
+        direction: current.key === 'title' && current.direction === 'asc' ? 'desc' : 'asc'
+      }));
+      return;
     }
-
+    
     let direction: SortDirection = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
+    } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
+        direction = 'asc';
     }
     setSortConfig({ key, direction });
   };

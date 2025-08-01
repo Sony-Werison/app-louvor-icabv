@@ -78,6 +78,8 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     let direction: SortDirection = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
+    } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
+        direction = 'asc';
     }
     setSortConfig({ key, direction });
   };
@@ -186,7 +188,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as any)}>
-            <TabsList className="grid w-full grid-cols-4 sm:w-auto">
+            <TabsList className="grid w-full grid-cols-4 sm:w-auto h-auto">
               {categories.map((cat) => (
                 <TabsTrigger
                   key={cat}
@@ -339,6 +341,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     
 
     
+
 
 
 
