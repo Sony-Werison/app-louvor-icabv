@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ListMusic, Play, Pause, FileText, Music, X, ChevronLeft, ChevronRight, Rabbit, Turtle, ZoomIn, ZoomOut } from 'lucide-react';
+import { ListMusic, Play, Pause, FileText, Music, X, ChevronLeft, ChevronRight, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Badge } from './ui/badge';
@@ -251,7 +251,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                       </div>
                   )}
                   </ScrollArea>
-                   {activeSong && activeTab === 'chords' && (
+                  {activeSong && activeTab === 'chords' && (
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center gap-4 rounded-full border bg-background/80 px-3 py-1 shadow-lg backdrop-blur-sm">
                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
                         <Turtle className="h-5 w-5" />
