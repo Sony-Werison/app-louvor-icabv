@@ -240,10 +240,10 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.2 }}
-                          className="flex items-center gap-2 p-2 rounded-md hover:bg-muted bg-card"
+                          className="flex items-center justify-between gap-2 p-2 rounded-md hover:bg-muted bg-card"
                         >
-                          <div className="flex items-center shrink-0">
-                              <div className="flex flex-col">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="flex flex-col shrink-0">
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 
@@ -262,19 +262,19 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                                 >
                                     <ArrowDown className="h-4 w-4"/>
                                 </Button>
-                              </div>
-                            <Button variant="ghost" size="icon" onClick={() => handleCheckedChange(song.id, false)} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive">
-                                <X className="h-4 w-4"/>
-                            </Button>
-                          </div>
+                            </div>
 
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <span className="text-sm font-bold text-muted-foreground w-5 text-center">{index + 1}</span>
+                            <span className="text-sm font-bold text-muted-foreground w-5 text-center shrink-0">{index + 1}</span>
+                            
                             <div className="flex-1 truncate">
                                 <p className="font-medium truncate">{song.title}</p>
                                 <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
                             </div>
                           </div>
+
+                          <Button variant="ghost" size="icon" onClick={() => handleCheckedChange(song.id, false)} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive">
+                              <X className="h-4 w-4"/>
+                          </Button>
                         </motion.div>
                       ))}
                       </AnimatePresence>
