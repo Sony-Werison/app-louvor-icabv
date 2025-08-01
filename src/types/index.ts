@@ -1,7 +1,8 @@
 
+
 export type Role = 'admin' | 'dirigente' | 'viewer';
 
-export type MemberRole = 'Dirigente' | 'Pregador' | 'Multimídia';
+export type MemberRole = 'Dirigente' | 'Pregador' | 'Multimídia' | 'Convidado';
 export type SongCategory = 'Hino' | 'Louvor' | 'Infantil';
 
 export type Member = {

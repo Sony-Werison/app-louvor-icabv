@@ -73,13 +73,6 @@ export function MonthlyScheduleView({
   
   const sortedSchedules = [...schedules].sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  const getFilteredMembers = (role: MemberRole | undefined) => {
-    if (!role) {
-      return members;
-    }
-    return members.filter(member => member.roles.includes(role));
-  };
-
   return (
     <>
       {/* Mobile View */}
@@ -90,10 +83,9 @@ export function MonthlyScheduleView({
             schedule={schedule}
             members={members}
             columns={columns}
-            getFilteredMembers={getFilteredMembers}
+            getAssignedMemberIds={getAssignedMemberIds}
             handleMemberChange={handleMemberChange}
             handleClearAssignment={handleClearAssignment}
-            getAssignedMemberIds={getAssignedMemberIds}
             handleDateChange={handleDateChange}
             handleRemoveDate={handleRemoveDate}
             isReadOnly={isReadOnly}
@@ -128,10 +120,9 @@ export function MonthlyScheduleView({
                  isDesktop 
                  members={members}
                  columns={columns}
-                 getFilteredMembers={getFilteredMembers}
+                 getAssignedMemberIds={getAssignedMemberIds}
                  handleMemberChange={handleMemberChange}
                  handleClearAssignment={handleClearAssignment}
-                 getAssignedMemberIds={getAssignedMemberIds}
                  handleDateChange={handleDateChange}
                  handleRemoveDate={handleRemoveDate}
                  isReadOnly={isReadOnly}

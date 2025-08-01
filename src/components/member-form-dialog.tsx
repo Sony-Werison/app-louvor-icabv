@@ -32,7 +32,7 @@ interface MemberFormDialogProps {
   member: Member | null;
 }
 
-const memberRoles: MemberRole[] = ['Dirigente', 'Pregador', 'Multimídia'];
+const memberRoles: MemberRole[] = ['Dirigente', 'Pregador', 'Multimídia', 'Convidado'];
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),

@@ -54,7 +54,6 @@ export function ScheduleListItem({
   schedule,
   members,
   columns,
-  getFilteredMembers,
   getAssignedMemberIds,
   handleMemberChange,
   handleClearAssignment,
@@ -66,7 +65,6 @@ export function ScheduleListItem({
     schedule: MonthlySchedule;
     members: Member[];
     columns: ScheduleColumn[];
-    getFilteredMembers: (role: MemberRole | undefined) => Member[];
     getAssignedMemberIds: (date: Date, columnId: string) => (string | null)[];
     handleMemberChange: (date: Date, columnId: string, memberId: string, index: number) => void;
     handleClearAssignment: (date: Date, columnId: string, index: number) => void;
@@ -76,10 +74,20 @@ export function ScheduleListItem({
     isReadOnly?: boolean;
 }) {
 
+  const getFilteredMembersForColumn = (column: ScheduleColumn): Member[] => {
+    if (column.id.includes('pregacao')) {
+        return members.filter(m => m.roles.includes('Pregador') || m.roles.includes('Convidado'));
+    }
+    if (column.role) {
+        return members.filter(m => m.roles.includes(column.role!));
+    }
+    return members;
+  };
+
   const renderDesktopAssignment = (col: ScheduleColumn) => {
     const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
     const slots = col.isMulti ? [0, 1] : [0];
-    const filteredMembersForColumn = getFilteredMembers(col.role);
+    const filteredMembersForColumn = getFilteredMembersForColumn(col);
 
     return (
         <div className={`flex gap-1 ${col.isMulti ? 'flex-col' : ''}`}>
@@ -171,7 +179,7 @@ export function ScheduleListItem({
                         {columns.map(col => {
                             const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
                             const slots = col.isMulti ? [0, 1] : [0];
-                            const filteredMembersForColumn = getFilteredMembers(col.role);
+                            const filteredMembersForColumn = getFilteredMembersForColumn(col);
                             return (
                                 <div key={col.id}>
                                     <label className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-1.5">
