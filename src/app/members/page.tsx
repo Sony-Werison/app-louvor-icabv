@@ -3,7 +3,6 @@
 
 import { useState, useMemo } from 'react';
 import type { Member, MemberRole } from '@/types';
-import { members as initialMembers } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,7 +33,7 @@ import { useAuth } from '@/context/auth-context';
 
 export default function MembersPage() {
   const { can } = useAuth();
-  const [members, setMembers] = useState<Member[]>(initialMembers);
+  const { members, monthlySchedules, scheduleColumns, addMember, updateMember, removeMember } = useSchedule();
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isScheduleViewOpen, setIsScheduleViewOpen] = useState(false);
@@ -42,14 +41,11 @@ export default function MembersPage() {
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
   const [memberToView, setMemberToView] = useState<Member | null>(null);
 
-  const { monthlySchedules, scheduleColumns } = useSchedule();
-
   const handleSaveMember = (memberData: Omit<Member, 'id'> & { id?: string }) => {
     if (memberData.id) {
-      setMembers(members.map((m) => (m.id === memberData.id ? { ...m, ...memberData } as Member : m)));
+      updateMember(memberData.id, memberData);
     } else {
-      const newMember = { ...memberData, id: `m${Date.now()}` } as Member;
-      setMembers([...members, newMember]);
+      addMember(memberData);
     }
     setIsFormDialogOpen(false);
     setSelectedMember(null);
@@ -72,7 +68,7 @@ export default function MembersPage() {
 
   const handleDeleteConfirm = () => {
     if (memberToDelete) {
-      setMembers(members.filter((m) => m.id !== memberToDelete.id));
+      removeMember(memberToDelete.id);
       setIsAlertOpen(false);
       setMemberToDelete(null);
     }

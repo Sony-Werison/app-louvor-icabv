@@ -22,6 +22,9 @@ interface ScheduleContextType {
   removeSchedule: (date: Date) => void;
   updateSchedule: (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => void;
   updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => void;
+  addMember: (memberData: Omit<Member, 'id'>) => void;
+  updateMember: (memberId: string, updates: Partial<Member>) => void;
+  removeMember: (memberId: string) => void;
   updateSong: (songId: string, updates: Partial<Song>) => void;
   addOrUpdateSongs: (songsToAdd: Song[]) => void;
   isLoading: boolean;
@@ -51,7 +54,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setMonthlySchedules(loadedSchedules);
       } catch (error) {
         console.error("Failed to load data from blob store:", error);
-        // Optionally handle error, e.g., show a toast
       } finally {
         setIsLoading(false);
       }
@@ -101,6 +103,25 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     saveMonthlySchedules(newSchedules);
   };
 
+  const addMember = (memberData: Omit<Member, 'id'>) => {
+    const newMember = { ...memberData, id: `m${Date.now()}` };
+    const newMembers = [...members, newMember];
+    setMembers(newMembers);
+    saveMembers(newMembers);
+  };
+
+  const updateMember = (memberId: string, updates: Partial<Member>) => {
+    const newMembers = members.map(m => m.id === memberId ? { ...m, ...updates } : m);
+    setMembers(newMembers);
+    saveMembers(newMembers);
+  };
+
+  const removeMember = (memberId: string) => {
+    const newMembers = members.filter(m => m.id !== memberId);
+    setMembers(newMembers);
+    saveMembers(newMembers);
+  };
+
   const updateSong = (songId: string, updates: Partial<Song>) => {
     const newSongs = songs.map(s => s.id === songId ? { ...s, ...updates } : s);
     setSongs(newSongs);
@@ -108,12 +129,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addOrUpdateSongs = (songsToAdd: Song[]) => {
-    const newSongs = [...songs];
+    let newSongs = [...songs];
     
     songsToAdd.forEach(song => {
       const existingSongIndex = newSongs.findIndex(s => s.title.toLowerCase() === song.title.toLowerCase());
       if (existingSongIndex > -1) {
-        // Update existing song, preserving its ID, but updating frequency
         const existingSong = newSongs[existingSongIndex];
         newSongs[existingSongIndex] = { 
           ...existingSong, 
@@ -121,7 +141,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
           timesPlayedTotal: song.timesPlayedTotal 
         };
       } else {
-        // Add new song
         newSongs.push({ ...song, id: `s${Date.now()}${Math.random()}` });
       }
     });
@@ -141,13 +160,18 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       removeSchedule,
       updateSchedule,
       updateSchedulePlaylist,
+      addMember,
+      updateMember,
+      removeMember,
       updateSong,
       addOrUpdateSongs,
       isLoading,
     }}>
       {isLoading ? (
-          <div className="flex items-center justify-center h-screen">
-              <div>Carregando dados...</div>
+          <div className="flex items-center justify-center h-screen bg-background">
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-muted-foreground">Carregando dados da nuvem...</p>
+              </div>
           </div>
       ) : children}
     </ScheduleContext.Provider>
