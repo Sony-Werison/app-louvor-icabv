@@ -144,7 +144,7 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
                             Músicas a Atualizar ({songsToUpdate.length})
                         </AlertTitle>
                         <AlertDescription>
-                             <ScrollArea className="max-h-24 border rounded-md p-2 mt-2">
+                             <ScrollArea className="h-40 border rounded-md p-2 mt-2">
                                 <ul className="text-xs space-y-1">
                                     {songsToUpdate.map((song, i) => <li key={i} className="truncate">{song.title}</li>)}
                                 </ul>
@@ -159,7 +159,7 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
                             Músicas não encontradas ({songsNotFound.length})
                         </AlertTitle>
                         <AlertDescription>
-                             <ScrollArea className="max-h-24 border rounded-md p-2 mt-2">
+                             <ScrollArea className="h-40 border rounded-md p-2 mt-2">
                                 <ul className="text-xs space-y-1">
                                     {songsNotFound.map((song, i) => <li key={i} className="truncate">{song.title}</li>)}
                                 </ul>

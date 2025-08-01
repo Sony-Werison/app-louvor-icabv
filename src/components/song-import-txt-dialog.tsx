@@ -299,7 +299,7 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
                         <AccordionContent>
                            <AlertDescription>
                                 <p className="mb-2 text-sm">As seguintes músicas foram ignoradas por terem títulos duplicados no lote de importação:</p>
-                                <ScrollArea className="max-h-20 border rounded-md p-2">
+                                <ScrollArea className="h-20 border rounded-md p-2">
                                     <ul className="text-xs space-y-1">
                                         {conflicts.map((title, i) => <li key={i} className="truncate">{title}</li>)}
                                     </ul>
