@@ -81,7 +81,7 @@ export function ChordDisplay({ chordsText }: ChordDisplayProps) {
         
         if (isSectionHeader(currentLine) && !currentLine.includes('[')) {
             elements.push(
-                <div key={`section-${i}`} className="font-bold text-muted-foreground mt-4 mb-2">
+                <div key={`section-${i}`} className="font-bold text-muted-foreground mt-4 mb-2 pl-4">
                     {currentLine}
                 </div>
             );
