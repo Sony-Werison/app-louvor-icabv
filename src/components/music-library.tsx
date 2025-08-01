@@ -104,15 +104,16 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
   }, [songs]);
 
   const filteredSongs = useMemo(() => {
+    const lowercasedSearchTerm = searchTerm.toLowerCase();
     const filtered = songs.filter(
-        (song) =>
+      (song) =>
         (activeCategory === 'all' || song.category === activeCategory) &&
-        (song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        song.artist.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (song.title.toLowerCase().includes(lowercasedSearchTerm) ||
+          song.artist.toLowerCase().includes(lowercasedSearchTerm) ||
+          (song.lyrics || '').toLowerCase().includes(lowercasedSearchTerm)) &&
         (chordFilter === 'all' ||
-         (chordFilter === 'with' && hasChords(song)) ||
-         (chordFilter === 'without' && !hasChords(song))
-        )
+          (chordFilter === 'with' && hasChords(song)) ||
+          (chordFilter === 'without' && !hasChords(song)))
     );
 
     return [...filtered].sort((a, b) => {
@@ -182,7 +183,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar por título ou artista..."
+            placeholder="Buscar por título, artista ou letra..."
             className="pl-10 w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -343,6 +344,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     
 
     
+
 
 
 
