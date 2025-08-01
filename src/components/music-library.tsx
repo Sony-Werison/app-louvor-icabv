@@ -84,6 +84,21 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
 
   const hasChords = (song: Song) => song.chords && song.chords.includes('[');
 
+  const categoryCounts = useMemo(() => {
+    const counts: Record<SongCategory | 'all', number> = {
+      all: songs.length,
+      Louvor: 0,
+      Hino: 0,
+      Infantil: 0,
+    };
+    songs.forEach(song => {
+      if (song.category && counts[song.category] !== undefined) {
+        counts[song.category]++;
+      }
+    });
+    return counts;
+  }, [songs]);
+
   const filteredSongs = useMemo(() => {
     const filtered = songs.filter(
         (song) =>
@@ -173,7 +188,10 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
           <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as any)}>
               <TabsList className="grid w-full grid-cols-4 sm:w-auto sm:grid-cols-4">
                   {categories.map(cat => (
-                     <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{categoryLabels[cat]}</TabsTrigger>
+                     <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">
+                        <span>{categoryLabels[cat]}</span>
+                        <span className="ml-1.5 text-xs text-muted-foreground/80 font-mono">{categoryCounts[cat]}</span>
+                     </TabsTrigger>
                   ))}
               </TabsList>
           </Tabs>
@@ -315,6 +333,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     </div>
   );
 }
+
 
 
 
