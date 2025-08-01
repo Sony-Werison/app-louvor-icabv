@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ListMusic, Play, Pause, FileText, Music, X, ChevronLeft, ChevronRight, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus } from 'lucide-react';
+import { ListMusic, Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Badge } from './ui/badge';
@@ -215,30 +215,6 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
               </header>
 
               <main className="flex-grow min-h-0 relative group/main">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={cn(
-                        "absolute left-2 top-1/2 -translate-y-1/2 z-10 h-12 w-12 rounded-full bg-black/10 opacity-0 group-hover/main:opacity-100 transition-opacity",
-                        activeSongIndex === 0 && "invisible"
-                    )}
-                    onClick={() => navigateSong('prev')}
-                    aria-label="Música anterior"
-                  >
-                    <ChevronLeft className="h-8 w-8" />
-                  </Button>
-                   <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={cn(
-                        "absolute right-2 top-1/2 -translate-y-1/2 z-10 h-12 w-12 rounded-full bg-black/10 opacity-0 group-hover/main:opacity-100 transition-opacity",
-                        activeSongIndex === songsInPlaylist.length - 1 && "invisible"
-                    )}
-                    onClick={() => navigateSong('next')}
-                    aria-label="Próxima música"
-                  >
-                    <ChevronRight className="h-8 w-8" />
-                  </Button>
                   <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
                   {activeSong ? (
                       <div className="p-4 sm:p-8 pb-24" style={{ fontSize: `${fontSize}rem` }}>
@@ -262,6 +238,9 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
                         <Turtle className="h-6 w-6" />
                     </Button>
+                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigateSong('prev')} disabled={activeSongIndex === 0}>
+                        <SkipBack className="h-6 w-6 fill-current"/>
+                    </Button>
                     <div className="flex flex-col items-center">
                       <button
                         onClick={handleToggleScrolling}
@@ -279,6 +258,9 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                         {scrollSpeed}
                       </span>
                     </div>
+                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigateSong('next')} disabled={activeSongIndex === songsInPlaylist.length - 1}>
+                        <SkipForward className="h-6 w-6 fill-current"/>
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
                         <Rabbit className="h-6 w-6" />
                     </Button>
