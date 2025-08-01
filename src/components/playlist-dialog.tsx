@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator } from './ui/dropdown-menu';
+import { PlayCountDisplay } from './play-count-display';
 
 interface PlaylistDialogProps {
   schedule: Schedule;
@@ -177,20 +178,22 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                                 <AccordionContent>
                                     <div className="space-y-4 pt-2">
                                         {songs.map(song => (
-                                            <div key={song.id} className="flex items-center space-x-3">
+                                            <div key={song.id} className="flex items-start space-x-3">
                                                 <Checkbox 
                                                     id={`song-${song.id}`} 
                                                     onCheckedChange={(checked) => handleCheckedChange(song.id, checked)}
                                                     checked={currentPlaylist.includes(song.id)}
+                                                    className="mt-1"
                                                 />
-                                                <Label htmlFor={`song-${song.id}`} className="flex flex-col cursor-pointer flex-grow">
-                                                    <span>{song.title}</span>
-                                                    <span className="text-sm text-muted-foreground">
-                                                        {song.artist}
-                                                        <span className="ml-2 font-mono text-xs opacity-70">
-                                                            (T: {song.timesPlayedQuarterly ?? 0}, Total: {song.timesPlayedTotal ?? 0})
-                                                        </span>
-                                                    </span>
+                                                <Label htmlFor={`song-${song.id}`} className="flex flex-col cursor-pointer flex-grow gap-1">
+                                                    <div>
+                                                      <span>{song.title}</span>
+                                                      <span className="text-sm text-muted-foreground ml-2">{song.artist}</span>
+                                                    </div>
+                                                    <PlayCountDisplay 
+                                                      quarterly={song.timesPlayedQuarterly}
+                                                      total={song.timesPlayedTotal}
+                                                    />
                                                 </Label>
                                             </div>
                                         ))}
