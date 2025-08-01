@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import type { Song } from '@/types';
 
 export default function SongDetailPage() {
   const params = useParams();
@@ -46,7 +47,7 @@ export default function SongDetailPage() {
     );
   }
 
-  const handleSave = (updatedSong: any) => {
+  const handleSave = (updatedSong: Omit<Song, 'id'>) => {
     updateSong(songId, updatedSong);
     setIsEditing(false);
   };
@@ -77,14 +78,6 @@ export default function SongDetailPage() {
         )}
       </div>
 
-      {isEditing && can('edit:songs') ? (
-         <SongFormDialog
-            isOpen={isEditing}
-            onOpenChange={setIsEditing}
-            onSave={handleSave}
-            song={song}
-        />
-      ) : (
         <Card>
           <CardHeader>
             <div className="flex justify-between items-start">
@@ -112,6 +105,14 @@ export default function SongDetailPage() {
             </Tabs>
           </CardContent>
         </Card>
+
+      {isEditing && can('edit:songs') && (
+         <SongFormDialog
+            isOpen={isEditing}
+            onOpenChange={setIsEditing}
+            onSave={handleSave}
+            song={song}
+        />
       )}
 
       {isAlertOpen && (
