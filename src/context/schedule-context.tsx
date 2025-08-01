@@ -180,21 +180,19 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     saveMonthlySchedules(updatedSchedules);
   };
 
-  const addOrUpdateSongs = (songsToAdd: Song[]) => {
-    let newSongs = [...songs];
+  const addOrUpdateSongs = (songsToUpdate: Song[]) => {
+    const songsToUpdateMap = new Map(songsToUpdate.map(s => [s.id, s]));
     
-    songsToAdd.forEach(song => {
-      const existingSongIndex = newSongs.findIndex(s => s.title.toLowerCase() === song.title.toLowerCase());
-      if (existingSongIndex > -1) {
-        const existingSong = newSongs[existingSongIndex];
-        newSongs[existingSongIndex] = { 
-          ...existingSong, 
-          timesPlayedQuarterly: song.timesPlayedQuarterly, 
-          timesPlayedTotal: song.timesPlayedTotal 
+    const newSongs = songs.map(song => {
+      if (songsToUpdateMap.has(song.id)) {
+        const updatedSongData = songsToUpdateMap.get(song.id)!;
+        return { 
+          ...song, 
+          timesPlayedQuarterly: updatedSongData.timesPlayedQuarterly, 
+          timesPlayedTotal: updatedSongData.timesPlayedTotal 
         };
-      } else {
-        newSongs.push({ ...song, id: `s${Date.now()}${Math.random()}` });
       }
+      return song;
     });
       
     setSongs(newSongs);

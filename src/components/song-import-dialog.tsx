@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Song, SongCategory } from '@/types';
+import type { Song } from '@/types';
 import Papa from 'papaparse';
 import {
   Dialog,
@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { CheckCircle, UploadCloud, FileDiff } from 'lucide-react';
+import { CheckCircle, UploadCloud, FileDiff, AlertCircle } from 'lucide-react';
 
 interface SongImportDialogProps {
   isOpen: boolean;
@@ -28,12 +28,12 @@ interface SongImportDialogProps {
 
 type ParsedSong = Omit<Song, 'id' | 'key' | 'category'> & { category: string };
 
-const requiredHeaders = ['title', 'artist', 'category', 'timesPlayedQuarterly', 'timesPlayedTotal'];
+const requiredHeaders = ['title', 'timesPlayedQuarterly', 'timesPlayedTotal'];
 
 export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }: SongImportDialogProps) {
     const [file, setFile] = useState<File | null>(null);
-    const [songsToCreate, setSongsToCreate] = useState<Song[]>([]);
     const [songsToUpdate, setSongsToUpdate] = useState<Song[]>([]);
+    const [songsNotFound, setSongsNotFound] = useState<ParsedSong[]>([]);
     const [isProcessed, setIsProcessed] = useState(false);
     const { toast } = useToast();
 
@@ -41,8 +41,8 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
         if (event.target.files && event.target.files[0]) {
             setFile(event.target.files[0]);
             setIsProcessed(false);
-            setSongsToCreate([]);
             setSongsToUpdate([]);
+            setSongsNotFound([]);
         }
     };
 
@@ -69,32 +69,29 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
                 }
                 
                 const data = result.data as ParsedSong[];
-                const existingTitles = new Set(existingSongs.map(s => s.title.toLowerCase()));
-                const toCreate: Song[] = [];
                 const toUpdate: Song[] = [];
+                const notFound: ParsedSong[] = [];
 
                 data.forEach(parsedSong => {
-                    const songData: Song = {
-                        ...parsedSong,
-                        id: '', // será gerado no contexto
-                        key: parsedSong.key || 'N/A', 
-                        category: parsedSong.category as SongCategory,
-                        timesPlayedQuarterly: Number(parsedSong.timesPlayedQuarterly) || 0,
-                        timesPlayedTotal: Number(parsedSong.timesPlayedTotal) || 0,
-                    };
+                    const existingSong = existingSongs.find(
+                        s => s.title.toLowerCase() === parsedSong.title.toLowerCase()
+                    );
                     
-                    if (existingTitles.has(songData.title.toLowerCase())) {
-                        toUpdate.push(songData);
+                    if (existingSong) {
+                        toUpdate.push({
+                           ...existingSong,
+                           timesPlayedQuarterly: Number(parsedSong.timesPlayedQuarterly) || existingSong.timesPlayedQuarterly || 0,
+                           timesPlayedTotal: Number(parsedSong.timesPlayedTotal) || existingSong.timesPlayedTotal || 0,
+                        });
                     } else {
-                        toCreate.push(songData);
-                        existingTitles.add(songData.title.toLowerCase()); // Evitar duplicatas no mesmo lote
+                        notFound.push(parsedSong);
                     }
                 });
 
-                setSongsToCreate(toCreate);
                 setSongsToUpdate(toUpdate);
+                setSongsNotFound(notFound);
                 setIsProcessed(true);
-                toast({ title: "Arquivo processado!", description: `Pronto para importar ${toCreate.length + toUpdate.length} músicas.`});
+                toast({ title: "Arquivo processado!", description: `Pronto para atualizar ${toUpdate.length} música(s).`});
 
             },
             error: (error) => {
@@ -104,17 +101,16 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
     };
     
     const handleFinalSave = () => {
-        const allSongs = [...songsToCreate, ...songsToUpdate];
-        onSave(allSongs);
-        toast({ title: 'Importação bem-sucedida!', description: `${allSongs.length} músicas foram importadas/atualizadas.` });
+        onSave(songsToUpdate);
+        toast({ title: 'Importação bem-sucedida!', description: `${songsToUpdate.length} músicas foram atualizadas.` });
         onOpenChange(false);
     };
 
     const resetState = () => {
         setFile(null);
         setIsProcessed(false);
-        setSongsToCreate([]);
         setSongsToUpdate([]);
+        setSongsNotFound([]);
     }
 
     const handleOpenChange = (open: boolean) => {
@@ -128,9 +124,9 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Importar Músicas via CSV</DialogTitle>
+            <DialogTitle>Atualizar Frequência via CSV</DialogTitle>
             <DialogDescription>
-                Selecione um arquivo CSV com as colunas: title, artist, category, timesPlayedQuarterly, timesPlayedTotal.
+                Selecione um arquivo CSV com as colunas: title, timesPlayedQuarterly, timesPlayedTotal. Apenas músicas existentes serão atualizadas.
             </DialogDescription>
           </DialogHeader>
           
@@ -141,21 +137,6 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
             </div>
           ) : (
             <div className="py-4 space-y-4">
-                {songsToCreate.length > 0 && (
-                    <Alert>
-                        <AlertTitle className="flex items-center gap-2">
-                            <UploadCloud className="h-5 w-5 text-green-500"/>
-                            Músicas a Criar ({songsToCreate.length})
-                        </AlertTitle>
-                        <AlertDescription>
-                            <ScrollArea className="max-h-24 border rounded-md p-2 mt-2">
-                                <ul className="text-xs space-y-1">
-                                    {songsToCreate.map((song, i) => <li key={i} className="truncate">{song.title}</li>)}
-                                </ul>
-                            </ScrollArea>
-                        </AlertDescription>
-                    </Alert>
-                )}
                 {songsToUpdate.length > 0 && (
                      <Alert>
                         <AlertTitle className="flex items-center gap-2">
@@ -171,14 +152,29 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
                         </AlertDescription>
                     </Alert>
                 )}
-                 {songsToCreate.length === 0 && songsToUpdate.length === 0 && (
+                {songsNotFound.length > 0 && (
                      <Alert variant="destructive">
+                        <AlertTitle className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5"/>
+                            Músicas não encontradas ({songsNotFound.length})
+                        </AlertTitle>
+                        <AlertDescription>
+                             <ScrollArea className="max-h-24 border rounded-md p-2 mt-2">
+                                <ul className="text-xs space-y-1">
+                                    {songsNotFound.map((song, i) => <li key={i} className="truncate">{song.title}</li>)}
+                                </ul>
+                            </ScrollArea>
+                        </AlertDescription>
+                    </Alert>
+                )}
+                 {songsToUpdate.length === 0 && songsNotFound.length === 0 && (
+                     <Alert>
                         <AlertTitle className="flex items-center gap-2">
                             <CheckCircle className="h-5 w-5"/>
                             Nenhuma Alteração
                         </AlertTitle>
                         <AlertDescription>
-                            Não foram encontradas músicas novas para criar ou dados de frequência para atualizar.
+                            Não foram encontradas músicas correspondentes no arquivo para atualizar.
                         </AlertDescription>
                     </Alert>
                  )}
@@ -190,8 +186,8 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
               Cancelar
             </Button>
             {isProcessed ? (
-                <Button onClick={handleFinalSave} disabled={songsToCreate.length === 0 && songsToUpdate.length === 0}>
-                    Confirmar Importação
+                <Button onClick={handleFinalSave} disabled={songsToUpdate.length === 0}>
+                    Confirmar Atualização
                 </Button>
             ) : (
                 <Button onClick={processFile} disabled={!file}>Processar</Button>
