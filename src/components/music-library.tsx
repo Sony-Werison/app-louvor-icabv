@@ -188,10 +188,10 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
           <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as any)}>
               <TabsList className="grid w-full grid-cols-4 sm:w-auto sm:grid-cols-4">
                   {categories.map(cat => (
-                     <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm px-2">
-                        <div className="flex items-center gap-1.5">
-                          <span className="hidden sm:inline">{categoryLabels[cat]}</span>
-                          <span className="text-xs text-muted-foreground/80 font-mono hidden sm:inline">{categoryCounts[cat]}</span>
+                     <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">
+                        <div className="hidden sm:flex items-center gap-1.5">
+                          <span>{categoryLabels[cat]}</span>
+                          <span className="text-xs text-muted-foreground/80 font-mono">{categoryCounts[cat]}</span>
                         </div>
                         <div className="sm:hidden text-center">
                           <div>{categoryLabels[cat]}</div>
