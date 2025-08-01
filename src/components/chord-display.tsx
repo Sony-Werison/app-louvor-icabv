@@ -65,24 +65,29 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
     const parts = line.split(chordRegex).filter(Boolean);
 
     return (
-      <div key={lineIndex} className="leading-normal" style={{lineHeight: '1.75'}}>
+      <div key={lineIndex} className="flex flex-wrap items-end leading-none">
         {parts.map((part, partIndex) => {
           if (part.match(chordRegex)) {
             const chord = part.substring(1, part.length - 1);
             if (chord === '') {
-              // This case should be handled by renderPureChordLine, but as a fallback:
-              return <span key={partIndex} className="inline-block w-2" />;
+              // This is a space chord like `[]` over a space in lyrics.
+              // We'll let the lyric part handle the space.
+              return null;
             }
             const transposed = transposeChord(chord, transposeBy);
             return (
-              <span key={partIndex} className="relative inline-block h-4 px-px align-bottom">
-                <b className="text-primary font-bold absolute bottom-full left-1/2 -translate-x-1/2 whitespace-nowrap">
+               // This is a chord associated with the *next* part of the lyrics
+               // We render it now, but it will be visually placed above the upcoming text.
+              <b key={partIndex} className="flex flex-col items-center self-end h-full">
+                <span className="text-primary font-bold whitespace-nowrap">
                   {transposed}
-                </b>
-              </span>
+                </span>
+                <span className="opacity-0 select-none">-</span>
+              </b>
             );
           }
-          return <span key={partIndex}>{part}</span>;
+          // This is a piece of lyric
+          return <span key={partIndex} className="leading-tight">{part}</span>;
         })}
       </div>
     );
@@ -98,14 +103,14 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
       }
       
       return (
-          <div key={`chord-line-${lineIndex}`} className="flex items-end leading-normal" style={{lineHeight: '1.75'}}>
+          <div key={`chord-line-${lineIndex}`} className="flex items-end">
               {parts.map((part, index) => {
                   if (part.startsWith('[') && part.endsWith(']')) {
                     const chord = part.substring(1, part.length - 1);
                     if (chord) {
                         const transposed = transposeChord(chord, transposeBy);
                         return (
-                            <b key={index} className="text-primary font-bold px-2">
+                            <b key={index} className="text-primary font-bold px-1">
                                 {transposed}
                             </b>
                         );
@@ -114,13 +119,13 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
                   }
                   
                   if (part.startsWith('-')) {
-                      return part.split('').map((_, i) => <span key={`${index}-${i}`} className="inline-block w-4">&nbsp;</span>);
+                      return part.split('').map((_, i) => <span key={`${index}-${i}`} className="inline-block" style={{width: '0.75ch'}}>&nbsp;</span>);
                   }
 
                   if (part) {
                       const transposed = transposeChord(part, transposeBy);
                       return (
-                          <b key={index} className="text-primary font-bold px-2">
+                          <b key={index} className="text-primary font-bold px-1">
                               {transposed}
                           </b>
                       );
@@ -141,7 +146,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
 
         if (isSectionHeader(currentLine)) {
             lineContent = (
-                <div className="font-bold text-muted-foreground mt-6 mb-2">
+                <div className="font-bold text-muted-foreground mt-4 mb-1">
                     {currentLine.replace(/[\[\]:]/g, '')}
                 </div>
             );
@@ -151,7 +156,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
             lineContent = renderTextWithChords(currentLine, i);
         } else {
             lineContent = (
-                <div className={cn("leading-normal", !currentLine.trim() && "h-4")} style={{lineHeight: '1.75'}}>
+                <div className={cn("leading-tight", !currentLine.trim() && "h-4")}>
                     {currentLine}
                 </div>
             );
