@@ -188,7 +188,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
           <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as any)}>
               <TabsList className="grid w-full grid-cols-4 sm:w-auto sm:grid-cols-4">
                   {categories.map(cat => (
-                     <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm flex-col sm:flex-row h-auto sm:h-9">
+                     <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm flex-col sm:flex-row h-auto sm:h-9 py-1.5">
                         <span>{categoryLabels[cat]}</span>
                         <span className="sm:ml-1.5 text-xs text-muted-foreground/80 font-mono">{categoryCounts[cat]}</span>
                      </TabsTrigger>
@@ -250,7 +250,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                  <SortableHeader sortKey="key" label="Tom" />
               </TableHead>
               <TableHead className="w-24 text-center">
-                  <div className="flex flex-col items-center justify-center -my-2 gap-0 sm:flex-row sm:gap-4">
+                  <div className="flex items-center justify-center -my-2 gap-x-4 gap-y-0 flex-wrap">
                         <SortableHeader sortKey="timesPlayedQuarterly" label="Trimestre" />
                         <SortableHeader sortKey="timesPlayedTotal" label="Total" />
                   </div>
@@ -333,8 +333,3 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     </div>
   );
 }
-
-
-
-
-
