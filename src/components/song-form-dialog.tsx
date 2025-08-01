@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { ScrollArea } from './ui/scroll-area';
 
 const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
 
@@ -51,116 +52,118 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
 
   return (
      <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent>
-            <DialogHeader>
+        <DialogContent className="max-h-[90dvh] flex flex-col p-0">
+            <DialogHeader className="p-6 pb-0">
             <DialogTitle>{song ? 'Editar Música' : 'Nova Música'}</DialogTitle>
              <DialogDescription>
                 Preencha os detalhes da música abaixo.
             </DialogDescription>
             </DialogHeader>
-            <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Título</FormLabel>
-                        <FormControl>
-                        <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="artist"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Artista</FormLabel>
-                        <FormControl>
-                        <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Categoria</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <ScrollArea className="flex-1 px-6">
+                <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                            <FormLabel>Título</FormLabel>
                             <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Selecione a categoria" />
-                            </SelectTrigger>
+                            <Input {...field} />
                             </FormControl>
-                            <SelectContent>
-                            {songCategories.map(cat => (
-                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                </div>
-                
-                <FormField
-                control={form.control}
-                name="lyrics"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Letra</FormLabel>
-                    <FormControl>
-                        <Textarea rows={8} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-
-                 <FormField
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="artist"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Artista</FormLabel>
+                            <FormControl>
+                            <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Categoria</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecione a categoria" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                {songCategories.map(cat => (
+                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    </div>
+                    
+                    <FormField
                     control={form.control}
-                    name="key"
+                    name="lyrics"
                     render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Tom</FormLabel>
+                        <FormItem>
+                        <FormLabel>Letra</FormLabel>
                         <FormControl>
-                        <Input {...field} />
+                            <Textarea rows={8} {...field} />
                         </FormControl>
                         <FormMessage />
-                    </FormItem>
+                        </FormItem>
                     )}
-                />
+                    />
 
-                <FormField
-                control={form.control}
-                name="chords"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Cifras</FormLabel>
-                    <FormControl>
-                        <Textarea className="font-code" rows={8} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                
-                <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <Button type="submit">Salvar</Button>
-                </DialogFooter>
-            </form>
-            </Form>
+                    <FormField
+                        control={form.control}
+                        name="key"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Tom</FormLabel>
+                            <FormControl>
+                            <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                    control={form.control}
+                    name="chords"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Cifras</FormLabel>
+                        <FormControl>
+                            <Textarea className="font-code" rows={8} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    
+                    <DialogFooter className="sticky bottom-0 -mx-6 px-6 py-4 bg-background border-t">
+                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                            Cancelar
+                        </Button>
+                        <Button type="submit">Salvar</Button>
+                    </DialogFooter>
+                </form>
+                </Form>
+            </ScrollArea>
         </DialogContent>
     </Dialog>
   );
