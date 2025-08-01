@@ -1,108 +1,154 @@
 
-'use server';
-import { put, list, del, head } from '@vercel/blob';
-import {
-  members as initialMembers,
-  songs as initialSongs,
-  monthlySchedules as initialMonthlySchedules,
-} from './data';
-import type { Member, Song, MonthlySchedule } from '@/types';
+'use client';
 
-// Define keys for Vercel Blob (which are filenames)
-const KEYS = {
-  MEMBERS: 'members.json',
-  SONGS: 'songs.json',
-  SCHEDULES: 'monthlySchedules.json',
-  INITIALIZED: 'db_initialized.flag',
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import type { MonthlySchedule, Member, Song, ScheduleColumn } from '@/types';
+import { scheduleColumns as initialScheduleColumns } from '@/lib/data';
+import {
+  fetchMembers,
+  fetchSongs,
+  fetchMonthlySchedules,
+  saveMembers,
+  saveSongs,
+  saveMonthlySchedules,
+} from '@/lib/blob-storage';
+
+interface ScheduleContextType {
+  monthlySchedules: MonthlySchedule[];
+  members: Member[];
+  songs: Song[];
+  scheduleColumns: ScheduleColumn[];
+  addSchedule: (date: Date) => void;
+  removeSchedule: (date: Date) => void;
+  updateSchedule: (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => void;
+  updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => void;
+  updateSong: (songId: string, updates: Partial<Song>) => void;
+  addOrUpdateSongs: (songsToAdd: Song[]) => void;
+  isLoading: boolean;
+}
+
+const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
+
+export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
+  const [monthlySchedules, setMonthlySchedules] = useState<MonthlySchedule[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [scheduleColumns] = useState<ScheduleColumn[]>(initialScheduleColumns);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load data from blob storage on initial render
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      try {
+        const [loadedMembers, loadedSongs, loadedSchedules] = await Promise.all([
+          fetchMembers(),
+          fetchSongs(),
+          fetchMonthlySchedules(),
+        ]);
+        setMembers(loadedMembers);
+        setSongs(loadedSongs);
+        setMonthlySchedules(loadedSchedules);
+      } catch (error) {
+        console.error("Failed to load data from blob store:", error);
+        // Optionally handle error, e.g., show a toast
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const addSchedule = (date: Date) => {
+    const newSchedule: MonthlySchedule = {
+      date,
+      assignments: {},
+    };
+    const newSchedules = [...monthlySchedules, newSchedule].sort((a,b) => a.date.getTime() - b.date.getTime());
+    setMonthlySchedules(newSchedules);
+    saveMonthlySchedules(newSchedules);
+  };
+
+  const removeSchedule = (date: Date) => {
+    const newSchedules = monthlySchedules.filter(s => s.date.getTime() !== date.getTime());
+    setMonthlySchedules(newSchedules);
+    saveMonthlySchedules(newSchedules);
+  };
+
+  const updateSchedule = (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => {
+    const newSchedules = monthlySchedules.map(s => (s.date.getTime() === date.getTime() ? { ...s, ...updates } : s));
+    setMonthlySchedules(newSchedules);
+    saveMonthlySchedules(newSchedules);
+  };
+  
+  const updateSchedulePlaylist = (scheduleId: string, playlist: string[]) => {
+    const [type, timestampStr] = scheduleId.replace('s-', '').split('-');
+    const timestamp = parseInt(timestampStr, 10);
+
+    const newSchedules = monthlySchedules.map(schedule => {
+        if (schedule.date.getTime() === timestamp) {
+            const newSchedule = { ...schedule };
+            if (type === 'manha') {
+                newSchedule.playlist_manha = playlist;
+            } else if (type === 'noite') {
+                newSchedule.playlist_noite = playlist;
+            }
+            return newSchedule;
+        }
+        return schedule;
+    });
+    setMonthlySchedules(newSchedules);
+    saveMonthlySchedules(newSchedules);
+  };
+
+  const updateSong = (songId: string, updates: Partial<Song>) => {
+    const newSongs = songs.map(s => s.id === songId ? { ...s, ...updates } : s);
+    setSongs(newSongs);
+    saveSongs(newSongs);
+  };
+  
+  const addOrUpdateSongs = (songsToAdd: Song[]) => {
+    const newSongs = [...songs];
+    
+    songsToAdd.forEach(song => {
+      const existingSongIndex = newSongs.findIndex(s => s.title.toLowerCase() === song.title.toLowerCase());
+      if (existingSongIndex > -1) {
+        // Update existing song, preserving its ID
+        newSongs[existingSongIndex] = { ...newSongs[existingSongIndex], ...song };
+      } else {
+        // Add new song
+        newSongs.push({ ...song, id: `s${Date.now()}${Math.random()}` });
+      }
+    });
+      
+    setSongs(newSongs);
+    saveSongs(newSongs);
+  };
+
+
+  return (
+    <ScheduleContext.Provider value={{ 
+      monthlySchedules, 
+      members, 
+      songs, 
+      scheduleColumns,
+      addSchedule,
+      removeSchedule,
+      updateSchedule,
+      updateSchedulePlaylist,
+      updateSong,
+      addOrUpdateSongs,
+      isLoading,
+    }}>
+      {isLoading ? <div>Carregando dados...</div> : children}
+    </ScheduleContext.Provider>
+  );
 };
 
-async function initializeDatabase() {
-  try {
-    await head(KEYS.INITIALIZED);
-  } catch (error: any) {
-    if (error.status === 404) {
-      console.log('Database not initialized. Seeding with initial data...');
-      await Promise.all([
-        saveMembers(initialMembers),
-        saveSongs(initialSongs),
-        saveMonthlySchedules(initialMonthlySchedules),
-        put(KEYS.INITIALIZED, 'true', { access: 'public' }),
-      ]);
-      console.log('Database seeded successfully.');
-    } else {
-        throw error;
-    }
+export const useSchedule = () => {
+  const context = useContext(ScheduleContext);
+  if (context === undefined) {
+    throw new Error('useSchedule must be used within a ScheduleProvider');
   }
-}
-
-// Ensure the database is initialized on startup
-initializeDatabase().catch(console.error);
-
-// --- Helper Functions ---
-async function fetchData<T>(key: string, defaultValue: T): Promise<T> {
-  try {
-    const blob = await list({ prefix: key, limit: 1 });
-    if (blob.blobs.length > 0) {
-      const response = await fetch(blob.blobs[0].url);
-      if (!response.ok) { // Check for HTTP errors
-          console.error(`Failed to fetch ${key}, status: ${response.status}`);
-          return defaultValue;
-      }
-      return await response.json();
-    }
-    return defaultValue;
-  } catch (error) {
-    console.error(`Failed to fetch ${key}:`, error);
-    return defaultValue;
-  }
-}
-
-async function saveData<T>(key: string, data: T): Promise<void> {
-    try {
-        await put(key, JSON.stringify(data), { 
-            access: 'public',
-            contentType: 'application/json',
-        });
-    } catch (error) {
-         console.error(`Failed to save ${key}:`, error);
-    }
-}
-
-
-// --- Data Fetching Functions ---
-
-export async function fetchMembers(): Promise<Member[]> {
-  const members = await fetchData<Member[]>(KEYS.MEMBERS, []);
-  return members || [];
-}
-
-export async function fetchSongs(): Promise<Song[]> {
-  const songs = await fetchData<Song[]>(KEYS.SONGS, []);
-  return songs || [];
-}
-
-export async function fetchMonthlySchedules(): Promise<MonthlySchedule[]> {
-  const schedules = await fetchData<any[]>(KEYS.SCHEDULES, []);
-  if (!schedules) return [];
-  // Deserialize dates from string
-  return schedules.map(s => ({ ...s, date: new Date(s.date) }));
-}
-
-// --- Data Mutation Functions ---
-
-export async function saveMembers(members: Member[]): Promise<void> {
-  await saveData(KEYS.MEMBERS, members);
-}
-
-export async function saveSongs(songs: Song[]): Promise<void> {
-  await saveData(KEYS.SONGS, songs);
-}
-
-export async function saveMonthlySchedules(schedules: MonthlySchedule[]): Promise<void> {
-  // Serialize dates to string before storing
-  const schedulesToStore = schedules.map(s => ({
-    ...s,
-    date: s.date.toISOString(),
-  }));
-  await saveData(KEYS.SCHEDULES, schedulesToStore);
-}
+  return context;
+};
