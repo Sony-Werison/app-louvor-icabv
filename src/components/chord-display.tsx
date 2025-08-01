@@ -65,7 +65,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
     const parts = line.split(chordRegex).filter(Boolean);
 
     return (
-      <div key={lineIndex} className="mb-4 leading-normal" style={{lineHeight: '1.75'}}>
+      <div key={lineIndex} className="mb-6 leading-normal" style={{lineHeight: '1.75'}}>
         {parts.map((part, partIndex) => {
           if (part.match(chordRegex)) {
             const chord = part.substring(1, part.length - 1);
@@ -98,7 +98,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
       }
       
       return (
-          <div key={`chord-line-${lineIndex}`} className="flex items-end mb-4 leading-normal" style={{lineHeight: '1.75'}}>
+          <div key={`chord-line-${lineIndex}`} className="flex items-end mb-6 leading-normal" style={{lineHeight: '1.75'}}>
               {parts.map((part, index) => {
                   if (part.startsWith('[') && part.endsWith(']')) {
                     const chord = part.substring(1, part.length - 1);
