@@ -20,6 +20,7 @@ import { ListMusic, Play, Pause, FileText, Music, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Slider } from './ui/slider';
+import { Badge } from './ui/badge';
 
 interface PlaylistViewerProps {
   schedule: Schedule;
@@ -117,7 +118,10 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                           </SheetTrigger>
                           <div className="flex flex-col flex-1 min-w-0">
                             <h1 className="font-headline font-bold text-base sm:text-lg truncate leading-tight">{activeSong?.title || 'Repertório'}</h1>
-                            <p className="text-xs sm:text-sm text-muted-foreground truncate leading-tight">{activeSong?.artist}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-xs sm:text-sm text-muted-foreground truncate leading-tight">{activeSong?.artist}</p>
+                                {activeSong?.key && <Badge variant="secondary" className="text-xs">{activeSong.key}</Badge>}
+                            </div>
                           </div>
                       </div>
                        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
