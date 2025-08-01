@@ -69,10 +69,6 @@ export function LoginDialog() {
       });
     } else {
       setError('');
-      toast({
-        title: 'Login Bem-sucedido!',
-        description: `Você entrou como ${roleLabels[selectedRole]}.`,
-      });
     }
   };
 
@@ -80,9 +76,9 @@ export function LoginDialog() {
     <Dialog open={true}>
       <DialogContent onInteractOutside={(e) => e.preventDefault()} hideCloseButton>
         <DialogHeader>
-          <DialogTitle>Bem-vindo!</DialogTitle>
+          <DialogTitle>Bem-vindo ao Louvor ICABV</DialogTitle>
           <DialogDescription>
-            Selecione seu perfil de acesso para continuar.
+            Selecione seu perfil para acessar a plataforma de gestão de escalas e repertório.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
