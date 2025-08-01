@@ -84,6 +84,11 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   };
 
   const handleSort = (key: SortKey) => {
+    if (key === 'title') {
+        setSortConfig({ key: 'title', direction: 'asc' });
+        return;
+    }
+
     let direction: SortDirection = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
@@ -132,11 +137,12 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-none w-full h-full sm:h-[90vh] p-0 gap-0 flex flex-col">
-        <DialogHeader className="p-4 pt-6 border-b shrink-0 relative text-center">
-            <DialogTitle className="text-xl font-bold">Gerenciar Repertório</DialogTitle>
-            <p className="text-sm text-muted-foreground">{schedule.name}</p>
-           <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0 absolute top-3 right-3">
-              <X/>
+        <DialogHeader className="p-4 border-b shrink-0 relative flex-row items-center justify-center">
+            <DialogTitle className="text-base sm:text-lg font-bold text-center">
+                Gerenciar Repertório - <span className="text-muted-foreground font-medium">{schedule.name}</span>
+            </DialogTitle>
+           <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0 absolute top-1/2 right-3 -translate-y-1/2 h-8 w-8">
+              <X className="h-5 w-5"/>
            </Button>
         </DialogHeader>
         
@@ -270,7 +276,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
             </TabsContent>
         </Tabs>
         
-        <DialogFooter className="p-3 border-t shrink-0 flex-row gap-2">
+        <DialogFooter className="p-3 border-t shrink-0 flex-row justify-center gap-2">
           <Button variant="outline" onClick={() => { setIsOpen(false); onOpenChange(false); }} className="w-full">Cancelar</Button>
           <Button onClick={handleSave} className="w-full">Salvar</Button>
         </DialogFooter>
