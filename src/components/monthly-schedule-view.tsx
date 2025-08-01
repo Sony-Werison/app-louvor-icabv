@@ -98,16 +98,16 @@ export function MonthlyScheduleView({
         <Table className="min-w-max">
           <TableHeader className="bg-background">
             <TableRow className="hover:bg-background">
-              <TableHead className="w-[180px] sticky left-0 z-20 bg-inherit">Data</TableHead>
+              <TableHead className="w-[180px] sticky left-0 z-20 bg-background">Data</TableHead>
               {columns.map((col) => (
-                <TableHead key={col.id} className="sticky top-0 z-10 bg-inherit min-w-[180px]">
+                <TableHead key={col.id} className="sticky top-0 z-10 bg-background min-w-[180px]">
                   <div className="flex items-center gap-2">
                     {col.icon && <col.icon className="h-4 w-4 text-muted-foreground" />}
                     {col.label}
                   </div>
                 </TableHead>
               ))}
-              <TableHead className="w-[50px] sticky right-0 z-20 bg-inherit">Ações</TableHead>
+              <TableHead className="w-[50px] sticky right-0 z-20 bg-background">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
