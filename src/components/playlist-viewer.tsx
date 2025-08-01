@@ -184,6 +184,14 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                               <Plus className="h-4 w-4"/>
                           </Button>
                         </div>
+                        <div className="flex items-center gap-1">
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
+                                <ZoomOut className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
+                                <ZoomIn className="h-4 w-4" />
+                            </Button>
+                        </div>
                         <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0">
                           <X/>
                         </Button>
@@ -234,34 +242,28 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                       </div>
                   )}
                   </ScrollArea>
-                  <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2">
-                     <div className="flex items-center justify-center gap-2 rounded-lg border bg-background/80 p-2 shadow-lg backdrop-blur-sm">
-                        <Button variant="ghost" size="icon" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
-                            <ZoomOut className="h-5 w-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
-                            <ZoomIn className="h-5 w-5" />
-                        </Button>
-                      </div>
-
-                    {activeSong && activeTab === 'chords' && (
-                      <div className="flex flex-col items-center justify-center gap-1 rounded-lg border bg-background/80 p-2 shadow-lg backdrop-blur-sm">
-                        <Button variant="ghost" size="icon" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
-                           <Rabbit className="h-5 w-5" />
-                        </Button>
-                        <Button
-                          variant={isScrolling ? "destructive" : "ghost"}
-                          className="w-10 h-10 rounded-full text-base font-bold"
-                          onClick={handleToggleScrolling}
-                        >
-                            {scrollSpeed}
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
-                           <Turtle className="h-5 w-5" />
-                        </Button>
-                      </div>
-                     )}
+                  {activeSong && activeTab === 'chords' && (
+                  <div className="absolute bottom-4 right-4 z-10 flex flex-col items-center justify-center gap-1 rounded-lg border bg-background/80 p-2 shadow-lg backdrop-blur-sm">
+                    <Button variant="ghost" size="icon" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
+                        <Rabbit className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-12 h-12 rounded-full text-base font-bold relative"
+                      onClick={handleToggleScrolling}
+                    >
+                        <span className="z-10">{scrollSpeed}</span>
+                        {isScrolling ? (
+                            <Pause className="w-6 h-6 absolute inset-0 m-auto text-white z-0 opacity-50" />
+                        ) : (
+                            <Play className="w-6 h-6 absolute inset-0 m-auto text-white z-0 opacity-50" />
+                        )}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
+                        <Turtle className="h-5 w-5" />
+                    </Button>
                   </div>
+                  )}
               </main>
 
               <SheetContent side="left" className="p-0 flex flex-col">
