@@ -48,6 +48,13 @@ const getQuarterlyColorClass = (count: number = 0) => {
     return 'bg-transparent';
 }
 
+const getTotalColorClass = (count: number = 0) => {
+    if (count > 40) return 'bg-destructive/40';
+    if (count > 25) return 'bg-destructive/20';
+    if (count > 10) return 'bg-destructive/10';
+    return 'bg-transparent';
+}
+
 
 export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: PlaylistDialogProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -211,7 +218,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                                                 <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-16", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
                                                     {song.timesPlayedQuarterly ?? 0}
                                                 </div>
-                                                <div className="text-center p-2 w-16 font-medium text-muted-foreground">
+                                                <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-16", getTotalColorClass(song.timesPlayedTotal))}>
                                                     {song.timesPlayedTotal ?? 0}
                                                 </div>
                                             </Label>
