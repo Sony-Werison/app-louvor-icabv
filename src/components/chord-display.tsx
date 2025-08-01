@@ -13,7 +13,7 @@ const chordRegex = /(\[.*?\])/g;
 // Regex to find chords in a string. It's not perfect but covers most cases.
 // It looks for a capital letter A-G, followed by optional 'b' or '#',
 // and then a series of common chord modifiers like 'm', 'maj', 'sus', 'dim', 'aug', 'add', 'M', 'º', '°', etc.
-// Note: The forward slash '/' is escaped as '\\/'.
+// Note: The forward slash '/' is escaped as '\/'.
 const unbracketedChordRegex = /([A-G][b#]?(?:m|maj|sus|dim|aug|add|M|º|°|\/)?\d*(?:sus\d*|add\d*|maj\d*)?(?:[b#]\d{1,2})?)/g;
 
 
@@ -50,10 +50,10 @@ const isPureChordLineWithoutBrackets = (line: string) => {
     const trimmed = line.trim();
     if (!trimmed || line.includes('[') || line.includes(']')) return false;
 
-    // Check if every word in the line is a valid chord.
+    // Check if every word in the line is a valid chord or a hyphen.
     const words = trimmed.split(/\s+/);
-    const chordAloneRegex = new RegExp(`^${unbracketedChordRegex.source}$`, '');
-    return words.every(word => word.match(chordAloneRegex));
+    const chordAloneRegex = new RegExp(`^${unbracketedChordRegex.source}$`);
+    return words.every(word => word === '-' || word.match(chordAloneRegex));
 }
 
 
@@ -90,27 +90,43 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
   };
 
   const renderPureChordLine = (line: string, lineIndex: number) => {
-      let chords: string[] = [];
+      let parts: string[] = [];
       if (isPureChordLineWithBrackets(line)) {
-          const parts = line.split(chordRegex).filter(Boolean);
-          chords = parts.map(p => p.substring(1, p.length - 1));
+          parts = line.split(chordRegex).filter(Boolean);
       } else if (isPureChordLineWithoutBrackets(line)) {
-          chords = line.trim().split(/\s+/);
+          parts = line.trim().split(/\s+/);
       }
       
       return (
           <div key={`chord-line-${lineIndex}`} className="flex items-end gap-x-4 mb-4 leading-normal">
-              {chords.map((chord, index) => {
-                  if (chord) {
-                      const transposed = transposeChord(chord, transposeBy);
+              {parts.map((part, index) => {
+                  if (part.startsWith('[') && part.endsWith(']')) {
+                    const chord = part.substring(1, part.length - 1);
+                    if (chord) {
+                        const transposed = transposeChord(chord, transposeBy);
+                        return (
+                            <b key={index} className="text-primary font-bold">
+                                {transposed}
+                            </b>
+                        );
+                    }
+                    // Render a non-breaking space for empty brackets `[]` to maintain spacing
+                    return <span key={index} className="inline-block w-3">&nbsp;</span>;
+                  }
+                  
+                  if (part === '-') {
+                      return <span key={index} className="inline-block w-3 text-muted-foreground">&ndash;</span>;
+                  }
+
+                  if (part) {
+                      const transposed = transposeChord(part, transposeBy);
                       return (
                           <b key={index} className="text-primary font-bold">
                               {transposed}
                           </b>
                       );
                   }
-                  // Render a non-breaking space for empty brackets `[]` to maintain spacing
-                  return <span key={index} className="inline-block w-3">&nbsp;</span>;
+                  return null;
               })}
           </div>
       );
