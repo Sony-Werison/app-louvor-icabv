@@ -152,15 +152,15 @@ export default function MembersPage() {
         {sortedRoles.map((role) => (
           <section key={role}>
             <h2 className="text-xl sm:text-2xl font-headline font-semibold mb-4 border-b pb-2">{role}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-6">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-x-2 gap-y-4">
               {groupedMembers[role as MemberRole].map((member) => (
-                <div key={member.id} className="relative flex flex-col items-center text-center group">
-                  <div className="cursor-pointer" onClick={() => handleViewSchedule(member)}>
-                    <Avatar className="w-16 h-16 sm:w-20 sm:h-20 mb-2">
+                <div key={member.id} className="relative group">
+                  <div className="flex flex-col items-center cursor-pointer" onClick={() => handleViewSchedule(member)}>
+                    <Avatar className="w-14 h-14 sm:w-16 sm:h-16 mb-2">
                       <AvatarImage src={convertGoogleDriveUrl(member.avatar)} alt={member.name} data-ai-hint="person portrait" />
                       <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <p className="font-medium text-xs sm:text-sm w-full break-words">{member.name}</p>
+                    <p className="font-medium text-xs sm:text-sm text-center w-full break-words">{member.name}</p>
                   </div>
                   {can('edit:members') && (
                     <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
