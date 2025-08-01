@@ -137,7 +137,7 @@ const getWeekends = (date: Date): Date[] => {
     const start = startOfMonth(date);
     const end = endOfMonth(date);
     const days = eachDayOfInterval({ start, end });
-    // Retorna todos os sábados e domingos
+    // Retorna todos os sábados (6) e domingos (0)
     return days.filter(day => getDay(day) === 6 || getDay(day) === 0);
 };
 
