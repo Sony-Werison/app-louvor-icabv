@@ -15,6 +15,7 @@ import { Separator } from './ui/separator';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/context/auth-context';
+import { convertGoogleDriveUrl } from '@/lib/utils';
 
 interface ScheduleViewProps {
   initialSchedules: Schedule[];
@@ -112,7 +113,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                         {leader && (
                         <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8" data-ai-hint="person portrait">
-                            <AvatarImage src={leader.avatar} alt={leader.name} />
+                            <AvatarImage src={convertGoogleDriveUrl(leader.avatar)} alt={leader.name} />
                             <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
                             </Avatar>
                             <div>
@@ -124,7 +125,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                         {preacher && (
                         <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8" data-ai-hint="person portrait">
-                            <AvatarImage src={preacher.avatar} alt={preacher.name} />
+                            <AvatarImage src={convertGoogleDriveUrl(preacher.avatar)} alt={preacher.name} />
                             <AvatarFallback>{getMemberInitial(preacher.name)}</AvatarFallback>
                             </Avatar>
                             <div>
@@ -144,7 +145,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                                 {teamMembers.map(member => (
                                     <div key={member.id} className="flex items-center gap-2 text-xs">
                                         <Avatar className="h-5 w-5" data-ai-hint="person portrait">
-                                            <AvatarImage src={member.avatar} alt={member.name} />
+                                            <AvatarImage src={convertGoogleDriveUrl(member.avatar)} alt={member.name} />
                                             <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
                                         </Avatar>
                                         <span className="text-muted-foreground">{member.name}</span>

@@ -10,7 +10,8 @@ export function convertGoogleDriveUrl(url: string): string {
     return url;
   }
   
-  const match = url.match(/file\/d\/([a-zA-Z0-9_-]+)/);
+  // Regex to find the file ID in various Google Drive URL formats
+  const match = url.match(/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/open\?id=([a-zA-Z0-9_-]+)/);
   if (match && match[1]) {
     const fileId = match[1];
     return `https://drive.google.com/uc?export=view&id=${fileId}`;
