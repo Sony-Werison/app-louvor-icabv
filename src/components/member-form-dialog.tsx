@@ -55,7 +55,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const avatar = values.avatar || `https://i.pravatar.cc/150?u=${values.email}`;
+    const avatar = values.avatar || '';
     if (member) {
       onSave({ ...values, roles: values.roles as MemberRole[], avatar, id: member.id });
     } else {
