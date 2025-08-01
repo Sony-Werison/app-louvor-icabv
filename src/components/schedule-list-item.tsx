@@ -74,7 +74,7 @@ export function ScheduleListItem({
   isDesktop = false,
 }: ScheduleListItemProps) {
 
-  const renderAssignment = (col: ScheduleColumn) => {
+  const renderDesktopAssignment = (col: ScheduleColumn) => {
     const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
     const slots = col.isMulti ? [0, 1] : [0];
     const filteredMembersForColumn = getFilteredMembers(col.role);
@@ -117,7 +117,7 @@ export function ScheduleListItem({
             </TableCell>
             {columns.map((col) => (
                 <TableCell key={col.id} className="p-2">
-                    {renderAssignment(col)}
+                    {renderDesktopAssignment(col)}
                 </TableCell>
             ))}
             <TableCell className="p-2 sticky right-0 z-10 bg-background group-hover:bg-muted/50">
@@ -161,15 +161,30 @@ export function ScheduleListItem({
                     </AccordionTrigger>
                     <AccordionContent>
                         <div className="p-3 pt-0 space-y-4">
-                        {columns.map(col => (
-                            <div key={col.id}>
-                                <label className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-1.5">
-                                    {col.icon && <col.icon className="h-4 w-4" />}
-                                    {col.label}
-                                </label>
-                                {renderAssignment(col)}
-                            </div>
-                        ))}
+                        {columns.map(col => {
+                            const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
+                            const slots = col.isMulti ? [0, 1] : [0];
+                            const filteredMembersForColumn = getFilteredMembers(col.role);
+                            return (
+                                <div key={col.id}>
+                                    <label className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-1.5">
+                                        {col.icon && <col.icon className="h-4 w-4" />}
+                                        {col.label}
+                                    </label>
+                                    <div className={`flex gap-1 ${col.isMulti ? 'flex-col' : ''}`}>
+                                        {slots.map(index => (
+                                            <MemberSelector
+                                                key={`${col.id}-${index}`}
+                                                assignedMemberId={assignedMemberIds[index]}
+                                                filteredMembers={filteredMembersForColumn}
+                                                onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
+                                                onClear={() => handleClearAssignment(schedule.date, col.id, index)}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )
+                        })}
                         </div>
                     </AccordionContent>
                 </AccordionItem>
