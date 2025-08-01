@@ -13,7 +13,7 @@ import { useAuth } from '@/context/auth-context';
 import type { Song } from '@/types';
 
 export default function MusicPage() {
-  const { songs, addOrUpdateSongs, addSong, addSongsFromImport } = useSchedule();
+  const { songs, addOrUpdateSongs, addSong, addSongsFromImport, removeSongs } = useSchedule();
   const [isImporting, setIsImporting] = useState(false);
   const [isImportingTxt, setIsImportingTxt] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -45,7 +45,7 @@ export default function MusicPage() {
             </div>
         )}
       </div>
-      <MusicLibrary songs={songs} />
+      <MusicLibrary songs={songs} onSongsDelete={removeSongs} isReadOnly={!can('edit:songs')}/>
 
       {isImporting && (
           <SongImportDialog

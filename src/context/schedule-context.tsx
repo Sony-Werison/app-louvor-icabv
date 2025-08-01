@@ -29,6 +29,7 @@ interface ScheduleContextType {
   addSong: (songData: Omit<Song, 'id'>) => void;
   updateSong: (songId: string, updates: Partial<Song>) => void;
   removeSong: (songId: string) => void;
+  removeSongs: (songIds: string[]) => void;
   addOrUpdateSongs: (songs: Song[]) => void;
   addSongsFromImport: (songs: Omit<Song, 'id'>[]) => void;
   isLoading: boolean;
@@ -160,18 +161,24 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeSong = (songId: string) => {
-    const newSongs = songs.filter(s => s.id !== songId);
+    removeSongs([songId]);
+  };
+  
+  const removeSongs = (songIds: string[]) => {
+    const songIdSet = new Set(songIds);
+    const newSongs = songs.filter(s => !songIdSet.has(s.id));
     setSongs(newSongs);
     saveSongs(newSongs);
+
     const updatedSchedules = monthlySchedules.map(schedule => ({
       ...schedule,
-      playlist_manha: schedule.playlist_manha?.filter(id => id !== songId),
-      playlist_noite: schedule.playlist_noite?.filter(id => id !== songId),
+      playlist_manha: schedule.playlist_manha?.filter(id => !songIdSet.has(id)),
+      playlist_noite: schedule.playlist_noite?.filter(id => !songIdSet.has(id)),
     }));
     setMonthlySchedules(updatedSchedules);
     saveMonthlySchedules(updatedSchedules);
   };
-  
+
   const addOrUpdateSongs = (songsToAdd: Song[]) => {
     let newSongs = [...songs];
     
@@ -223,6 +230,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       addSong,
       updateSong,
       removeSong,
+      removeSongs,
       addOrUpdateSongs,
       addSongsFromImport,
       isLoading,

@@ -2,17 +2,32 @@
 'use client';
 
 import type { Song, SongCategory } from '@/types';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { Checkbox } from './ui/checkbox';
+import { Button } from './ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 interface MusicLibraryProps {
   songs: Song[];
+  onSongsDelete: (songIds: string[]) => void;
+  isReadOnly?: boolean;
 }
 
 const categories: (SongCategory | 'all')[] = ['all', 'Louvor', 'Hino', 'Infantil'];
@@ -37,21 +52,52 @@ const getTotalColorClass = (count: number = 0) => {
     return 'bg-transparent';
 }
 
-export function MusicLibrary({ songs }: MusicLibraryProps) {
+export function MusicLibrary({ songs, onSongsDelete, isReadOnly = false }: MusicLibraryProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<SongCategory | 'all'>('all');
+  const [selectedSongs, setSelectedSongs] = useState<string[]>([]);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
   const router = useRouter();
 
-  const filteredSongs = songs.filter(
+  const filteredSongs = useMemo(() => songs.filter(
     (song) =>
       (activeCategory === 'all' || song.category === activeCategory) &&
       (song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       song.artist.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  ), [songs, activeCategory, searchTerm]);
   
-  const handleRowClick = (songId: string) => {
+  const handleRowClick = (songId: string, e: React.MouseEvent) => {
+    // Navigate only if the click is not on an interactive element like a checkbox
+    if ((e.target as HTMLElement).closest('[role="checkbox"]')) {
+      return;
+    }
     router.push(`/music/${songId}`);
   };
+
+  const toggleSelectAll = (checked: boolean | 'indeterminate') => {
+    if (checked) {
+      setSelectedSongs(filteredSongs.map(s => s.id));
+    } else {
+      setSelectedSongs([]);
+    }
+  }
+  
+  const toggleSongSelection = (songId: string) => {
+    setSelectedSongs(prev => 
+      prev.includes(songId) 
+        ? prev.filter(id => id !== songId)
+        : [...prev, songId]
+    );
+  }
+
+  const handleDeleteSelected = () => {
+    onSongsDelete(selectedSongs);
+    setSelectedSongs([]);
+    setIsAlertOpen(false);
+  }
+
+  const isAllFilteredSelected = selectedSongs.length > 0 && selectedSongs.length === filteredSongs.length;
+
 
   return (
     <div className="space-y-4">
@@ -74,10 +120,30 @@ export function MusicLibrary({ songs }: MusicLibraryProps) {
             </TabsList>
         </Tabs>
       </div>
+
+       {selectedSongs.length > 0 && !isReadOnly && (
+        <div className="flex justify-between items-center bg-muted/50 p-2 rounded-lg">
+          <span className="text-sm font-medium">{selectedSongs.length} música(s) selecionada(s)</span>
+          <Button variant="destructive" size="sm" onClick={() => setIsAlertOpen(true)}>
+            <Trash2 className="mr-2 h-4 w-4"/>
+            Excluir Selecionadas
+          </Button>
+        </div>
+      )}
+
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
+              {!isReadOnly && (
+                <TableHead className="w-12">
+                  <Checkbox 
+                    checked={isAllFilteredSelected} 
+                    onCheckedChange={toggleSelectAll} 
+                    aria-label="Selecionar todas as músicas"
+                  />
+                </TableHead>
+              )}
               <TableHead>Título</TableHead>
               <TableHead className="hidden sm:table-cell">Artista</TableHead>
               <TableHead className="hidden md:table-cell">Categoria</TableHead>
@@ -89,7 +155,21 @@ export function MusicLibrary({ songs }: MusicLibraryProps) {
           <TableBody>
             {filteredSongs.length > 0 ? (
               filteredSongs.map((song) => (
-                <TableRow key={song.id} onClick={() => handleRowClick(song.id)} className="cursor-pointer">
+                <TableRow 
+                  key={song.id} 
+                  onClick={(e) => handleRowClick(song.id, e)} 
+                  className="cursor-pointer"
+                  data-state={selectedSongs.includes(song.id) ? 'selected' : ''}
+                >
+                  {!isReadOnly && (
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedSongs.includes(song.id)}
+                        onCheckedChange={() => toggleSongSelection(song.id)}
+                        aria-label={`Selecionar ${song.title}`}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell className="font-medium">
                     <div>{song.title}</div>
                     <div className="text-muted-foreground text-xs sm:hidden">{song.artist}</div>
@@ -111,7 +191,7 @@ export function MusicLibrary({ songs }: MusicLibraryProps) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={isReadOnly ? 6 : 7} className="h-24 text-center">
                   Nenhuma música encontrada.
                 </TableCell>
               </TableRow>
@@ -119,6 +199,21 @@ export function MusicLibrary({ songs }: MusicLibraryProps) {
           </TableBody>
         </Table>
       </div>
+
+       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Essa ação não pode ser desfeita. Isso excluirá permanentemente {selectedSongs.length} música(s) da biblioteca e de todos os repertórios.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteSelected}>Excluir</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
