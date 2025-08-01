@@ -75,13 +75,15 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
   const router = useRouter();
 
   const handleSort = (key: SortKey) => {
-    let direction: SortDirection = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
-        direction = 'asc';
+    const isNumeric = key === 'timesPlayedQuarterly' || key === 'timesPlayedTotal';
+    let newDirection: SortDirection = 'asc';
+
+    if (sortConfig.key === key) {
+      newDirection = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      newDirection = isNumeric ? 'desc' : 'asc';
     }
-    setSortConfig({ key, direction });
+    setSortConfig({ key, direction: newDirection });
   };
 
   const hasChords = (song: Song) => song.chords && song.chords.includes('[');
@@ -341,6 +343,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     
 
     
+
 
 
 

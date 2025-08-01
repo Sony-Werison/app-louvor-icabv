@@ -84,21 +84,15 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   };
 
   const handleSort = (key: SortKey) => {
-    if (key === 'title') {
-      setSortConfig(current => ({
-        key: 'title',
-        direction: current.key === 'title' && current.direction === 'asc' ? 'desc' : 'asc'
-      }));
-      return;
+    const isNumeric = key === 'quarterly' || key === 'total';
+    let newDirection: SortDirection = 'asc';
+
+    if (sortConfig.key === key) {
+      newDirection = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      newDirection = isNumeric ? 'desc' : 'asc';
     }
-    
-    let direction: SortDirection = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
-        direction = 'asc';
-    }
-    setSortConfig({ key, direction });
+    setSortConfig({ key, direction: newDirection });
   };
   
   const songsInPlaylist = useMemo(() => 
