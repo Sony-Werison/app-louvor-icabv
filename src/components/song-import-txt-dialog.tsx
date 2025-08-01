@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Song } from '@/types';
+import type { Song, SongCategory } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { CheckCircle, AlertCircle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Label } from './ui/label';
 
 interface SongImportTxtDialogProps {
   isOpen: boolean;
@@ -26,11 +28,14 @@ interface SongImportTxtDialogProps {
 }
 
 type ParsedSong = Omit<Song, 'id'>;
+const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
+
 
 export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSongs }: SongImportTxtDialogProps) {
     const [files, setFiles] = useState<FileList | null>(null);
     const [songsToImport, setSongsToImport] = useState<ParsedSong[]>([]);
     const [conflicts, setConflicts] = useState<string[]>([]);
+    const [category, setCategory] = useState<SongCategory>('Louvor');
     const { toast } = useToast();
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,7 +56,7 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
         const localConflicts: string[] = [];
         const existingTitles = new Set(existingSongs.map(s => s.title.toLowerCase()));
 
-        Array.from(files).forEach(file => {
+        Array.from(files).forEach((file, fileIndex) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const content = e.target?.result as string;
@@ -71,13 +76,15 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
                     .trim();
 
                 if (existingTitles.has(title.toLowerCase())) {
-                    localConflicts.push(title);
+                    if (!localConflicts.includes(title)) {
+                      localConflicts.push(title);
+                    }
                 } else {
                     parsed.push({
                         title,
                         artist,
-                        key: 'N/A', // Key is not in this new format
-                        category: 'Louvor', // Default category
+                        key: 'N/A',
+                        category: category,
                         chords: body,
                         lyrics: body.replace(/\[[^\]]+\]/g, ''), // Basic lyric extraction
                     });
@@ -85,7 +92,7 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
                 }
 
                 // Update state after the last file is read
-                if (file === files[files.length - 1]) {
+                if (fileIndex === files.length - 1) {
                     if (parsed.length === 0 && localConflicts.length > 0) {
                         toast({ title: 'Nenhuma música nova para importar', description: `Todas as ${localConflicts.length} músicas encontradas já existem.`, variant: 'default' });
                     } else if (parsed.length > 0) {
@@ -114,14 +121,30 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
         <DialogHeader>
           <DialogTitle>Importar Músicas via TXT</DialogTitle>
           <DialogDescription>
-              Selecione um ou mais arquivos .txt. Cada arquivo deve conter "Título:" e "Artista:" nas primeiras linhas.
+              Selecione um ou mais arquivos .txt. O arquivo deve ter "Título:" e "Artista:" nas primeiras linhas. A categoria será aplicada a todas as músicas importadas.
           </DialogDescription>
         </DialogHeader>
         
         {songsToImport.length === 0 && conflicts.length === 0 ? (
           <div className="space-y-4 py-4">
-              <Input type="file" accept=".txt" onChange={handleFileChange} multiple />
-              {files && <p className="text-sm text-muted-foreground">{files.length} arquivo(s) selecionado(s).</p>}
+              <div className="space-y-2">
+                <Label htmlFor="category-select">Categoria para Importar</Label>
+                <Select value={category} onValueChange={(v) => setCategory(v as SongCategory)}>
+                    <SelectTrigger id="category-select">
+                        <SelectValue placeholder="Selecione a categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {songCategories.map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="file-upload">Arquivos TXT</Label>
+                <Input id="file-upload" type="file" accept=".txt" onChange={handleFileChange} multiple />
+                {files && <p className="text-sm text-muted-foreground">{files.length} arquivo(s) selecionado(s).</p>}
+              </div>
           </div>
         ) : (
           <div className="py-4 space-y-4">
@@ -132,7 +155,7 @@ export function SongImportTxtDialog({ isOpen, onOpenChange, onSave, existingSong
                         Pronto para Importar
                     </AlertTitle>
                     <AlertDescription>
-                        <p className="mb-2">{songsToImport.length} música(s) serão adicionadas:</p>
+                        <p className="mb-2">{songsToImport.length} música(s) serão adicionadas com a categoria "{category}":</p>
                         <ScrollArea className="max-h-20 border rounded-md p-2">
                             <ul className="text-xs space-y-1">
                                 {songsToImport.map((song, i) => <li key={i} className="truncate">{song.title}</li>)}
