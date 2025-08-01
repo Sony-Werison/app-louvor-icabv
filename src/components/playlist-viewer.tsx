@@ -36,6 +36,7 @@ const MAX_FONT_SIZE = 2.5;
 const FONT_STEP = 0.1;
 const MIN_SPEED = 1;
 const MAX_SPEED = 10;
+const DEFAULT_FONT_SIZE = 1.25;
 
 export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewerProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -43,7 +44,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   const [activeTab, setActiveTab] = useState<'lyrics' | 'chords'>('lyrics');
   const [activeSongId, setActiveSongId] = useState<string | null>(null);
   const [transpose, setTranspose] = useState(0);
-  const [fontSize, setFontSize] = useState(1.25); // em rem, default é text-lg (1.125rem)
+  const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE); // em rem
 
   const [isScrolling, setIsScrolling] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(5); // 1 to 10
@@ -143,6 +144,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   }
   
   const transposedKey = activeSong ? getTransposedKey(activeSong.key, transpose) : null;
+  const zoomPercentage = Math.round((fontSize / DEFAULT_FONT_SIZE) * 100);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
@@ -175,19 +177,20 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                               <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
                           </TabsList>
                         </Tabs>
-                        <div className={cn("flex items-center gap-1", activeTab !== 'chords' && 'invisible' )}>
-                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose - 1)}>
-                              <Minus className="h-4 w-4"/>
-                          </Button>
-                          <span className="font-bold w-8 text-center text-sm">{transpose > 0 ? `+${transpose}` : transpose}</span>
-                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose + 1)}>
-                              <Plus className="h-4 w-4"/>
-                          </Button>
+                        <div className="flex items-center gap-1">
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose - 1)} disabled={activeTab !== 'chords'}>
+                                <Minus className="h-4 w-4"/>
+                            </Button>
+                            <span className="font-bold w-8 text-center text-sm">{transpose > 0 ? `+${transpose}` : transpose}</span>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose + 1)} disabled={activeTab !== 'chords'}>
+                                <Plus className="h-4 w-4"/>
+                            </Button>
                         </div>
                         <div className="flex items-center gap-1">
                             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
                                 <ZoomOut className="h-4 w-4" />
                             </Button>
+                            <span className="font-bold w-12 text-center text-sm tabular-nums">{zoomPercentage}%</span>
                             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
                                 <ZoomIn className="h-4 w-4" />
                             </Button>
@@ -226,7 +229,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                   </Button>
                   <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
                   {activeSong ? (
-                      <div className="p-4 sm:p-8" style={{ fontSize: `${fontSize}rem` }}>
+                      <div className="p-4 sm:p-8 pb-24" style={{ fontSize: `${fontSize}rem` }}>
                           {activeTab === 'lyrics' ? (
                               <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75', whiteSpace: 'pre-wrap'}}>
                                   {activeSong.lyrics || 'Nenhuma letra disponível.'}
@@ -253,10 +256,9 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                       aria-label={isScrolling ? "Pausar rolagem" : "Iniciar rolagem"}
                     >
                       {isScrolling ? 
-                        <Pause className="w-8 h-8"/> :
-                        <svg viewBox="0 0 100 100" className="w-14 h-14 fill-current">
+                        <Pause className="w-8 h-8 fill-current"/> :
+                        <svg viewBox="0 0 100 100" className="w-12 h-12 fill-current">
                             <path d="M 30 20 L 80 50 L 30 80 Z" />
-                            <text x="50" y="59" fontSize="32" fill="hsl(var(--background))" textAnchor="middle" dy=".3em">{scrollSpeed}</text>
                         </svg>
                       }
                     </button>
