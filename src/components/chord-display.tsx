@@ -68,8 +68,6 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
         <div key={lineIndex} className="mb-2 leading-8">
             {parts.map((part, partIndex) => {
                 if (part.match(chordRegex)) {
-                    const chord = part.substring(1, part.length - 1);
-                    const transposed = transposeChord(chord, transposeBy);
                     // This is a chord - it's paired with the next text part
                     // so we render it with the text part. Here we return null.
                     return null;
@@ -79,18 +77,18 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
                 const previousPart = partIndex > 0 ? parts[partIndex - 1] : '';
                 const hasPairedChord = previousPart.match(chordRegex);
 
+                let chord;
                 if (hasPairedChord) {
-                  const chord = previousPart.substring(1, previousPart.length - 1);
-                  const transposed = transposeChord(chord, transposeBy);
-                  return (
-                    <div key={partIndex} className="inline-flex flex-col-reverse align-bottom">
-                      <span className="leading-tight">{part}</span>
-                      <b className="text-primary font-bold leading-none">{transposed}</b>
-                    </div>
-                  );
+                    chord = previousPart.substring(1, previousPart.length - 1);
                 }
+                const transposed = chord ? transposeChord(chord, transposeBy) : '\u00A0'; // Non-breaking space
                 
-                return <span key={partIndex}>{part}</span>;
+                return (
+                    <div key={partIndex} className="inline-flex flex-col-reverse align-bottom">
+                        <span className="leading-tight">{part}</span>
+                        <b className={cn("text-primary font-bold leading-none", !hasPairedChord && "text-transparent")}>{transposed}</b>
+                    </div>
+                );
             })}
         </div>
     );
