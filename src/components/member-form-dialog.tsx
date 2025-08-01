@@ -39,7 +39,6 @@ const formSchema = z.object({
   roles: z.array(z.string()).refine(value => value.some(item => item), {
     message: "Você deve selecionar pelo menos uma função.",
   }),
-  email: z.string().email({ message: 'Por favor, insira um e-mail válido.' }),
   avatar: z.string().url({ message: 'Por favor, insira uma URL de avatar válida.' }).optional().or(z.literal('')),
 });
 
@@ -49,7 +48,6 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
     defaultValues: {
       name: member?.name || '',
       roles: member?.roles || [],
-      email: member?.email || '',
       avatar: member?.avatar || '',
     },
   });
@@ -129,20 +127,6 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
                     />
                   ))}
                   </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="email@exemplo.com" {...field} />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

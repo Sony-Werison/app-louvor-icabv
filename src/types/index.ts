@@ -9,7 +9,6 @@ export type Member = {
   name: string;
   avatar: string;
   roles: MemberRole[];
-  email: string;
 };
 
 export type Song = {
