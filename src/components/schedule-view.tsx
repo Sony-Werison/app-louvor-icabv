@@ -72,7 +72,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
 
   return (
     <div className="space-y-6">
-        <h1 className="text-2xl font-headline font-bold">Reuniões da semana</h1>
+        <h1 className="text-xl font-headline font-bold">Reuniões da semana</h1>
         <TooltipProvider>
         {schedules.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground bg-card border rounded-lg p-8 sm:p-12 h-[calc(100vh-10rem)]">
