@@ -1,11 +1,17 @@
+
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 export function AppLogo({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div className="bg-primary text-primary-foreground p-2 rounded-full flex items-center justify-center h-10 w-10">
-        <span className="text-xs font-bold">ICABV</span>
-      </div>
+      <Image 
+        src="/logo.png" 
+        alt="Logotipo ICABV" 
+        width={40} 
+        height={40}
+        className="rounded-full"
+      />
       <h1 className="text-lg font-headline font-bold text-primary-foreground">
         Louvor ICABV
       </h1>
