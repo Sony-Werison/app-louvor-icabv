@@ -12,6 +12,7 @@ import {
   saveSongs,
   saveMonthlySchedules,
 } from '@/lib/blob-storage';
+import { getDay } from 'date-fns';
 
 interface ScheduleContextType {
   monthlySchedules: MonthlySchedule[];
@@ -51,9 +52,22 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
           fetchSongs(),
           fetchMonthlySchedules(),
         ]);
+        
+        // Corrective filter: remove any schedules that are not Saturday (6) or Sunday (0)
+        const correctedSchedules = loadedSchedules.filter(schedule => {
+            const day = getDay(schedule.date);
+            return day === 0 || day === 6;
+        });
+
+        if (correctedSchedules.length !== loadedSchedules.length) {
+            // If we filtered something, it means there was bad data, let's save the corrected version.
+            await saveMonthlySchedules(correctedSchedules);
+        }
+        
         setMembers(loadedMembers);
         setSongs(loadedSongs);
-        setMonthlySchedules(loadedSchedules);
+        setMonthlySchedules(correctedSchedules);
+
       } catch (error) {
         console.error("Failed to load data from blob store:", error);
       } finally {
