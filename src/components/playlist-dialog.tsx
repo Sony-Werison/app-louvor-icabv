@@ -139,7 +139,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-none w-full h-full sm:h-[90vh] p-0 gap-0 flex flex-col">
-        <DialogHeader className="p-4 border-b shrink-0 flex-row items-center justify-center">
+        <DialogHeader className="p-4 border-b shrink-0">
             <DialogTitle className="text-base sm:text-lg font-bold text-center">
                 Gerenciar Repertório - <span className="text-muted-foreground font-medium">{schedule.name}</span>
             </DialogTitle>
