@@ -101,6 +101,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   );
 
   const availableSongs = useMemo(() => {
+    const lowercasedSearchTerm = searchTerm.toLowerCase();
     const sortedSongs = [...allSongs].sort((a, b) => {
         const { key, direction } = sortConfig;
         const dir = direction === 'asc' ? 1 : -1;
@@ -119,7 +120,9 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     return sortedSongs.filter(song => 
       !currentPlaylist.includes(song.id) &&
       (activeCategory === 'all' || song.category === activeCategory) &&
-      (song.title.toLowerCase().includes(searchTerm.toLowerCase()) || song.artist.toLowerCase().includes(searchTerm.toLowerCase()))
+      (song.title.toLowerCase().includes(lowercasedSearchTerm) || 
+       song.artist.toLowerCase().includes(lowercasedSearchTerm) ||
+       (song.lyrics || '').toLowerCase().includes(lowercasedSearchTerm))
     )
   },[allSongs, currentPlaylist, searchTerm, activeCategory, sortConfig]);
   
@@ -159,7 +162,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                     <div className="relative flex-grow">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input 
-                            placeholder="Buscar por título ou artista..." 
+                            placeholder="Buscar por título, artista ou letra..." 
                             className="pl-10 h-10" 
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
