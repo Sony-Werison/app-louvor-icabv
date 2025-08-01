@@ -19,13 +19,14 @@ interface ScheduleContextType {
   updateSchedule: (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => void;
   updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => void;
   updateSong: (songId: string, updates: Partial<Song>) => void;
+  addOrUpdateSongs: (songsToAdd: Song[]) => void;
 }
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
 export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [monthlySchedules, setMonthlySchedules] = useState<MonthlySchedule[]>(initialMonthlySchedules);
-  const [members] = useState<Member[]>(initialMembers);
+  const [members, setMembers] = useState<Member[]>(initialMembers);
   const [songs, setSongs] = useState<Song[]>(initialSongs);
   const [scheduleColumns] = useState<ScheduleColumn[]>(initialScheduleColumns);
 
@@ -70,6 +71,26 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const updateSong = (songId: string, updates: Partial<Song>) => {
     setSongs(prev => prev.map(s => s.id === songId ? { ...s, ...updates } : s));
   };
+  
+  const addOrUpdateSongs = (songsToAdd: Song[]) => {
+    setSongs(currentSongs => {
+      const newSongs = [...currentSongs];
+      const titles = new Set(newSongs.map(s => s.title.toLowerCase()));
+
+      songsToAdd.forEach(song => {
+        const existingSong = newSongs.find(s => s.title.toLowerCase() === song.title.toLowerCase());
+        if (existingSong) {
+          // Update existing song
+          Object.assign(existingSong, song, { id: existingSong.id });
+        } else {
+          // Add new song
+          newSongs.push({ ...song, id: `s${Date.now()}${Math.random()}` });
+        }
+      });
+      
+      return newSongs;
+    });
+  };
 
 
   return (
@@ -83,6 +104,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       updateSchedule,
       updateSchedulePlaylist,
       updateSong,
+      addOrUpdateSongs,
     }}>
       {children}
     </ScheduleContext.Provider>
