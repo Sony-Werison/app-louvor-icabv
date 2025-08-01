@@ -65,7 +65,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
     const parts = line.split(chordRegex).filter(Boolean);
 
     return (
-      <div key={lineIndex} className="mb-6 leading-normal" style={{lineHeight: '1.75'}}>
+      <div key={lineIndex} className="leading-normal" style={{lineHeight: '1.75'}}>
         {parts.map((part, partIndex) => {
           if (part.match(chordRegex)) {
             const chord = part.substring(1, part.length - 1);
@@ -98,7 +98,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
       }
       
       return (
-          <div key={`chord-line-${lineIndex}`} className="flex items-end mb-6 leading-normal" style={{lineHeight: '1.75'}}>
+          <div key={`chord-line-${lineIndex}`} className="flex items-end leading-normal" style={{lineHeight: '1.75'}}>
               {parts.map((part, index) => {
                   if (part.startsWith('[') && part.endsWith(']')) {
                     const chord = part.substring(1, part.length - 1);
@@ -137,33 +137,32 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
     while (i < lines.length) {
         const currentLine = lines[i];
         
+        let lineContent: React.ReactNode;
+
         if (isSectionHeader(currentLine)) {
-            elements.push(
-                <div key={`section-${i}`} className="font-bold text-muted-foreground mt-6 mb-2">
+            lineContent = (
+                <div className="font-bold text-muted-foreground mt-6 mb-2">
                     {currentLine.replace(/[\[\]:]/g, '')}
                 </div>
             );
-            i++;
-            continue;
+        } else if (isPureChordLineWithBrackets(currentLine) || isPureChordLineWithoutBrackets(currentLine)) {
+            lineContent = renderPureChordLine(currentLine, i);
+        } else if (currentLine.match(chordRegex)) {
+            lineContent = renderTextWithChords(currentLine, i);
+        } else {
+            lineContent = (
+                <div className={cn("leading-normal", !currentLine.trim() && "h-4")} style={{lineHeight: '1.75'}}>
+                    {currentLine}
+                </div>
+            );
         }
         
-        if (isPureChordLineWithBrackets(currentLine) || isPureChordLineWithoutBrackets(currentLine)) {
-            elements.push(renderPureChordLine(currentLine, i));
-            i++;
-            continue;
-        }
-
-        if (currentLine.match(chordRegex)) {
-            elements.push(renderTextWithChords(currentLine, i));
-            i++;
-            continue;
-        }
-
         elements.push(
-            <div key={`lyrics-${i}`} className={cn("leading-normal", !currentLine.trim() && "h-4")} style={{lineHeight: '1.75'}}>
-                {currentLine}
+            <div key={`line-wrapper-${i}`} className="pt-2 mb-4">
+                {lineContent}
             </div>
         );
+
         i++;
     }
     return elements;
