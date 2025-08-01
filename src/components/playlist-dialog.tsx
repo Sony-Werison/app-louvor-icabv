@@ -126,27 +126,25 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-none w-full h-full sm:h-[90vh] p-0 gap-0 flex flex-col">
-        <DialogHeader className="p-4 border-b shrink-0">
-           <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-col">
-                  <DialogTitle className="text-lg sm:text-xl font-bold">Gerenciar Repertório</DialogTitle>
-                  <p className="text-sm text-muted-foreground">{schedule.name}</p>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0">
-                  <X/>
-              </Button>
+        <DialogHeader className="p-4 border-b shrink-0 relative">
+           <div className="flex flex-col">
+              <DialogTitle className="text-lg sm:text-xl font-bold">Gerenciar Repertório</DialogTitle>
+              <p className="text-sm text-muted-foreground">{schedule.name}</p>
            </div>
+           <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0 absolute top-3 right-3">
+              <X/>
+           </Button>
         </DialogHeader>
         
         <Tabs defaultValue="available" className="flex-grow min-h-0 flex flex-col">
-            <div className="px-4 pt-4 pb-2 border-b shrink-0">
+            <div className="px-4 pt-2 pb-2 border-b shrink-0">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="available">Adicionar Músicas</TabsTrigger>
                     <TabsTrigger value="selected">Selecionadas ({songsInPlaylist.length})</TabsTrigger>
                 </TabsList>
             </div>
             <TabsContent value="available" className="flex-grow flex flex-col min-h-0 mt-0">
-                <div className="px-4 py-2 border-b flex flex-col sm:flex-row gap-2 shrink-0">
+                <div className="px-4 py-3 border-b flex flex-col sm:flex-row gap-2 shrink-0">
                     <div className="relative flex-grow">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input 
@@ -281,9 +279,9 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
             </TabsContent>
         </Tabs>
         
-        <DialogFooter className="p-4 border-t shrink-0">
-          <Button variant="outline" onClick={() => { setIsOpen(false); onOpenChange(false); }}>Cancelar</Button>
-          <Button onClick={handleSave}>Salvar e Fechar</Button>
+        <DialogFooter className="p-4 border-t shrink-0 flex-col sm:flex-row gap-2">
+          <Button variant="outline" onClick={() => { setIsOpen(false); onOpenChange(false); }} className="w-full sm:w-auto">Cancelar</Button>
+          <Button onClick={handleSave} className="w-full sm:w-auto">Salvar e Fechar</Button>
         </DialogFooter>
 
       </DialogContent>
