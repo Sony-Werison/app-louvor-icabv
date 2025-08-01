@@ -158,7 +158,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
             </TabsContent>
             <TabsContent value="selected" className="flex-grow mt-0 flex flex-col min-h-0">
                 <DragDropContext onDragEnd={handleDragEnd}>
-                    <Droppable droppableId="playlist">
+                    <Droppable droppableId="playlist" direction="vertical">
                       {(provided) => (
                         <ScrollArea 
                           className="h-full flex-grow p-4"
