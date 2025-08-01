@@ -87,19 +87,6 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
                     </FormItem>
                     )}
                 />
-                 <FormField
-                    control={form.control}
-                    name="key"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Tom</FormLabel>
-                        <FormControl>
-                        <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
                 <FormField
                     control={form.control}
                     name="category"
@@ -136,6 +123,20 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
                     <FormMessage />
                     </FormItem>
                 )}
+                />
+
+                 <FormField
+                    control={form.control}
+                    name="key"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Tom</FormLabel>
+                        <FormControl>
+                        <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
                 />
 
                 <FormField

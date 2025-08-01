@@ -54,7 +54,7 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               <FormField
                 control={form.control}
                 name="title"
@@ -74,19 +74,6 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Artista</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="key"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tom</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -131,6 +118,20 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
                 </FormItem>
               )}
             />
+
+            <FormField
+                control={form.control}
+                name="key"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tom</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
             <FormField
               control={form.control}
