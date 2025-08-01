@@ -20,7 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator } from './ui/dropdown-menu';
-import { PlayCountDisplay } from './play-count-display';
+import { cn } from '@/lib/utils';
+
 
 interface PlaylistDialogProps {
   schedule: Schedule;
@@ -38,6 +39,13 @@ const categoryLabels: Record<'all' | SongCategory, string> = {
   Louvor: 'Louvor',
   Hino: 'Hino',
   Infantil: 'Infantil'
+}
+
+const getQuarterlyColorClass = (count: number = 0) => {
+    if (count > 4) return 'bg-destructive/40';
+    if (count > 2) return 'bg-destructive/20';
+    if (count > 0) return 'bg-destructive/10';
+    return 'bg-transparent';
 }
 
 
@@ -170,32 +178,43 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
-                <ScrollArea className="flex-grow p-4">
+                 <div className="grid grid-cols-[auto,1fr,auto,auto] items-center gap-x-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground shrink-0">
+                    <div className="w-5"></div>
+                    <div>Música</div>
+                    <div className="text-center w-16">Trimestre</div>
+                    <div className="text-center w-16">Total</div>
+                </div>
+                <ScrollArea className="flex-grow">
                     <Accordion type="multiple" defaultValue={songCategories} className="w-full">
                         {Object.entries(groupedAvailableSongs).map(([category, songs]) => (
-                            <AccordionItem value={category} key={category}>
-                                <AccordionTrigger className="text-base font-semibold">{category} ({songs.length})</AccordionTrigger>
+                            <AccordionItem value={category} key={category} className="border-b-0">
+                                <AccordionTrigger className="text-base font-semibold px-4 py-3 hover:no-underline bg-muted/50 border-b">
+                                    {category} ({songs.length})
+                                </AccordionTrigger>
                                 <AccordionContent>
-                                    <div className="space-y-4 pt-2">
+                                    <div className="divide-y divide-border">
                                         {songs.map(song => (
-                                            <div key={song.id} className="flex items-start space-x-3">
+                                            <Label 
+                                                htmlFor={`song-${song.id}`} 
+                                                key={song.id} 
+                                                className="grid grid-cols-[auto,1fr,auto,auto] items-center gap-x-3 p-4 pl-3 cursor-pointer hover:bg-accent/50"
+                                            >
                                                 <Checkbox 
                                                     id={`song-${song.id}`} 
                                                     onCheckedChange={(checked) => handleCheckedChange(song.id, checked)}
                                                     checked={currentPlaylist.includes(song.id)}
-                                                    className="mt-1"
                                                 />
-                                                <Label htmlFor={`song-${song.id}`} className="flex flex-col cursor-pointer flex-grow gap-1">
-                                                    <div>
-                                                      <span>{song.title}</span>
-                                                      <span className="text-sm text-muted-foreground ml-2">{song.artist}</span>
-                                                    </div>
-                                                    <PlayCountDisplay 
-                                                      quarterly={song.timesPlayedQuarterly}
-                                                      total={song.timesPlayedTotal}
-                                                    />
-                                                </Label>
-                                            </div>
+                                                <div>
+                                                  <div className="font-medium">{song.title}</div>
+                                                  <div className="text-sm text-muted-foreground">{song.artist}</div>
+                                                </div>
+                                                 <div className={cn("text-center font-medium p-2 rounded-md transition-colors", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
+                                                    {song.timesPlayedQuarterly ?? 0}
+                                                </div>
+                                                <div className="text-center text-muted-foreground font-medium p-2">
+                                                    {song.timesPlayedTotal ?? 0}
+                                                </div>
+                                            </Label>
                                         ))}
                                     </div>
                                 </AccordionContent>
@@ -206,7 +225,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
             </TabsContent>
             <TabsContent value="selected" className="flex-grow mt-0 flex flex-col min-h-0">
                 <DragDropContext onDragEnd={handleDragEnd}>
-                    <Droppable droppableId="playlist" direction="vertical">
+                    <Droppable droppableId="playlist">
                       {(provided) => (
                         <ScrollArea 
                           className="h-full flex-grow p-4"
