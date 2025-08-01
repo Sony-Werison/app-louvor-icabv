@@ -191,11 +191,14 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                 <TabsTrigger
                   key={cat}
                   value={cat}
-                  className="text-xs sm:text-sm flex-col sm:flex-row sm:gap-1.5"
+                  className="text-xs sm:text-sm flex flex-col sm:flex-row sm:gap-1.5 py-1.5 h-auto"
                 >
-                  <span>{categoryLabels[cat]}</span>
-                  <span className="text-xs text-muted-foreground/80 font-mono">
+                  <span className="sm:hidden text-xs text-muted-foreground/80 font-mono pb-1">
                     {categoryCounts[cat]}
+                  </span>
+                  <span>{categoryLabels[cat]}</span>
+                  <span className="hidden sm:inline text-xs text-muted-foreground/80 font-mono">
+                    ({categoryCounts[cat]})
                   </span>
                 </TabsTrigger>
               ))}
@@ -256,10 +259,10 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                  <SortableHeader sortKey="key" label="Tom" />
               </TableHead>
               <TableHead className="w-24 text-center">
-                  <div className="flex items-center justify-center -my-2 gap-x-4 gap-y-0 flex-wrap">
-                        <SortableHeader sortKey="timesPlayedQuarterly" label="Trimestre" />
-                        <SortableHeader sortKey="timesPlayedTotal" label="Total" />
-                  </div>
+                 <SortableHeader sortKey="timesPlayedQuarterly" label="Trimestre" />
+              </TableHead>
+              <TableHead className="w-24 text-center">
+                  <SortableHeader sortKey="timesPlayedTotal" label="Total" />
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -296,24 +299,17 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                   <TableCell className="text-center hidden sm:table-cell">
                     <Badge variant="outline">{song.key}</Badge>
                   </TableCell>
-                  <TableCell className="w-24">
-                      <div className="flex gap-1 justify-center items-center">
-                        <div className={cn("text-center text-foreground font-medium w-10 p-1 rounded-md text-xs", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
-                            {song.timesPlayedQuarterly ?? 0}
-                        </div>
-                        <div className={cn("text-center text-foreground font-medium w-10 p-1 rounded-md text-xs", getTotalColorClass(song.timesPlayedTotal))}>
-                            {song.timesPlayedTotal ?? 0}
-                        </div>
-                      </div>
-                      <div className="text-center text-muted-foreground text-xs mt-1 sm:hidden">
-                        Tri / Total
-                      </div>
+                  <TableCell className={cn("text-center font-medium p-1 text-xs", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
+                      {song.timesPlayedQuarterly ?? 0}
+                  </TableCell>
+                  <TableCell className={cn("text-center font-medium p-1 text-xs", getTotalColorClass(song.timesPlayedTotal))}>
+                      {song.timesPlayedTotal ?? 0}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={isReadOnly ? 5 : 6} className="h-24 text-center">
+                <TableCell colSpan={isReadOnly ? 6 : 7} className="h-24 text-center">
                   Nenhuma música encontrada.
                 </TableCell>
               </TableRow>
@@ -343,5 +339,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     
 
     
+
+
 
 
