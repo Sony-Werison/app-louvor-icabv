@@ -18,12 +18,13 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ListMusic, Play, Pause, FileText, Music, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ListMusic, Play, Pause, FileText, Music, X, ChevronLeft, ChevronRight, Plus, Minus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Slider } from './ui/slider';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
+import { getTransposedKey } from '@/lib/transpose';
 
 interface PlaylistViewerProps {
   schedule: Schedule;
@@ -36,6 +37,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'lyrics' | 'chords'>('lyrics');
   const [activeSongId, setActiveSongId] = useState<string | null>(null);
+  const [transpose, setTranspose] = useState(0);
 
   const [isScrolling, setIsScrolling] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(50);
@@ -58,6 +60,10 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
       stopScrolling();
     };
   }, []);
+  
+  useEffect(() => {
+    setTranspose(0);
+  }, [activeSongId]);
 
   useEffect(() => {
     if (scrollViewportRef.current) {
@@ -115,6 +121,8 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
           setActiveSongId(songsInPlaylist[newIndex].id);
       }
   }
+  
+  const transposedKey = activeSong ? getTransposedKey(activeSong.key, transpose) : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
@@ -124,8 +132,8 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
           </DialogHeader>
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <header className="flex-shrink-0 bg-background/95 backdrop-blur-sm z-20 border-b">
-                  <div className="h-16 flex items-center justify-between px-2 sm:px-4 gap-2">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="h-24 sm:h-16 flex flex-col sm:flex-row items-center justify-between px-2 sm:px-4 gap-2 py-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0 w-full">
                           <SheetTrigger asChild>
                               <Button variant="destructive" size="sm">
                                   Ver Todas
@@ -136,18 +144,30 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                             <div className="flex items-center gap-2">
                                 <p className="text-xs sm:text-sm text-muted-foreground truncate leading-tight">{activeSong?.artist}</p>
                                 {activeSong?.key && <Badge variant="secondary" className="text-xs">{activeSong.key}</Badge>}
+                                {transpose !== 0 && transposedKey && <Badge className="text-xs">{transposedKey}</Badge>}
                             </div>
                           </div>
                       </div>
-                       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
-                        <TabsList>
-                            <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>
-                            <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
-                        </TabsList>
-                      </Tabs>
-                      <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0">
-                        <X/>
-                      </Button>
+                      <div className="w-full sm:w-auto flex justify-between sm:justify-end items-center gap-2">
+                        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
+                          <TabsList>
+                              <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>
+                              <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
+                          </TabsList>
+                        </Tabs>
+                        <div className={cn("flex items-center gap-1", activeTab !== 'chords' && 'invisible' )}>
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose - 1)}>
+                              <Minus className="h-4 w-4"/>
+                          </Button>
+                          <span className="font-bold w-8 text-center text-sm">{transpose > 0 ? `+${transpose}` : transpose}</span>
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose + 1)}>
+                              <Plus className="h-4 w-4"/>
+                          </Button>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0">
+                          <X/>
+                        </Button>
+                      </div>
                   </div>
               </header>
 
@@ -184,7 +204,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                                   {activeSong.lyrics || 'Nenhuma letra disponível.'}
                               </pre>
                           ) : (
-                              <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra disponível.'} />
+                              <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose}/>
                           )}
                       </div>
                   ) : (

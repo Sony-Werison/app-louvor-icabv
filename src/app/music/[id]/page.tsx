@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSchedule } from '@/context/schedule-context';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Plus, Minus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { Song } from '@/types';
+import { getTransposedKey } from '@/lib/transpose';
 
 export default function SongDetailPage() {
   const params = useParams();
@@ -30,6 +31,7 @@ export default function SongDetailPage() {
   const { songs, updateSong, removeSong } = useSchedule();
   const [isEditing, setIsEditing] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [transpose, setTranspose] = useState(0);
   const { can } = useAuth();
 
   const songId = params.id as string;
@@ -68,6 +70,8 @@ export default function SongDetailPage() {
         </div>
     );
   }
+
+  const transposedKey = getTransposedKey(song.key, transpose);
   
   return (
     <div className="p-4 md:p-6">
@@ -97,22 +101,37 @@ export default function SongDetailPage() {
                 <CardTitle className="font-headline font-bold text-2xl sm:text-3xl">{song.title}</CardTitle>
                 <p className="text-muted-foreground text-md sm:text-lg">{song.artist}</p>
               </div>
-              <Badge variant="secondary" className="text-sm sm:text-base">{song.key}</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-sm sm:text-base">{song.key}</Badge>
+                {transpose !== 0 && <Badge className="text-sm sm:text-base">{transposedKey}</Badge>}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="lyrics" className="mt-4">
-              <TabsList>
-                <TabsTrigger value="lyrics">Letra</TabsTrigger>
-                <TabsTrigger value="chords">Cifras</TabsTrigger>
-              </TabsList>
+              <div className="flex justify-between items-center border-b">
+                  <TabsList>
+                    <TabsTrigger value="lyrics">Letra</TabsTrigger>
+                    <TabsTrigger value="chords">Cifras</TabsTrigger>
+                  </TabsList>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Tom</span>
+                     <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setTranspose(transpose - 1)}>
+                        <Minus className="h-4 w-4"/>
+                    </Button>
+                    <span className="font-bold w-10 text-center">{transpose > 0 ? `+${transpose}` : transpose}</span>
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setTranspose(transpose + 1)}>
+                        <Plus className="h-4 w-4"/>
+                    </Button>
+                  </div>
+              </div>
               <TabsContent value="lyrics" className="mt-4">
                 <pre className="whitespace-pre-wrap font-body text-sm sm:text-base leading-relaxed p-4 bg-muted/50 rounded-md">
                   {song.lyrics || 'Nenhuma letra disponível.'}
                 </pre>
               </TabsContent>
               <TabsContent value="chords" className="mt-4 p-4 bg-muted/50 rounded-md">
-                <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} />
+                <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose} />
               </TabsContent>
             </Tabs>
           </CardContent>

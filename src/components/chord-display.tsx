@@ -2,47 +2,42 @@
 'use client';
 
 import { cn } from "@/lib/utils";
+import { transposeChord } from "@/lib/transpose";
 
 interface ChordDisplayProps {
   chordsText: string;
+  transposeBy?: number;
 }
 
 const chordRegex = /(\[.*?\])/g;
-// Regex para acordes válidos
-const validChordRegex = /^[A-G](b|#)?(m|maj|min|dim|aug|sus|add|m|M|º|ª|\+|-|°|\/|\d)*$/;
 
 const isLinePurelyChords = (line: string) => {
     const trimmed = line.trim();
     if (!trimmed) return false;
-    // Pega todas as partes entre colchetes
     const chords = trimmed.match(chordRegex);
-    // Pega o texto fora dos colchetes
     const textOnly = trimmed.replace(chordRegex, '').trim();
-    // Se não há acordes ou existe texto fora, não é uma linha de acordes
     if (!chords || textOnly) return false;
     
-    // Verifica se tudo dentro dos colchetes parece um acorde válido
     return chords.every(part => {
         const chord = part.substring(1, part.length - 1);
-        return chord === '' || validChordRegex.test(chord);
+        return true; 
     });
 };
 
 const isSectionHeader = (line: string) => {
-    const trimmed = line.trim();
+    const trimmed = line.trim().toLowerCase();
     if (!trimmed) return false;
 
-    // Se a linha tem colchetes, verifica se NÃO é uma linha de acordes puros
-    if (trimmed.includes('[') || trimmed.includes(']')) {
-        return !isLinePurelyChords(trimmed);
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        return true;
     }
-    
-    // Se não tem colchetes, consideramos que é um cabeçalho de seção.
-    // Isso cobre casos como "Intro", "suave", "+", etc.
-    return true;
+
+    const sectionKeywords = ['intro', 'verso', 'refrão', 'ponte', 'solo', 'final', 'interlúdio', 'suave', 'forte', '+', '++', '+++'];
+    return sectionKeywords.some(keyword => trimmed.includes(keyword)) && !trimmed.match(/[a-gA-G]/);
 };
 
-export function ChordDisplay({ chordsText }: ChordDisplayProps) {
+
+export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps) {
   if (!chordsText) return null;
 
   const lines = chordsText.split('\n');
@@ -56,13 +51,13 @@ export function ChordDisplay({ chordsText }: ChordDisplayProps) {
           if (part.match(chordRegex)) {
             const chord = part.substring(1, part.length - 1);
             if (chord === '') {
-              // Trata [] como um espaçamento
               return <span key={partIndex} className="inline-block w-8" />;
             }
+            const transposed = transposeChord(chord, transposeBy);
             return (
               <span key={partIndex} className="relative inline-block h-4 px-1">
                 <b className="text-primary font-bold absolute bottom-full left-1/2 -translate-x-1/2 whitespace-nowrap">
-                  {chord}
+                  {transposed}
                 </b>
               </span>
             );
@@ -79,10 +74,10 @@ export function ChordDisplay({ chordsText }: ChordDisplayProps) {
     while (i < lines.length) {
         const currentLine = lines[i];
         
-        if (isSectionHeader(currentLine) && !currentLine.includes('[')) {
+        if (isSectionHeader(currentLine)) {
             elements.push(
-                <div key={`section-${i}`} className="font-bold text-muted-foreground mt-4 mb-2">
-                    {currentLine}
+                <div key={`section-${i}`} className="font-bold text-muted-foreground mt-6 mb-2">
+                    {currentLine.replace(/[\[\]]/g, '')}
                 </div>
             );
             i++;
@@ -95,14 +90,12 @@ export function ChordDisplay({ chordsText }: ChordDisplayProps) {
             continue;
         }
 
-        // Linha com letra e acordes embutidos
         if (currentLine.match(chordRegex)) {
             elements.push(renderTextWithChords(currentLine, i));
             i++;
             continue;
         }
 
-        // Linha de letra normal
         elements.push(
             <div key={`lyrics-${i}`} className={cn(!currentLine.trim() && "h-4")}>
                 {currentLine}
