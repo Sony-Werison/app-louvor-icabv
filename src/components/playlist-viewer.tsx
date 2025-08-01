@@ -18,11 +18,12 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ListMusic, Play, Pause, FileText, Music, X } from 'lucide-react';
+import { ListMusic, Play, Pause, FileText, Music, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Slider } from './ui/slider';
 import { Badge } from './ui/badge';
+import { cn } from '@/lib/utils';
 
 interface PlaylistViewerProps {
   schedule: Schedule;
@@ -43,6 +44,8 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
 
   const songsInPlaylist = schedule.playlist.map(id => songs.find(s => s.id === id)).filter((s): s is Song => !!s);
   const activeSong = songsInPlaylist.find(s => s.id === activeSongId);
+  
+  const activeSongIndex = songsInPlaylist.findIndex(s => s.id === activeSongId);
 
   useEffect(() => {
     if (songsInPlaylist.length > 0 && !activeSongId) {
@@ -106,6 +109,13 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
     setIsSheetOpen(false);
   }
 
+  const navigateSong = (direction: 'next' | 'prev') => {
+      const newIndex = direction === 'next' ? activeSongIndex + 1 : activeSongIndex - 1;
+      if (newIndex >= 0 && newIndex < songsInPlaylist.length) {
+          setActiveSongId(songsInPlaylist[newIndex].id);
+      }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-none w-full h-full p-0 gap-0 flex flex-col">
@@ -141,7 +151,31 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                   </div>
               </header>
 
-              <main className="flex-grow min-h-0 relative">
+              <main className="flex-grow min-h-0 relative group/main">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={cn(
+                        "absolute left-2 top-1/2 -translate-y-1/2 z-10 h-12 w-12 rounded-full bg-black/10 opacity-0 group-hover/main:opacity-100 transition-opacity",
+                        activeSongIndex === 0 && "invisible"
+                    )}
+                    onClick={() => navigateSong('prev')}
+                    aria-label="Música anterior"
+                  >
+                    <ChevronLeft className="h-8 w-8" />
+                  </Button>
+                   <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={cn(
+                        "absolute right-2 top-1/2 -translate-y-1/2 z-10 h-12 w-12 rounded-full bg-black/10 opacity-0 group-hover/main:opacity-100 transition-opacity",
+                        activeSongIndex === songsInPlaylist.length - 1 && "invisible"
+                    )}
+                    onClick={() => navigateSong('next')}
+                    aria-label="Próxima música"
+                  >
+                    <ChevronRight className="h-8 w-8" />
+                  </Button>
                   <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
                   {activeSong ? (
                       <div className="p-4 sm:p-8 text-lg md:text-xl">
