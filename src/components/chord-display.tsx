@@ -73,7 +73,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
                     // This is a chord
                     return (
                         <div key={partIndex} className="relative inline-block h-0">
-                            <b className="absolute bottom-0 left-0 text-primary font-bold whitespace-nowrap">
+                            <b className="absolute bottom-5 left-0 text-primary font-bold whitespace-nowrap">
                                 {transposed}
                             </b>
                         </div>
