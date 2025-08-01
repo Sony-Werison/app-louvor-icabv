@@ -2,9 +2,9 @@
 'use server';
 import { put, list, del, head } from '@vercel/blob';
 import {
-  members as initialMembers,
   songs as initialSongs,
   monthlySchedules as initialMonthlySchedules,
+  members as initialMembers
 } from './data';
 import type { Member, Song, MonthlySchedule } from '@/types';
 
@@ -13,45 +13,27 @@ const KEYS = {
   MEMBERS: 'members.json',
   SONGS: 'songs.json',
   SCHEDULES: 'monthlySchedules.json',
-  INITIALIZED: 'db_initialized.flag',
 };
-
-async function initializeDatabase() {
-  try {
-    await head(KEYS.INITIALIZED);
-  } catch (error: any) {
-    if (error.status === 404) {
-      console.log('Database not initialized. Seeding with initial data...');
-      await Promise.all([
-        saveMembers(initialMembers),
-        saveSongs(initialSongs),
-        saveMonthlySchedules(initialMonthlySchedules),
-        put(KEYS.INITIALIZED, 'true', { access: 'public' }),
-      ]);
-      console.log('Database seeded successfully.');
-    } else {
-        throw error;
-    }
-  }
-}
-
-// Ensure the database is initialized on startup
-initializeDatabase().catch(console.error);
 
 // --- Helper Functions ---
 async function fetchData<T>(key: string, defaultValue: T): Promise<T> {
   try {
-    const blob = await list({ prefix: key, limit: 1 });
-    if (blob.blobs.length > 0) {
-      const response = await fetch(blob.blobs[0].url);
-      if (!response.ok) { // Check for HTTP errors
+    const blob = await head(key);
+    const response = await fetch(blob.url);
+     if (!response.ok) { 
           console.error(`Failed to fetch ${key}, status: ${response.status}`);
+          // This might happen if the blob exists but is not accessible. Return default.
           return defaultValue;
       }
-      return await response.json();
+    return await response.json();
+  } catch (error: any) {
+    // If the blob does not exist (404), create it with default data.
+    if (error?.status === 404) {
+      console.log(`Blob ${key} not found. Seeding with initial data.`);
+      await saveData(key, defaultValue);
+      return defaultValue;
     }
-    return defaultValue;
-  } catch (error) {
+    // For any other error, log it and return the default value.
     console.error(`Failed to fetch ${key}:`, error);
     return defaultValue;
   }
@@ -62,6 +44,7 @@ async function saveData<T>(key: string, data: T): Promise<void> {
         await put(key, JSON.stringify(data, null, 2), { 
             access: 'public',
             contentType: 'application/json',
+            addRandomSuffix: false, // Ensure consistent filename
         });
     } catch (error) {
          console.error(`Failed to save ${key}:`, error);
