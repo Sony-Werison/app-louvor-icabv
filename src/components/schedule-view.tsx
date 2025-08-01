@@ -82,7 +82,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                 <p className="text-sm sm:text-base">Vá para a página "Escala Mensal" para planejar.</p>
             </div>
         ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
             {schedules.map((schedule) => {
                 const leader = getMemberById(schedule.leaderId);
                 const preacher = getMemberById(schedule.preacherId);
