@@ -248,16 +248,11 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                         <Rabbit className="h-5 w-5" />
                     </Button>
                     <Button
-                      variant="ghost"
-                      className="w-12 h-12 rounded-full text-base font-bold relative"
+                      variant={isScrolling ? "destructive" : "ghost"}
+                      className="w-12 h-12 rounded-full text-base font-bold"
                       onClick={handleToggleScrolling}
                     >
-                        <span className="z-10">{scrollSpeed}</span>
-                        {isScrolling ? (
-                            <Pause className="w-6 h-6 absolute inset-0 m-auto text-white z-0 opacity-50" />
-                        ) : (
-                            <Play className="w-6 h-6 absolute inset-0 m-auto text-white z-0 opacity-50" />
-                        )}
+                        {scrollSpeed}
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
                         <Turtle className="h-5 w-5" />
