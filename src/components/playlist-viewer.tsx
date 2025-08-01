@@ -34,9 +34,9 @@ interface PlaylistViewerProps {
 const MIN_FONT_SIZE = 0.8;
 const MAX_FONT_SIZE = 2.5;
 const FONT_STEP = 0.1;
+const DEFAULT_FONT_SIZE = 1.25;
 const MIN_SPEED = 1;
 const MAX_SPEED = 10;
-const DEFAULT_FONT_SIZE = 1.25;
 
 export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewerProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -130,6 +130,10 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   const changeFontSize = (delta: number) => {
     setFontSize(prev => Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, prev + delta)));
   }
+
+  const resetFontSize = () => {
+    setFontSize(DEFAULT_FONT_SIZE);
+  }
   
   const handleSelectSong = (songId: string) => {
     setActiveSongId(songId);
@@ -190,7 +194,9 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
                                 <ZoomOut className="h-4 w-4" />
                             </Button>
-                            <span className="font-bold w-12 text-center text-sm tabular-nums">{zoomPercentage}%</span>
+                            <Button variant="ghost" onClick={resetFontSize} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">
+                                {zoomPercentage}%
+                            </Button>
                             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
                                 <ZoomIn className="h-4 w-4" />
                             </Button>
@@ -250,18 +256,21 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
                         <Turtle className="h-5 w-5" />
                     </Button>
-                    <button
-                      onClick={handleToggleScrolling}
-                      className="relative flex items-center justify-center w-12 h-12 text-foreground focus:outline-none"
-                      aria-label={isScrolling ? "Pausar rolagem" : "Iniciar rolagem"}
-                    >
-                      {isScrolling ? 
-                        <Pause className="w-8 h-8 fill-current"/> :
-                        <svg viewBox="0 0 100 100" className="w-12 h-12 fill-current">
-                            <path d="M 30 20 L 80 50 L 30 80 Z" />
-                        </svg>
-                      }
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleToggleScrolling}
+                        className={cn("relative flex items-center justify-center w-10 h-10 text-foreground rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors",
+                          isScrolling && "bg-primary text-primary-foreground"
+                        )}
+                        aria-label={isScrolling ? "Pausar rolagem" : "Iniciar rolagem"}
+                      >
+                        {isScrolling ? 
+                          <Pause className="w-6 h-6 fill-current"/> :
+                          <Play className="w-6 h-6 fill-current" />
+                        }
+                      </button>
+                      <span className="font-bold w-6 text-center text-sm tabular-nums">{scrollSpeed}</span>
+                    </div>
                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
                         <Rabbit className="h-5 w-5" />
                     </Button>
@@ -299,3 +308,5 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
     </Dialog>
   );
 }
+
+    
