@@ -16,8 +16,8 @@ const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
 
 const formSchema = z.object({
   title: z.string().min(2, { message: 'O título deve ter pelo menos 2 caracteres.' }),
-  artist: z.string().min(2, { message: 'O nome do artista é obrigatório.' }),
-  key: z.string().min(1, { message: 'O tom é obrigatório.' }),
+  artist: z.string().optional(),
+  key: z.string().optional(),
   category: z.enum(songCategories, { required_error: 'Selecione uma categoria.' }),
   lyrics: z.string().optional(),
   chords: z.string().optional(),
@@ -165,4 +165,3 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
     </Dialog>
   );
 }
-
