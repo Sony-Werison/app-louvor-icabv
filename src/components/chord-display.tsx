@@ -60,7 +60,7 @@ export function ChordDisplay({ chordsText }: ChordDisplayProps) {
               return <span key={partIndex} className="inline-block w-8" />;
             }
             return (
-              <span key={partIndex} className="relative inline-block h-6 px-1">
+              <span key={partIndex} className="relative inline-block h-4 px-1">
                 <b className="text-primary font-bold absolute bottom-full left-1/2 -translate-x-1/2 whitespace-nowrap">
                   {chord}
                 </b>
