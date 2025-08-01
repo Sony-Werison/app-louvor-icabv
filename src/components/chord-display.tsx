@@ -109,7 +109,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
                 return (
                     <div key={partIndex} className="inline-flex flex-col-reverse align-bottom">
                         <span className="leading-tight">{part}</span>
-                        <b className={cn("text-primary font-bold leading-none", !hasPairedChord && "text-transparent")}>{transposed}</b>
+                        <b className={cn("text-primary font-bold leading-none text-sm", !hasPairedChord && "text-transparent")}>{transposed}</b>
                     </div>
                 );
             })}
@@ -135,7 +135,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
                     if (chord) {
                         const transposed = transposeChord(chord, transposeBy);
                         return (
-                            <b key={index} className="text-primary font-bold px-1">
+                            <b key={index} className="text-primary font-bold px-1 text-sm">
                                 {transposed}
                             </b>
                         );
@@ -150,7 +150,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
                   if (part) {
                       const transposed = transposeChord(part, transposeBy);
                       return (
-                          <b key={index} className="text-primary font-bold px-1">
+                          <b key={index} className="text-primary font-bold px-1 text-sm">
                               {transposed}
                           </b>
                       );
