@@ -113,8 +113,13 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     songsToAdd.forEach(song => {
       const existingSongIndex = newSongs.findIndex(s => s.title.toLowerCase() === song.title.toLowerCase());
       if (existingSongIndex > -1) {
-        // Update existing song, preserving its ID
-        newSongs[existingSongIndex] = { ...newSongs[existingSongIndex], ...song };
+        // Update existing song, preserving its ID, but updating frequency
+        const existingSong = newSongs[existingSongIndex];
+        newSongs[existingSongIndex] = { 
+          ...existingSong, 
+          timesPlayedQuarterly: song.timesPlayedQuarterly, 
+          timesPlayedTotal: song.timesPlayedTotal 
+        };
       } else {
         // Add new song
         newSongs.push({ ...song, id: `s${Date.now()}${Math.random()}` });
@@ -140,7 +145,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       addOrUpdateSongs,
       isLoading,
     }}>
-      {isLoading ? <div>Carregando dados...</div> : children}
+      {isLoading ? (
+          <div className="flex items-center justify-center h-screen">
+              <div>Carregando dados...</div>
+          </div>
+      ) : children}
     </ScheduleContext.Provider>
   );
 };
