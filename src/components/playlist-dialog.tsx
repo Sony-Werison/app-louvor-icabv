@@ -178,7 +178,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
-                 <div className="grid grid-cols-[auto,1fr,auto,auto] items-center gap-x-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground shrink-0">
+                 <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground shrink-0">
                     <div className="w-5"></div>
                     <div>Música</div>
                     <div className="text-center w-16">Trimestre</div>
@@ -197,7 +197,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                                             <Label 
                                                 htmlFor={`song-${song.id}`} 
                                                 key={song.id} 
-                                                className="grid grid-cols-[auto,1fr,auto,auto] items-center gap-x-3 p-4 pl-3 cursor-pointer hover:bg-accent/50"
+                                                className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-3 p-4 pl-3 cursor-pointer hover:bg-accent/50"
                                             >
                                                 <Checkbox 
                                                     id={`song-${song.id}`} 
@@ -211,8 +211,8 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                                                  <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-16", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
                                                     {song.timesPlayedQuarterly ?? 0}
                                                 </div>
-                                                <div className="text-center text-muted-foreground font-medium p-2 w-16">
-                                                    {song.timesPlayedTotal ?? 0}
+                                                <div className="text-center p-2 w-16">
+                                                    <span className="font-medium text-muted-foreground">{song.timesPlayedTotal ?? 0}</span>
                                                 </div>
                                             </Label>
                                         ))}
@@ -283,5 +283,3 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     </Dialog>
   );
 }
-
-    
