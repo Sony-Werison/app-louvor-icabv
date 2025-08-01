@@ -38,7 +38,7 @@ export default function RootLayout({
                 <SidebarInset>
                   <Header>
                     <PageTitle />
-                    <div className="ml-auto">
+                    <div className="ml-auto flex items-center gap-2">
                       <ProfileSwitcher />
                     </div>
                   </Header>
