@@ -224,9 +224,16 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
               <SortableHeader sortKey="title" label="Título" />
               <SortableHeader sortKey="artist" label="Artista" className="hidden sm:table-cell" />
               <SortableHeader sortKey="category" label="Categoria" className="hidden md:table-cell" />
-              <SortableHeader sortKey="key" label="Tom" className="text-center" />
-              <SortableHeader sortKey="timesPlayedQuarterly" label="Trimestre" className="hidden lg:table-cell text-center w-24" />
-              <SortableHeader sortKey="timesPlayedTotal" label="Total" className="hidden lg:table-cell text-center w-24" />
+              <SortableHeader sortKey="key" label="Tom" className="hidden sm:table-cell text-center" />
+              <TableHead className="w-24 text-center">
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs">Freq.</span>
+                    <div className="flex gap-4">
+                        <SortableHeader sortKey="timesPlayedQuarterly" label="Tri" className="hidden lg:table-cell" />
+                        <SortableHeader sortKey="timesPlayedTotal" label="Total" className="hidden lg:table-cell" />
+                    </div>
+                  </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -259,20 +266,27 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                   <TableCell className="hidden md:table-cell">
                     <Badge variant="secondary">{song.category}</Badge>
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="text-center hidden sm:table-cell">
                     <Badge variant="outline">{song.key}</Badge>
                   </TableCell>
-                  <TableCell className={cn("hidden lg:table-cell text-center text-foreground font-medium w-24", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
-                    {song.timesPlayedQuarterly ?? 0}
-                  </TableCell>
-                  <TableCell className={cn("hidden lg:table-cell text-center text-foreground font-medium w-24", getTotalColorClass(song.timesPlayedTotal))}>
-                    {song.timesPlayedTotal ?? 0}
+                  <TableCell className="w-24">
+                      <div className="flex gap-1 justify-center items-center">
+                        <div className={cn("text-center text-foreground font-medium w-10 p-1 rounded-md text-xs", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
+                            {song.timesPlayedQuarterly ?? 0}
+                        </div>
+                        <div className={cn("text-center text-foreground font-medium w-10 p-1 rounded-md text-xs", getTotalColorClass(song.timesPlayedTotal))}>
+                            {song.timesPlayedTotal ?? 0}
+                        </div>
+                      </div>
+                      <div className="text-center text-muted-foreground text-xs mt-1 sm:hidden">
+                        Tri / Total
+                      </div>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={isReadOnly ? 6 : 7} className="h-24 text-center">
+                <TableCell colSpan={isReadOnly ? 5 : 6} className="h-24 text-center">
                   Nenhuma música encontrada.
                 </TableCell>
               </TableRow>
