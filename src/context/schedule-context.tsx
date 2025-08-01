@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import type { MonthlySchedule, Member, Song, ScheduleColumn } from '@/types';
+import type { MonthlySchedule, Member, Song, ScheduleColumn, SongCategory } from '@/types';
 import { scheduleColumns as initialScheduleColumns } from '@/lib/data';
 import {
   fetchMembers,
@@ -32,6 +32,7 @@ interface ScheduleContextType {
   removeSongs: (songIds: string[]) => void;
   addOrUpdateSongs: (songs: Song[]) => void;
   addSongsFromImport: (songs: Omit<Song, 'id'>[]) => void;
+  updateSongsCategory: (songIds: string[], category: SongCategory) => void;
   isLoading: boolean;
 }
 
@@ -213,6 +214,15 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     saveSongs(newSongs);
   }
 
+  const updateSongsCategory = (songIds: string[], category: SongCategory) => {
+    const songIdSet = new Set(songIds);
+    const newSongs = songs.map(s =>
+      songIdSet.has(s.id) ? { ...s, category } : s
+    );
+    setSongs(newSongs);
+    saveSongs(newSongs);
+  };
+
 
   return (
     <ScheduleContext.Provider value={{ 
@@ -233,6 +243,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       removeSongs,
       addOrUpdateSongs,
       addSongsFromImport,
+      updateSongsCategory,
       isLoading,
     }}>
       {isLoading ? (

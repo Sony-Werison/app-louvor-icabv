@@ -2,12 +2,12 @@
 'use client';
 
 import type { Song, SongCategory } from '@/types';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Trash2 } from 'lucide-react';
+import { Search, Trash2, Edit } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Checkbox } from './ui/checkbox';
@@ -27,6 +27,8 @@ import {
 interface MusicLibraryProps {
   songs: Song[];
   onSongsDelete: (songIds: string[]) => void;
+  onSelectionChange: (songIds: string[]) => void;
+  onBulkEdit: () => void;
   isReadOnly?: boolean;
 }
 
@@ -52,7 +54,7 @@ const getTotalColorClass = (count: number = 0) => {
     return 'bg-transparent';
 }
 
-export function MusicLibrary({ songs, onSongsDelete, isReadOnly = false }: MusicLibraryProps) {
+export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEdit, isReadOnly = false }: MusicLibraryProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<SongCategory | 'all'>('all');
   const [selectedSongs, setSelectedSongs] = useState<string[]>([]);
@@ -65,10 +67,13 @@ export function MusicLibrary({ songs, onSongsDelete, isReadOnly = false }: Music
       (song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       song.artist.toLowerCase().includes(searchTerm.toLowerCase()))
   ), [songs, activeCategory, searchTerm]);
+
+  useEffect(() => {
+    onSelectionChange(selectedSongs);
+  }, [selectedSongs, onSelectionChange]);
   
   const handleRowClick = (songId: string, e: React.MouseEvent) => {
-    // Navigate only if the click is not on an interactive element like a checkbox
-    if ((e.target as HTMLElement).closest('[role="checkbox"]')) {
+    if ((e.target as HTMLElement).closest('[role="checkbox"]') || (e.target as HTMLElement).closest('button')) {
       return;
     }
     router.push(`/music/${songId}`);
@@ -96,7 +101,9 @@ export function MusicLibrary({ songs, onSongsDelete, isReadOnly = false }: Music
     setIsAlertOpen(false);
   }
 
-  const isAllFilteredSelected = selectedSongs.length > 0 && selectedSongs.length === filteredSongs.length;
+  const isAllFilteredSelected = selectedSongs.length > 0 && selectedSongs.length === filteredSongs.length && filteredSongs.length > 0;
+  const isAnyFilteredSelected = selectedSongs.length > 0;
+  const isIndeterminate = isAnyFilteredSelected && !isAllFilteredSelected;
 
 
   return (
@@ -124,10 +131,16 @@ export function MusicLibrary({ songs, onSongsDelete, isReadOnly = false }: Music
        {selectedSongs.length > 0 && !isReadOnly && (
         <div className="flex justify-between items-center bg-muted/50 p-2 rounded-lg">
           <span className="text-sm font-medium">{selectedSongs.length} música(s) selecionada(s)</span>
-          <Button variant="destructive" size="sm" onClick={() => setIsAlertOpen(true)}>
-            <Trash2 className="mr-2 h-4 w-4"/>
-            Excluir Selecionadas
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={onBulkEdit}>
+                <Edit className="mr-2 h-4 w-4"/>
+                Editar
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => setIsAlertOpen(true)}>
+                <Trash2 className="mr-2 h-4 w-4"/>
+                Excluir
+            </Button>
+          </div>
         </div>
       )}
 
@@ -138,9 +151,10 @@ export function MusicLibrary({ songs, onSongsDelete, isReadOnly = false }: Music
               {!isReadOnly && (
                 <TableHead className="w-12">
                   <Checkbox 
-                    checked={isAllFilteredSelected} 
+                    checked={isAllFilteredSelected || (isIndeterminate ? 'indeterminate' : false)} 
                     onCheckedChange={toggleSelectAll} 
-                    aria-label="Selecionar todas as músicas"
+                    aria-label="Selecionar todas as músicas visíveis"
+                    disabled={filteredSongs.length === 0}
                   />
                 </TableHead>
               )}
@@ -166,6 +180,7 @@ export function MusicLibrary({ songs, onSongsDelete, isReadOnly = false }: Music
                       <Checkbox 
                         checked={selectedSongs.includes(song.id)}
                         onCheckedChange={() => toggleSongSelection(song.id)}
+                        onClick={(e) => e.stopPropagation()}
                         aria-label={`Selecionar ${song.title}`}
                       />
                     </TableCell>

@@ -10,18 +10,26 @@ import { SongImportTxtDialog } from '@/components/song-import-txt-dialog';
 import { SongFormDialog } from '@/components/song-form-dialog';
 import { Upload, Plus, FileText } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import type { Song } from '@/types';
+import type { Song, SongCategory } from '@/types';
+import { SongBulkEditDialog } from '@/components/song-bulk-edit-dialog';
 
 export default function MusicPage() {
-  const { songs, addOrUpdateSongs, addSong, addSongsFromImport, removeSongs } = useSchedule();
+  const { songs, addOrUpdateSongs, addSong, addSongsFromImport, removeSongs, updateSongsCategory } = useSchedule();
   const [isImporting, setIsImporting] = useState(false);
   const [isImportingTxt, setIsImportingTxt] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [selectedSongIds, setSelectedSongIds] = useState<string[]>([]);
   const { can } = useAuth();
 
   const handleSaveSong = (songData: Omit<Song, 'id'>) => {
     addSong(songData);
     setIsFormOpen(false);
+  }
+
+  const handleBulkUpdateCategory = (category: SongCategory) => {
+    updateSongsCategory(selectedSongIds, category);
+    setIsBulkEditing(false);
   }
 
   return (
@@ -45,7 +53,13 @@ export default function MusicPage() {
             </div>
         )}
       </div>
-      <MusicLibrary songs={songs} onSongsDelete={removeSongs} isReadOnly={!can('edit:songs')}/>
+      <MusicLibrary 
+        songs={songs} 
+        onSongsDelete={removeSongs} 
+        onSelectionChange={setSelectedSongIds}
+        onBulkEdit={() => setIsBulkEditing(true)}
+        isReadOnly={!can('edit:songs')}
+      />
 
       {isImporting && (
           <SongImportDialog
@@ -70,6 +84,15 @@ export default function MusicPage() {
             isOpen={isFormOpen}
             onOpenChange={setIsFormOpen}
             onSave={handleSaveSong}
+        />
+      )}
+
+      {isBulkEditing && (
+        <SongBulkEditDialog
+          isOpen={isBulkEditing}
+          onOpenChange={setIsBulkEditing}
+          onSave={handleBulkUpdateCategory}
+          songCount={selectedSongIds.length}
         />
       )}
     </div>
