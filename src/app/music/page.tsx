@@ -13,6 +13,7 @@ import { useAuth } from '@/context/auth-context';
 import type { Song } from '@/types';
 import { SongBulkEditDialog, BulkEditData } from '@/components/song-bulk-edit-dialog';
 import type { ParsedTxtSong } from '@/components/song-import-txt-dialog';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function MusicPage() {
   const { songs, addOrUpdateSongs, addSong, importSongsFromTxt, removeSongs, updateSongs } = useSchedule();
@@ -45,20 +46,36 @@ export default function MusicPage() {
       <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8 gap-4">
         <h1 className="text-3xl sm:text-4xl font-headline font-bold">Músicas</h1>
         {can('edit:songs') && (
-            <div className="flex gap-2 flex-wrap justify-end">
-                <Button onClick={() => setIsImporting(true)} size="sm" variant="outline" className="sm:size-auto">
-                    <Upload className="mr-2 h-4 w-4"/>
-                    Importar CSV
-                </Button>
-                <Button onClick={() => setIsImportingTxt(true)} size="sm" variant="outline" className="sm:size-auto">
-                    <FileText className="mr-2 h-4 w-4"/>
-                    Importar TXT
-                </Button>
-                <Button onClick={() => setIsFormOpen(true)} size="sm" className="sm:size-auto">
-                    <Plus className="mr-2 h-4 w-4"/>
-                    Nova Música
-                </Button>
-            </div>
+            <TooltipProvider>
+                <div className="flex gap-2 flex-wrap justify-end">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button onClick={() => setIsImporting(true)} size="sm" variant="outline">
+                                <Upload className="mr-2 h-4 w-4"/>
+                                CSV
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Importar de CSV</p>
+                        </TooltipContent>
+                    </Tooltip>
+                     <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button onClick={() => setIsImportingTxt(true)} size="sm" variant="outline">
+                                <FileText className="mr-2 h-4 w-4"/>
+                                TXT
+                            </Button>
+                        </TooltipTrigger>
+                         <TooltipContent>
+                            <p>Importar de TXT</p>
+                        </TooltipContent>
+                    </Tooltip>
+                    <Button onClick={() => setIsFormOpen(true)} size="sm" className="sm:size-auto">
+                        <Plus className="mr-2 h-4 w-4"/>
+                        Nova Música
+                    </Button>
+                </div>
+            </TooltipProvider>
         )}
       </div>
       <MusicLibrary 
