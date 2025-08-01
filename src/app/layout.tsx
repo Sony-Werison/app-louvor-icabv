@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,18 @@ import { AppLogo } from '@/components/app-logo';
 export const metadata: Metadata = {
   title: 'Louvor ICABV',
   description: 'Gestão de escalas e repertório do ministério de louvor da ICABV.',
+  icons: {
+    icon: '/logo.png',
+  },
+  openGraph: {
+    title: 'Louvor ICABV',
+    description: 'Gestão de escalas e repertório do ministério de louvor da ICABV.',
+    images: [
+      {
+        url: '/logo.png',
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
