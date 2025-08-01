@@ -3,7 +3,6 @@
 
 import type { Schedule, Song, SongCategory } from '@/types';
 import { useState, useMemo } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +14,7 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { X, Music, GripVertical, Search, ArrowDownUp } from 'lucide-react';
+import { X, Music, Search, ArrowDownUp, ArrowUp, ArrowDown } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
@@ -73,14 +72,12 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
     );
   };
 
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-
-    const items = Array.from(currentPlaylist);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    setCurrentPlaylist(items);
+  const handleMoveSong = (index: number, direction: 'up' | 'down') => {
+    const newPlaylist = [...currentPlaylist];
+    const [song] = newPlaylist.splice(index, 1);
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    newPlaylist.splice(newIndex, 0, song);
+    setCurrentPlaylist(newPlaylist);
   };
 
   const handleSort = (key: SortKey) => {
@@ -233,53 +230,55 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                 </ScrollArea>
             </TabsContent>
             <TabsContent value="selected" className="flex-grow mt-0 flex flex-col min-h-0">
-                <DragDropContext onDragEnd={handleDragEnd}>
-                    <Droppable droppableId="playlist">
-                      {(provided) => (
-                        <ScrollArea 
-                          className="h-full flex-grow p-4"
-                          {...provided.droppableProps}
-                          ref={provided.innerRef}
+                <ScrollArea className="h-full flex-grow p-4">
+                  {songsInPlaylist.length > 0 ? (
+                      <div className="space-y-2">
+                      {songsInPlaylist.map((song, index) => (
+                        <div 
+                          key={song.id}
+                          className="flex items-center justify-between p-2 rounded-md hover:bg-muted bg-card"
                         >
-                          {songsInPlaylist.length > 0 ? (
-                              <div className="space-y-2">
-                              {songsInPlaylist.map((song, index) => (
-                                <Draggable key={song.id} draggableId={song.id} index={index}>
-                                  {(provided) => (
-                                    <div 
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      className="flex items-center justify-between p-2 rounded-md hover:bg-muted bg-card"
-                                    >
-                                      <div className="flex items-center gap-3 overflow-hidden">
-                                        <div {...provided.dragHandleProps}>
-                                          <GripVertical className="h-5 w-5 text-muted-foreground shrink-0"/>
-                                        </div>
-                                        <div className="truncate">
-                                            <p className="font-medium truncate">{song.title}</p>
-                                            <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
-                                        </div>
-                                      </div>
-                                      <Button variant="ghost" size="icon" onClick={() => handleCheckedChange(song.id, false)} className="shrink-0">
-                                          <X className="h-4 w-4"/>
-                                      </Button>
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {provided.placeholder}
-                              </div>
-                          ) : (
-                              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                                  <Music className="w-10 h-10 mb-2"/>
-                                  <p>Nenhuma música selecionada</p>
-                                  <p className="text-sm">Volte para a aba "Adicionar Músicas" para montar o repertório.</p>
-                              </div>
-                          )}
-                        </ScrollArea>
-                      )}
-                    </Droppable>
-                </DragDropContext>
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <span className="text-sm font-bold text-muted-foreground w-5 text-center">{index + 1}</span>
+                            <div className="truncate">
+                                <p className="font-medium truncate">{song.title}</p>
+                                <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleMoveSong(index, 'up')}
+                                disabled={index === 0}
+                                className="h-8 w-8"
+                            >
+                                <ArrowUp className="h-4 w-4"/>
+                            </Button>
+                             <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleMoveSong(index, 'down')}
+                                disabled={index === songsInPlaylist.length - 1}
+                                className="h-8 w-8"
+                            >
+                                <ArrowDown className="h-4 w-4"/>
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleCheckedChange(song.id, false)} className="shrink-0 h-8 w-8">
+                                <X className="h-4 w-4"/>
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      </div>
+                  ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                          <Music className="w-10 h-10 mb-2"/>
+                          <p>Nenhuma música selecionada</p>
+                          <p className="text-sm">Volte para a aba "Adicionar Músicas" para montar o repertório.</p>
+                      </div>
+                  )}
+                </ScrollArea>
             </TabsContent>
         </Tabs>
         
