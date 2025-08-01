@@ -219,7 +219,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                   {activeSong ? (
                       <div className="p-4 sm:p-8" style={{ fontSize: `${fontSize}rem` }}>
                           {activeTab === 'lyrics' ? (
-                              <pre className="whitespace-pre-wrap font-body leading-relaxed" style={{whiteSpace: 'pre-wrap'}}>
+                              <pre className="whitespace-pre-wrap font-body leading-relaxed" style={{lineHeight: '1.75', whiteSpace: 'pre-wrap'}}>
                                   {activeSong.lyrics || 'Nenhuma letra disponível.'}
                               </pre>
                           ) : (
@@ -292,5 +292,3 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
     </Dialog>
   );
 }
-
-    
