@@ -226,12 +226,14 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
               <SortableHeader sortKey="category" label="Categoria" className="hidden md:table-cell" />
               <SortableHeader sortKey="key" label="Tom" className="hidden sm:table-cell text-center" />
               <TableHead className="w-24 text-center">
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs">Freq.</span>
-                    <div className="flex gap-4">
-                        <SortableHeader sortKey="timesPlayedQuarterly" label="Tri" className="hidden lg:table-cell" />
-                        <SortableHeader sortKey="timesPlayedTotal" label="Total" className="hidden lg:table-cell" />
-                    </div>
+                  <div className="flex flex-col sm:flex-row items-center justify-center sm:gap-4">
+                      <div className="flex flex-col items-center">
+                        <span className="text-xs font-bold sm:hidden">Freq.</span>
+                        <SortableHeader sortKey="timesPlayedQuarterly" label="Tri" />
+                      </div>
+                       <div className="flex flex-col items-center">
+                        <SortableHeader sortKey="timesPlayedTotal" label="Total" />
+                      </div>
                   </div>
               </TableHead>
             </TableRow>
@@ -312,3 +314,4 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     </div>
   );
 }
+
