@@ -10,11 +10,11 @@ import { SongImportTxtDialog } from '@/components/song-import-txt-dialog';
 import { SongFormDialog } from '@/components/song-form-dialog';
 import { Upload, Plus, FileText } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import type { Song, SongCategory } from '@/types';
-import { SongBulkEditDialog } from '@/components/song-bulk-edit-dialog';
+import type { Song } from '@/types';
+import { SongBulkEditDialog, BulkEditData } from '@/components/song-bulk-edit-dialog';
 
 export default function MusicPage() {
-  const { songs, addOrUpdateSongs, addSong, addSongsFromImport, removeSongs, updateSongsCategory } = useSchedule();
+  const { songs, addOrUpdateSongs, addSong, addSongsFromImport, removeSongs, updateSongs } = useSchedule();
   const [isImporting, setIsImporting] = useState(false);
   const [isImportingTxt, setIsImportingTxt] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -27,9 +27,10 @@ export default function MusicPage() {
     setIsFormOpen(false);
   }
 
-  const handleBulkUpdateCategory = (category: SongCategory) => {
-    updateSongsCategory(selectedSongIds, category);
+  const handleBulkUpdate = (data: BulkEditData) => {
+    updateSongs(selectedSongIds, data);
     setIsBulkEditing(false);
+    setSelectedSongIds([]);
   }
 
   return (
@@ -91,7 +92,7 @@ export default function MusicPage() {
         <SongBulkEditDialog
           isOpen={isBulkEditing}
           onOpenChange={setIsBulkEditing}
-          onSave={handleBulkUpdateCategory}
+          onSave={handleBulkUpdate}
           songCount={selectedSongIds.length}
         />
       )}

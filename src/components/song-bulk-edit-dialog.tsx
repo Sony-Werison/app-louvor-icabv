@@ -4,7 +4,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import type { SongCategory } from '@/types';
+import type { Song, SongCategory } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -29,19 +29,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
+import { Input } from './ui/input';
 
 const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
 
 const formSchema = z.object({
-  category: z.enum(songCategories, {
-    required_error: 'Selecione uma categoria para aplicar.',
-  }),
+  category: z.enum(songCategories).optional(),
+  artist: z.string().optional(),
+  key: z.string().optional(),
+}).refine(data => !!data.category || !!data.artist || !!data.key, {
+  message: 'Pelo menos um campo deve ser preenchido para salvar.',
+  path: ['category'], 
 });
+
+export type BulkEditData = Partial<Pick<Song, 'category' | 'artist' | 'key'>>;
 
 interface SongBulkEditDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (category: SongCategory) => void;
+  onSave: (data: BulkEditData) => void;
   songCount: number;
 }
 
@@ -53,10 +59,18 @@ export function SongBulkEditDialog({
 }: SongBulkEditDialogProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+        artist: '',
+        key: ''
+    }
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    onSave(values.category);
+    const dataToSave: BulkEditData = {};
+    if (values.category) dataToSave.category = values.category;
+    if (values.artist) dataToSave.artist = values.artist;
+    if (values.key) dataToSave.key = values.key;
+    onSave(dataToSave);
   };
 
   return (
@@ -65,25 +79,24 @@ export function SongBulkEditDialog({
         <DialogHeader>
           <DialogTitle>Editar Músicas em Massa</DialogTitle>
           <DialogDescription>
-            Altere a categoria de todas as {songCount} músicas selecionadas.
-            Esta ação não pode ser desfeita.
+            Altere as propriedades das {songCount} músicas selecionadas. Deixe um campo em branco para não alterar seu valor.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField
+             <FormField
               control={form.control}
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nova Categoria</FormLabel>
+                  <FormLabel>Categoria</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione a nova categoria" />
+                        <SelectValue placeholder="Manter categoria atual" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -94,10 +107,36 @@ export function SongBulkEditDialog({
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="artist"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Artista</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Manter artista atual" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="key"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tom</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Manter tom atual" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormMessage>
+                {form.formState.errors.category?.message}
+            </FormMessage>
             <DialogFooter>
               <Button
                 type="button"
