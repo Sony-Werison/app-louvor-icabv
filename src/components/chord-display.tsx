@@ -50,11 +50,10 @@ const isPureChordLineWithoutBrackets = (line: string) => {
     const trimmed = line.trim();
     if (!trimmed || line.includes('[') || line.includes(']')) return false;
 
-    // Remove all identified chords from the line
-    const remaining = trimmed.replace(unbracketedChordRegex, '').trim();
-    
-    // If nothing remains, it's a pure chord line
-    return remaining === '' && trimmed !== '';
+    // Check if every word in the line is a valid chord.
+    const words = trimmed.split(/\s+/);
+    const chordAloneRegex = new RegExp(`^${unbracketedChordRegex.source}$`, '');
+    return words.every(word => word.match(chordAloneRegex));
 }
 
 
@@ -96,7 +95,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
           const parts = line.split(chordRegex).filter(Boolean);
           chords = parts.map(p => p.substring(1, p.length - 1));
       } else if (isPureChordLineWithoutBrackets(line)) {
-          chords = line.match(unbracketedChordRegex) || [];
+          chords = line.trim().split(/\s+/);
       }
       
       return (
