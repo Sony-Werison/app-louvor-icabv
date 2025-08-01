@@ -93,12 +93,12 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
 
                 return (
                 <Card key={schedule.id} className="flex flex-col relative">
-                    <CardHeader className="p-4">
+                    <CardHeader className="p-3">
                     <div className="flex justify-between items-start">
                         <div>
                            <div className="flex items-center gap-2">
                                 {getScheduleIcon(schedule.name)}
-                                <CardTitle className="font-headline font-bold text-lg capitalize">
+                                <CardTitle className="font-headline font-bold text-base capitalize">
                                     {schedule.name}
                                 </CardTitle>
                            </div>
@@ -108,28 +108,28 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                         </div>
                     </div>
                     </CardHeader>
-                    <CardContent className="flex-grow space-y-4 p-4 pt-0">
-                    <div className="space-y-3">
+                    <CardContent className="flex-grow space-y-3 p-3 pt-0">
+                    <div className="space-y-2">
                         {leader && (
                         <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8" data-ai-hint="person portrait">
+                            <Avatar className="h-6 w-6" data-ai-hint="person portrait">
                             <AvatarImage src={convertGoogleDriveUrl(leader.avatar)} alt={leader.name} />
                             <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
                             </Avatar>
                             <div>
-                            <p className="font-semibold text-sm leading-none">{leader.name}</p>
+                            <p className="font-semibold text-xs leading-none">{leader.name}</p>
                             <span className="text-xs text-muted-foreground flex items-center gap-1"><Mic className="w-3 h-3"/>Dirigente</span>
                             </div>
                         </div>
                         )}
                         {preacher && (
                         <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8" data-ai-hint="person portrait">
+                            <Avatar className="h-6 w-6" data-ai-hint="person portrait">
                             <AvatarImage src={convertGoogleDriveUrl(preacher.avatar)} alt={preacher.name} />
                             <AvatarFallback>{getMemberInitial(preacher.name)}</AvatarFallback>
                             </Avatar>
                             <div>
-                            <p className="font-semibold text-sm leading-none">{preacher.name}</p>
+                            <p className="font-semibold text-xs leading-none">{preacher.name}</p>
                             <span className="text-xs text-muted-foreground flex items-center gap-1"><BookUser className="w-3 h-3"/>Pregador</span>
                             </div>
                         </div>
@@ -140,11 +140,11 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
 
                     {teamMembers.length > 0 && (
                         <div>
-                            <h3 className="font-semibold mb-2 flex items-center gap-1.5 text-xs"><Tv className="w-3 h-3"/>Multimídia</h3>
-                            <div className="space-y-1.5">
+                            <h3 className="font-semibold mb-1 flex items-center gap-1.5 text-xs"><Tv className="w-3 h-3"/>Multimídia</h3>
+                            <div className="space-y-1">
                                 {teamMembers.map(member => (
                                     <div key={member.id} className="flex items-center gap-2 text-xs">
-                                        <Avatar className="h-5 w-5" data-ai-hint="person portrait">
+                                        <Avatar className="h-4 w-4" data-ai-hint="person portrait">
                                             <AvatarImage src={convertGoogleDriveUrl(member.avatar)} alt={member.name} />
                                             <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
                                         </Avatar>
@@ -157,8 +157,8 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
 
                     {playlistSongs.length > 0 && (
                         <div>
-                            <h3 className="font-semibold mb-2 flex items-center gap-1.5 text-xs"><ListMusic className="w-3 h-3"/>Repertório</h3>
-                            <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1 ml-1">
+                            <h3 className="font-semibold mb-1 flex items-center gap-1.5 text-xs"><ListMusic className="w-3 h-3"/>Repertório</h3>
+                            <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5 ml-1">
                                 {playlistSongs.map(song => (
                                     <li key={song.id} className="truncate">{song.title}</li>
                                 ))}
