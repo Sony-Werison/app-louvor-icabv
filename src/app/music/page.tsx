@@ -12,9 +12,10 @@ import { Upload, Plus, FileText } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import type { Song } from '@/types';
 import { SongBulkEditDialog, BulkEditData } from '@/components/song-bulk-edit-dialog';
+import type { ParsedTxtSong } from '@/components/song-import-txt-dialog';
 
 export default function MusicPage() {
-  const { songs, addOrUpdateSongs, addSong, addSongsFromImport, removeSongs, updateSongs } = useSchedule();
+  const { songs, addOrUpdateSongs, addSong, importSongsFromTxt, removeSongs, updateSongs } = useSchedule();
   const [isImporting, setIsImporting] = useState(false);
   const [isImportingTxt, setIsImportingTxt] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -32,6 +33,12 @@ export default function MusicPage() {
     setIsBulkEditing(false);
     setSelectedSongIds([]);
   }
+
+  const handleTxtImportSave = (data: { toCreate: ParsedTxtSong[], toUpdate: ParsedTxtSong[]}) => {
+    importSongsFromTxt(data.toCreate, data.toUpdate);
+    setIsImportingTxt(false);
+  };
+
 
   return (
     <div className="p-4 md:p-6">
@@ -75,7 +82,7 @@ export default function MusicPage() {
           <SongImportTxtDialog
             isOpen={isImportingTxt}
             onOpenChange={setIsImportingTxt}
-            onSave={addSongsFromImport}
+            onSave={handleTxtImportSave}
             existingSongs={songs}
           />
       )}

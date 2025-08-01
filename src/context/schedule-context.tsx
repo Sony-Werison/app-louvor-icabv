@@ -31,7 +31,7 @@ interface ScheduleContextType {
   removeSong: (songId: string) => void;
   removeSongs: (songIds: string[]) => void;
   addOrUpdateSongs: (songs: Song[]) => void;
-  addSongsFromImport: (songs: Omit<Song, 'id'>[]) => void;
+  importSongsFromTxt: (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => void;
   updateSongs: (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key'>>) => void;
   isLoading: boolean;
 }
@@ -201,15 +201,29 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     saveSongs(newSongs);
   };
 
-  const addSongsFromImport = (songsToAdd: Omit<Song, 'id'>[]) => {
+  const importSongsFromTxt = (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
     let newSongs = [...songs];
-    const existingTitles = new Set(newSongs.map(s => s.title.toLowerCase()));
 
-    songsToAdd.forEach(song => {
-        if (!existingTitles.has(song.title.toLowerCase())) {
-            newSongs.push({ ...song, id: `s${Date.now()}${Math.random()}` });
+    // Update existing songs
+    songsToUpdate.forEach(songData => {
+        const index = newSongs.findIndex(s => 
+            s.title.toLowerCase() === songData.title.toLowerCase() && 
+            s.artist.toLowerCase() === songData.artist.toLowerCase()
+        );
+        if (index !== -1) {
+            newSongs[index] = { 
+                ...newSongs[index], 
+                lyrics: songData.lyrics, 
+                chords: songData.chords 
+            };
         }
     });
+
+    // Add new songs
+    songsToCreate.forEach(songData => {
+        newSongs.push({ ...songData, id: `s${Date.now()}${Math.random()}` });
+    });
+
     setSongs(newSongs);
     saveSongs(newSongs);
   }
@@ -242,7 +256,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       removeSong,
       removeSongs,
       addOrUpdateSongs,
-      addSongsFromImport,
+      importSongsFromTxt,
       updateSongs,
       isLoading,
     }}>
