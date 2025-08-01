@@ -10,12 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
-import { Calendar } from './ui/calendar';
-import { ptBR } from 'date-fns/locale';
 import { useSchedule } from '@/context/schedule-context';
 import { ScheduleListItem } from './schedule-list-item';
 

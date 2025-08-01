@@ -130,7 +130,7 @@ export function ScheduleListItem({
 
   // Mobile View
   return (
-    <Card key={schedule.date.toISOString()}>
+    <Card>
         <CardHeader className="flex flex-row items-center justify-between p-3 border-b">
              <Popover>
                 <PopoverTrigger asChild>
