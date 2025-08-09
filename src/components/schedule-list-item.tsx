@@ -16,40 +16,66 @@ import { format } from 'date-fns';
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { cn, convertGoogleDriveUrl } from '@/lib/utils';
 import React from 'react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 
 
 const MemberSelector: React.FC<{
     assignedMemberId: string | null;
+    allMembers: Member[];
     filteredMembers: Member[];
     onValueChange: (memberId: string) => void;
     onClear: () => void;
     isReadOnly?: boolean;
-}> = ({ assignedMemberId, filteredMembers, onValueChange, onClear, isReadOnly }) => (
-    <div className="flex items-center gap-1">
-        <Select value={assignedMemberId || ''} onValueChange={onValueChange} disabled={isReadOnly}>
-            <SelectTrigger className={cn("h-9 text-xs sm:text-sm", !assignedMemberId && "text-muted-foreground/60")}>
-                <SelectValue placeholder="Selecione..." />
-            </SelectTrigger>
-            <SelectContent>
-                {filteredMembers.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                        {member.name}
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
-        {assignedMemberId && !isReadOnly && (
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onClear}>
-                <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-            </Button>
-        )}
-    </div>
-);
+}> = ({ assignedMemberId, allMembers, filteredMembers, onValueChange, onClear, isReadOnly }) => {
+    const selectedMember = assignedMemberId ? allMembers.find(m => m.id === assignedMemberId) : null;
+    
+    return (
+        <div className="flex items-center gap-1">
+            <Select value={assignedMemberId || ''} onValueChange={onValueChange} disabled={isReadOnly}>
+                <SelectTrigger className={cn("h-9 text-xs sm:text-sm", !assignedMemberId && "text-muted-foreground/60")}>
+                    <SelectValue asChild>
+                        <div className="flex items-center gap-2">
+                             {selectedMember ? (
+                                <>
+                                <Avatar className="w-5 h-5">
+                                    <AvatarImage src={convertGoogleDriveUrl(selectedMember.avatar)} alt={selectedMember.name} />
+                                    <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <span>{selectedMember.name}</span>
+                                </>
+                            ) : (
+                                <span className="text-muted-foreground">Selecione...</span>
+                            )}
+                        </div>
+                    </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                    {filteredMembers.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                           <div className="flex items-center gap-2">
+                                <Avatar className="w-5 h-5">
+                                    <AvatarImage src={convertGoogleDriveUrl(member.avatar)} alt={member.name} />
+                                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <span>{member.name}</span>
+                           </div>
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            {assignedMemberId && !isReadOnly && (
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onClear}>
+                    <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+            )}
+        </div>
+    );
+};
 
 
 export function ScheduleListItem({
@@ -97,6 +123,7 @@ export function ScheduleListItem({
                 <MemberSelector
                     key={`${col.id}-${index}`}
                     assignedMemberId={assignedMemberIds[index]}
+                    allMembers={members}
                     filteredMembers={filteredMembersForColumn}
                     onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
                     onClear={() => handleClearAssignment(schedule.date, col.id, index)}
@@ -109,24 +136,30 @@ export function ScheduleListItem({
   
   if (isDesktop) {
     return (
-        <TableRow key={schedule.date.toISOString()}>
-            <TableCell className="font-medium p-2 sticky left-0 z-10 bg-background group-hover:bg-muted/50">
-            <Popover>
-                <PopoverTrigger asChild disabled={isReadOnly}>
-                    <Button variant="outline" size="sm" className="w-full justify-start font-normal capitalize h-9 text-xs sm:text-sm">
-                        {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                    <Calendar
-                        mode="single"
-                        selected={schedule.date}
-                        onSelect={(newDate) => handleDateChange(schedule.date, newDate)}
-                        locale={ptBR}
-                        initialFocus
-                    />
-                </PopoverContent>
-            </Popover>
+        <TableRow key={schedule.date.toISOString()} className={schedule.exporting ? 'bg-white' : ''}>
+            <TableCell className={cn("font-medium p-2 sticky left-0 z-10", schedule.exporting ? 'bg-white text-black' : 'bg-background group-hover:bg-muted/50')}>
+             {isReadOnly ? (
+                <div className="text-left font-normal capitalize h-9 px-3 py-2 text-xs sm:text-sm">
+                     {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
+                </div>
+            ) : (
+                <Popover>
+                    <PopoverTrigger asChild disabled={isReadOnly}>
+                        <Button variant="outline" size="sm" className="w-full justify-start font-normal capitalize h-9 text-xs sm:text-sm">
+                            {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <Calendar
+                            mode="single"
+                            selected={schedule.date}
+                            onSelect={(newDate) => handleDateChange(schedule.date, newDate)}
+                            locale={ptBR}
+                            initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
+            )}
             </TableCell>
             {columns.map((col) => (
                 <TableCell key={col.id} className="p-2">
@@ -134,7 +167,7 @@ export function ScheduleListItem({
                 </TableCell>
             ))}
             {!isReadOnly && (
-                <TableCell className="p-2 sticky right-0 z-10 bg-background group-hover:bg-muted/50">
+                <TableCell className={cn("p-2 sticky right-0 z-10", schedule.exporting ? 'bg-white' : 'bg-background group-hover:bg-muted/50')}>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -225,6 +258,7 @@ export function ScheduleListItem({
                                             <MemberSelector
                                                 key={`${col.id}-${index}`}
                                                 assignedMemberId={assignedMemberIds[index]}
+                                                allMembers={members}
                                                 filteredMembers={filteredMembersForColumn}
                                                 onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
                                                 onClear={() => handleClearAssignment(schedule.date, col.id, index)}

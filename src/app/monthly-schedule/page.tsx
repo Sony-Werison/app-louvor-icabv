@@ -1,17 +1,21 @@
 
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSchedule } from '@/context/schedule-context';
 import { MonthlyScheduleView } from '@/components/monthly-schedule-view';
 import type { MonthlySchedule } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ptBR } from 'date-fns/locale';
-import { addMonths, format, startOfDay } from 'date-fns';
+import { addMonths, format, startOfDay, getMonth, getYear } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
+import * as htmlToImage from 'html-to-image';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 export default function MonthlySchedulePage() {
     const { monthlySchedules, addSchedule, members, scheduleColumns } = useSchedule();
@@ -19,13 +23,60 @@ export default function MonthlySchedulePage() {
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const { toast } = useToast();
     const { can } = useAuth();
+    const [isExporting, setIsExporting] = useState(false);
+    const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+    const [selectedMonthsForExport, setSelectedMonthsForExport] = useState<string[]>([]);
+
+    const exportRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setCurrentMonth(new Date());
     }, []);
 
+    const availableMonths = useMemo(() => {
+        const months = new Set<string>();
+        monthlySchedules.forEach(schedule => {
+            months.add(format(schedule.date, 'yyyy-MM'));
+        });
+        return Array.from(months).sort();
+    }, [monthlySchedules]);
+
+    const handleExport = useCallback(async () => {
+        if (!exportRef.current || selectedMonthsForExport.length === 0) {
+            toast({ title: 'Nenhum mês selecionado', description: 'Selecione pelo menos um mês para exportar.', variant: 'destructive'});
+            return;
+        }
+
+        setIsExporting(true);
+        setIsExportDialogOpen(false);
+        toast({ title: 'Preparando exportação...', description: 'Aguarde enquanto a imagem da escala é gerada.' });
+
+        try {
+            // Delay to allow DOM updates
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const dataUrl = await htmlToImage.toPng(exportRef.current, { 
+                quality: 1,
+                pixelRatio: 1.5,
+                backgroundColor: '#ffffff',
+            });
+            const link = document.createElement('a');
+            const monthNames = selectedMonthsForExport.map(m => format(new Date(`${m}-02`), 'MMMM', { locale: ptBR })).join('_');
+            link.download = `escala_louvor_${monthNames}.png`;
+            link.href = dataUrl;
+            link.click();
+            toast({ title: 'Exportação Concluída!', description: 'A imagem da escala foi baixada.' });
+        } catch (error) {
+            console.error('oops, something went wrong!', error);
+            toast({ title: 'Erro na Exportação', description: 'Não foi possível gerar a imagem da escala.', variant: 'destructive'});
+        } finally {
+            setIsExporting(false);
+            setSelectedMonthsForExport([]);
+        }
+    }, [selectedMonthsForExport, toast]);
+    
     if (!currentMonth) {
-        return null; 
+        return null;
     }
 
     const navigateMonths = (amount: number) => {
@@ -58,7 +109,23 @@ export default function MonthlySchedulePage() {
                     schedule.date.getFullYear() === currentMonth.getFullYear()
     );
 
+    const exportSchedules = isExporting ? monthlySchedules.filter(schedule => {
+        const monthYear = format(schedule.date, 'yyyy-MM');
+        return selectedMonthsForExport.includes(monthYear);
+    }) : [];
+    
+    const groupedExportSchedules = exportSchedules.reduce((acc, schedule) => {
+        const monthYear = format(schedule.date, 'yyyy-MM');
+        if (!acc[monthYear]) {
+            acc[monthYear] = [];
+        }
+        acc[monthYear].push(schedule);
+        return acc;
+    }, {} as Record<string, MonthlySchedule[]>);
+
+
     return (
+        <>
         <div className="p-4 md:p-6">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8 gap-4">
                 <div className="flex items-center gap-2 sm:gap-4 justify-between">
@@ -72,24 +139,30 @@ export default function MonthlySchedulePage() {
                         <ChevronRight className="h-4 w-4" />
                     </Button>
                 </div>
-                {can('edit:schedule') && (
-                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                        <PopoverTrigger asChild>
-                            <Button size="sm" className="sm:size-auto w-full sm:w-auto">
-                                <Plus className="mr-2" />
-                                Adicionar Data
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                onSelect={handleAddDate}
-                                locale={ptBR}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
-                )}
+                <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="w-full" onClick={() => setIsExportDialogOpen(true)}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Exportar PNG
+                    </Button>
+                    {can('edit:schedule') && (
+                        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                            <PopoverTrigger asChild>
+                                <Button size="sm" className="sm:size-auto w-full sm:w-auto">
+                                    <Plus className="mr-2" />
+                                    Adicionar Data
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    onSelect={handleAddDate}
+                                    locale={ptBR}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    )}
+                </div>
             </div>
             <MonthlyScheduleView 
                 schedules={filteredSchedules}
@@ -97,5 +170,67 @@ export default function MonthlySchedulePage() {
                 columns={scheduleColumns}
             />
         </div>
+
+        {/* Export Dialog */}
+        <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Exportar Escala para PNG</DialogTitle>
+                    <DialogDescription>
+                        Selecione os meses que você deseja incluir na imagem exportada.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2 py-4">
+                    {availableMonths.map(month => (
+                        <div key={month} className="flex items-center space-x-2">
+                            <Checkbox
+                                id={`month-${month}`}
+                                checked={selectedMonthsForExport.includes(month)}
+                                onCheckedChange={(checked) => {
+                                    setSelectedMonthsForExport(prev => 
+                                        checked ? [...prev, month] : prev.filter(m => m !== month)
+                                    )
+                                }}
+                            />
+                            <Label htmlFor={`month-${month}`} className="capitalize">
+                                {format(new Date(`${month}-02`), 'MMMM yyyy', { locale: ptBR })}
+                            </Label>
+                        </div>
+                    ))}
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleExport} disabled={selectedMonthsForExport.length === 0}>
+                        <Download className="mr-2 h-4 w-4"/>
+                        Exportar
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+
+        {/* Hidden element for export */}
+        {isExporting && (
+             <div className="fixed top-0 left-0 -z-50 opacity-0" style={{ width: '1200px' }}>
+                <div ref={exportRef} className="p-8 bg-white">
+                    {Object.entries(groupedExportSchedules).sort(([a], [b]) => a.localeCompare(b)).map(([month, schedules]) => (
+                        <div key={month} className="mb-8">
+                             <h2 className="text-3xl font-bold text-center mb-6 capitalize text-black">
+                                Escala - {format(new Date(`${month}-02`), 'MMMM yyyy', { locale: ptBR })}
+                            </h2>
+                            <MonthlyScheduleView 
+                                schedules={schedules}
+                                members={members}
+                                columns={scheduleColumns}
+                                isExporting={true}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        </>
     );
 }
+

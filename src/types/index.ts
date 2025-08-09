@@ -48,4 +48,5 @@ export type MonthlySchedule = {
   assignments: Record<string, (string | null)[]>; // columnId -> memberId[]
   playlist_manha?: string[];
   playlist_noite?: string[];
+  exporting?: boolean; // Used for PNG export styling
 };

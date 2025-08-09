@@ -18,16 +18,18 @@ interface MonthlyScheduleViewProps {
   schedules: MonthlySchedule[];
   members: Member[];
   columns: ScheduleColumn[];
+  isExporting?: boolean;
 }
 
 export function MonthlyScheduleView({
   schedules,
   members,
   columns,
+  isExporting = false,
 }: MonthlyScheduleViewProps) {
   const { updateSchedule, removeSchedule } = useSchedule();
   const { can } = useAuth();
-  const isReadOnly = !can('edit:schedule');
+  const isReadOnly = !can('edit:schedule') || isExporting;
 
   const handleMemberChange = (date: Date, columnId: string, memberId: string, index: number) => {
     if (isReadOnly) return;
