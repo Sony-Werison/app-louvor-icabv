@@ -39,7 +39,7 @@ const MemberSelector: React.FC<{
             <Select value={assignedMemberId || ''} onValueChange={onValueChange} disabled={isReadOnly}>
                 <SelectTrigger className={cn("h-9 text-xs sm:text-sm", !assignedMemberId && "text-muted-foreground/60")}>
                     <SelectValue asChild>
-                        <div className="flex items-center gap-2">
+                         <div className="flex items-center gap-2">
                              {selectedMember ? (
                                 <>
                                 <Avatar className="w-5 h-5">
