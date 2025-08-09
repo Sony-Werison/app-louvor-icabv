@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { ptBR } from 'date-fns/locale';
-import { cn, convertGoogleDriveUrl } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import React from 'react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
@@ -43,7 +43,7 @@ const MemberSelector: React.FC<{
                              {selectedMember ? (
                                 <div className="flex items-center gap-2">
                                     <Avatar className="w-5 h-5">
-                                        <AvatarImage src={convertGoogleDriveUrl(selectedMember.avatar)} alt={selectedMember.name} />
+                                        <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
                                         <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <span>{selectedMember.name}</span>
@@ -59,7 +59,7 @@ const MemberSelector: React.FC<{
                         <SelectItem key={member.id} value={member.id}>
                            <div className="flex items-center gap-2">
                                 <Avatar className="w-5 h-5">
-                                    <AvatarImage src={convertGoogleDriveUrl(member.avatar)} alt={member.name} />
+                                    <AvatarImage src={member.avatar} alt={member.name} />
                                     <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <span>{member.name}</span>
