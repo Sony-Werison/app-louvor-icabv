@@ -16,6 +16,9 @@ import * as htmlToImage from 'html-to-image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+type ExportFormat = 'desktop' | 'mobile';
 
 export default function MonthlySchedulePage() {
     const { monthlySchedules, addSchedule, members, scheduleColumns } = useSchedule();
@@ -26,6 +29,7 @@ export default function MonthlySchedulePage() {
     const [isExporting, setIsExporting] = useState(false);
     const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
     const [selectedMonthsForExport, setSelectedMonthsForExport] = useState<string[]>([]);
+    const [exportFormat, setExportFormat] = useState<ExportFormat>('desktop');
 
     const exportRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +66,7 @@ export default function MonthlySchedulePage() {
             });
             const link = document.createElement('a');
             const monthNames = selectedMonthsForExport.map(m => format(new Date(`${m}-02`), 'MMMM', { locale: ptBR })).join('_');
-            link.download = `escala_louvor_${monthNames}.png`;
+            link.download = `escala_louvor_${monthNames}_${exportFormat}.png`;
             link.href = dataUrl;
             link.click();
             toast({ title: 'Exportação Concluída!', description: 'A imagem da escala foi baixada.' });
@@ -73,7 +77,7 @@ export default function MonthlySchedulePage() {
             setIsExporting(false);
             setSelectedMonthsForExport([]);
         }
-    }, [selectedMonthsForExport, toast]);
+    }, [selectedMonthsForExport, toast, exportFormat]);
     
     if (!currentMonth) {
         return null;
@@ -177,26 +181,48 @@ export default function MonthlySchedulePage() {
                 <DialogHeader>
                     <DialogTitle>Exportar Escala para PNG</DialogTitle>
                     <DialogDescription>
-                        Selecione os meses que você deseja incluir na imagem exportada.
+                        Selecione os meses e o formato que você deseja exportar.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-2 py-4">
-                    {availableMonths.map(month => (
-                        <div key={month} className="flex items-center space-x-2">
-                            <Checkbox
-                                id={`month-${month}`}
-                                checked={selectedMonthsForExport.includes(month)}
-                                onCheckedChange={(checked) => {
-                                    setSelectedMonthsForExport(prev => 
-                                        checked ? [...prev, month] : prev.filter(m => m !== month)
-                                    )
-                                }}
-                            />
-                            <Label htmlFor={`month-${month}`} className="capitalize">
-                                {format(new Date(`${month}-02`), 'MMMM yyyy', { locale: ptBR })}
-                            </Label>
+                <div className="space-y-4 py-4">
+                    <div>
+                        <Label className="font-semibold">Meses</Label>
+                        <div className="space-y-2 mt-2">
+                            {availableMonths.map(month => (
+                                <div key={month} className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id={`month-${month}`}
+                                        checked={selectedMonthsForExport.includes(month)}
+                                        onCheckedChange={(checked) => {
+                                            setSelectedMonthsForExport(prev => 
+                                                checked ? [...prev, month] : prev.filter(m => m !== month)
+                                            )
+                                        }}
+                                    />
+                                    <Label htmlFor={`month-${month}`} className="capitalize font-normal">
+                                        {format(new Date(`${month}-02`), 'MMMM yyyy', { locale: ptBR })}
+                                    </Label>
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    </div>
+                    <div>
+                        <Label className="font-semibold">Formato</Label>
+                         <RadioGroup defaultValue="desktop" value={exportFormat} onValueChange={(value: any) => setExportFormat(value)} className="mt-2 grid grid-cols-2 gap-4">
+                            <div>
+                                <RadioGroupItem value="desktop" id="desktop" className="peer sr-only" />
+                                <Label htmlFor="desktop" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                    Desktop
+                                </Label>
+                            </div>
+                            <div>
+                                <RadioGroupItem value="mobile" id="mobile" className="peer sr-only" />
+                                <Label htmlFor="mobile" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                    Celular
+                                </Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>Cancelar</Button>
@@ -211,10 +237,10 @@ export default function MonthlySchedulePage() {
 
         {/* Hidden element for export */}
         {isExporting && (
-             <div className="fixed top-0 left-0 -z-50 opacity-0" style={{ width: '1200px' }}>
-                <div ref={exportRef} className="p-8 bg-white">
+             <div className="fixed top-0 left-0 -z-50 opacity-0" style={{ width: exportFormat === 'desktop' ? '1200px' : '450px' }}>
+                <div ref={exportRef} className="p-8 bg-white space-y-8">
                     {Object.entries(groupedExportSchedules).sort(([a], [b]) => a.localeCompare(b)).map(([month, schedules]) => (
-                        <div key={month} className="mb-8">
+                        <div key={month}>
                              <h2 className="text-3xl font-bold text-center mb-6 capitalize text-black">
                                 Escala - {format(new Date(`${month}-02`), 'MMMM yyyy', { locale: ptBR })}
                             </h2>
@@ -223,6 +249,7 @@ export default function MonthlySchedulePage() {
                                 members={members}
                                 columns={scheduleColumns}
                                 isExporting={true}
+                                exportFormat={exportFormat}
                             />
                         </div>
                     ))}

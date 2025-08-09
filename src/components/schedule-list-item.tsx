@@ -31,8 +31,29 @@ const MemberSelector: React.FC<{
     onValueChange: (memberId: string) => void;
     onClear: () => void;
     isReadOnly?: boolean;
-}> = ({ assignedMemberId, allMembers, filteredMembers, onValueChange, onClear, isReadOnly }) => {
+    isExporting?: boolean;
+}> = ({ assignedMemberId, allMembers, filteredMembers, onValueChange, onClear, isReadOnly, isExporting }) => {
     const selectedMember = assignedMemberId ? allMembers.find(m => m.id === assignedMemberId) : null;
+    
+    if (isExporting && selectedMember) {
+        return (
+            <div className="flex items-center gap-2 h-9 text-xs sm:text-sm px-3 py-2 rounded-md border border-input">
+                <Avatar className="w-5 h-5">
+                    <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
+                    <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <span className="text-black">{selectedMember.name}</span>
+            </div>
+        )
+    }
+
+    if (isExporting && !selectedMember) {
+        return (
+            <div className="flex items-center gap-2 h-9 text-xs sm:text-sm px-3 py-2 rounded-md border border-input">
+                 <span className="text-gray-400">N/A</span>
+            </div>
+        )
+    }
     
     return (
         <div className="flex items-center gap-1">
@@ -89,6 +110,7 @@ export function ScheduleListItem({
   handleRemoveDate,
   isDesktop = false,
   isReadOnly = false,
+  isExporting = false,
 }: {
     schedule: MonthlySchedule;
     members: Member[];
@@ -100,6 +122,7 @@ export function ScheduleListItem({
     handleRemoveDate: (date: Date) => void;
     isDesktop?: boolean;
     isReadOnly?: boolean;
+    isExporting?: boolean;
 }) {
 
   const getFilteredMembersForColumn = (column: ScheduleColumn): Member[] => {
@@ -128,6 +151,7 @@ export function ScheduleListItem({
                     onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
                     onClear={() => handleClearAssignment(schedule.date, col.id, index)}
                     isReadOnly={isReadOnly}
+                    isExporting={isExporting}
                 />
             ))}
         </div>
@@ -136,8 +160,8 @@ export function ScheduleListItem({
   
   if (isDesktop) {
     return (
-        <TableRow key={schedule.date.toISOString()} className={schedule.exporting ? 'bg-white' : ''}>
-            <TableCell className={cn("font-medium p-2 sticky left-0 z-10", schedule.exporting ? 'bg-white text-black' : 'bg-background group-hover:bg-muted/50')}>
+        <TableRow key={schedule.date.toISOString()} className={isExporting ? 'bg-white' : ''}>
+            <TableCell className={cn("font-medium p-2 sticky left-0 z-10", isExporting ? 'bg-white text-black' : 'bg-background group-hover:bg-muted/50')}>
              {isReadOnly ? (
                 <div className="text-left font-normal capitalize h-9 px-3 py-2 text-xs sm:text-sm">
                      {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
@@ -167,7 +191,7 @@ export function ScheduleListItem({
                 </TableCell>
             ))}
             {!isReadOnly && (
-                <TableCell className={cn("p-2 sticky right-0 z-10", schedule.exporting ? 'bg-white' : 'bg-background group-hover:bg-muted/50')}>
+                <TableCell className={cn("p-2 sticky right-0 z-10", isExporting ? 'bg-white' : 'bg-background group-hover:bg-muted/50')}>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -195,24 +219,11 @@ export function ScheduleListItem({
 
   // Mobile View
   return (
-    <Card>
+    <Card className={isExporting ? 'bg-white border-gray-300 shadow-lg' : ''}>
         <CardHeader className="flex flex-row items-center justify-between p-3 border-b">
-             <Popover>
-                <PopoverTrigger asChild disabled={isReadOnly}>
-                    <Button variant="outline" className="font-semibold capitalize text-base flex-grow justify-start">
-                       {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                    <Calendar
-                        mode="single"
-                        selected={schedule.date}
-                        onSelect={(newDate) => handleDateChange(schedule.date, newDate)}
-                        locale={ptBR}
-                        initialFocus
-                    />
-                </PopoverContent>
-            </Popover>
+             <div className={cn("font-semibold capitalize text-base flex-grow justify-start", isExporting ? 'text-black' : '')}>
+                {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
+             </div>
             {!isReadOnly && (
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -236,43 +247,76 @@ export function ScheduleListItem({
             )}
         </CardHeader>
         <CardContent className="p-0">
-            <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="item-1">
-                    <AccordionTrigger className="p-3">
-                        <span className="text-sm font-medium">Atribuições</span>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <div className="p-3 pt-0 space-y-4">
-                        {columns.map(col => {
-                            const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
-                            const slots = col.isMulti ? [0, 1] : [0];
-                            const filteredMembersForColumn = getFilteredMembersForColumn(col);
-                            return (
-                                <div key={col.id}>
-                                    <label className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-1.5">
-                                        {col.icon && <col.icon className="h-4 w-4" />}
-                                        {col.label}
-                                    </label>
-                                    <div className={`flex gap-1 ${col.isMulti ? 'flex-col' : ''}`}>
-                                        {slots.map(index => (
-                                            <MemberSelector
-                                                key={`${col.id}-${index}`}
-                                                assignedMemberId={assignedMemberIds[index]}
-                                                allMembers={members}
-                                                filteredMembers={filteredMembersForColumn}
-                                                onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
-                                                onClear={() => handleClearAssignment(schedule.date, col.id, index)}
-                                                isReadOnly={isReadOnly}
-                                            />
-                                        ))}
+             {isExporting ? (
+                 <div className="p-3 pt-2 space-y-4">
+                     {columns.map(col => {
+                         const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
+                         const slots = col.isMulti ? [0, 1] : [0];
+                         const filteredMembersForColumn = getFilteredMembersForColumn(col);
+                         return (
+                             <div key={col.id}>
+                                 <label className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-1.5">
+                                     {col.icon && <col.icon className="h-4 w-4" />}
+                                     {col.label}
+                                 </label>
+                                 <div className={`flex gap-1 ${col.isMulti ? 'flex-col' : ''}`}>
+                                     {slots.map(index => (
+                                         <MemberSelector
+                                             key={`${col.id}-${index}`}
+                                             assignedMemberId={assignedMemberIds[index]}
+                                             allMembers={members}
+                                             filteredMembers={filteredMembersForColumn}
+                                             onValueChange={() => {}}
+                                             onClear={() => {}}
+                                             isReadOnly={true}
+                                             isExporting={true}
+                                         />
+                                     ))}
+                                 </div>
+                             </div>
+                         )
+                     })}
+                 </div>
+             ) : (
+                <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="item-1">
+                        <AccordionTrigger className="p-3">
+                            <span className="text-sm font-medium">Atribuições</span>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            <div className="p-3 pt-0 space-y-4">
+                            {columns.map(col => {
+                                const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
+                                const slots = col.isMulti ? [0, 1] : [0];
+                                const filteredMembersForColumn = getFilteredMembersForColumn(col);
+                                return (
+                                    <div key={col.id}>
+                                        <label className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-1.5">
+                                            {col.icon && <col.icon className="h-4 w-4" />}
+                                            {col.label}
+                                        </label>
+                                        <div className={`flex gap-1 ${col.isMulti ? 'flex-col' : ''}`}>
+                                            {slots.map(index => (
+                                                <MemberSelector
+                                                    key={`${col.id}-${index}`}
+                                                    assignedMemberId={assignedMemberIds[index]}
+                                                    allMembers={members}
+                                                    filteredMembers={filteredMembersForColumn}
+                                                    onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
+                                                    onClear={() => handleClearAssignment(schedule.date, col.id, index)}
+                                                    isReadOnly={isReadOnly}
+                                                    isExporting={isExporting}
+                                                />
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            )
-                        })}
-                        </div>
-                    </AccordionContent>
-                </AccordionItem>
-            </Accordion>
+                                )
+                            })}
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
+            )}
         </CardContent>
     </Card>
   )
