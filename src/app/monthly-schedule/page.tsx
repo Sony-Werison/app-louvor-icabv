@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSchedule } from '@/context/schedule-context';
 import { MonthlyScheduleView } from '@/components/monthly-schedule-view';
 import type { MonthlySchedule } from '@/types';
@@ -233,4 +233,3 @@ export default function MonthlySchedulePage() {
         </>
     );
 }
-
