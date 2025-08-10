@@ -45,7 +45,7 @@ export default function MonthlySchedulePage() {
         return Array.from(months).sort();
     }, [monthlySchedules]);
 
-    const handleExport = useCallback(async () => {
+    const handleExport = async () => {
         if (selectedMonthsForExport.length === 0) {
             toast({ title: 'Nenhum mês selecionado', description: 'Selecione pelo menos um mês para exportar.', variant: 'destructive'});
             return;
@@ -82,7 +82,7 @@ export default function MonthlySchedulePage() {
             // We don't clear the selected months here to allow re-exporting with different settings
             // setSelectedMonthsForExport([]);
         }
-    }, [toast, exportFormat]);
+    };
     
     if (!currentMonth) {
         return null;
@@ -231,9 +231,9 @@ export default function MonthlySchedulePage() {
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleExport} disabled={selectedMonthsForExport.length === 0}>
-                        <Download className="mr-2 h-4 w-4"/>
-                        Exportar
+                    <Button onClick={handleExport} disabled={selectedMonthsForExport.length === 0 || isExporting}>
+                        {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4"/>}
+                        {isExporting ? 'Exportando...' : 'Exportar'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
