@@ -46,7 +46,7 @@ export default function MonthlySchedulePage() {
     }, [monthlySchedules]);
 
     const handleExport = useCallback(async () => {
-        if (!exportRef.current || selectedMonthsForExport.length === 0) {
+        if (selectedMonthsForExport.length === 0) {
             toast({ title: 'Nenhum mês selecionado', description: 'Selecione pelo menos um mês para exportar.', variant: 'destructive'});
             return;
         }
@@ -58,6 +58,10 @@ export default function MonthlySchedulePage() {
         try {
             // Delay to allow DOM updates
             await new Promise(resolve => setTimeout(resolve, 500));
+            
+            if (!exportRef.current) {
+                 throw new Error("Elemento de exportação não encontrado.");
+            }
 
             const dataUrl = await htmlToImage.toPng(exportRef.current, { 
                 quality: 1,
@@ -75,9 +79,10 @@ export default function MonthlySchedulePage() {
             toast({ title: 'Erro na Exportação', description: 'Não foi possível gerar a imagem da escala.', variant: 'destructive'});
         } finally {
             setIsExporting(false);
-            setSelectedMonthsForExport([]);
+            // We don't clear the selected months here to allow re-exporting with different settings
+            // setSelectedMonthsForExport([]);
         }
-    }, [selectedMonthsForExport, toast, exportFormat]);
+    }, [toast, exportFormat]);
     
     if (!currentMonth) {
         return null;
