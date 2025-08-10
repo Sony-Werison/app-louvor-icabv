@@ -24,6 +24,48 @@ interface MonthlyScheduleViewProps {
   exportFormat?: ExportFormat;
 }
 
+const renderTableForExport = (
+  schedules: MonthlySchedule[],
+  columns: ScheduleColumn[],
+  members: Member[]
+) => {
+  return (
+    <Table className="min-w-max">
+      <TableHeader className="bg-white">
+        <TableRow className="hover:bg-white">
+          <TableHead className="w-[180px] sticky left-0 z-20 bg-white text-black">Data</TableHead>
+          {columns.map((col) => (
+            <TableHead key={col.id} className="sticky top-0 z-10 bg-white text-black min-w-[180px]">
+              <div className="flex items-center gap-2">
+                {col.icon && <col.icon className="h-4 w-4 text-gray-500" />}
+                {col.label}
+              </div>
+            </TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {schedules.map((schedule) => (
+           <ScheduleListItem 
+             key={schedule.date.toISOString()}
+             schedule={schedule}
+             isDesktop 
+             members={members}
+             columns={columns}
+             getAssignedMemberIds={(date, columnId) => schedule.assignments[columnId] || []}
+             handleMemberChange={() => {}}
+             handleClearAssignment={() => {}}
+             handleDateChange={() => {}}
+             handleRemoveDate={() => {}}
+             isReadOnly={true}
+             isExporting={true}
+           />
+        ))}
+      </TableBody>
+    </Table>
+  );
+};
+
 export function MonthlyScheduleView({
   schedules,
   members,
@@ -79,26 +121,51 @@ export function MonthlyScheduleView({
   
   const sortedSchedules = [...schedules].sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  if (isExporting && exportFormat === 'mobile') {
-      return (
-        <div className="space-y-3">
-          {sortedSchedules.map((schedule) => (
-            <ScheduleListItem 
-              key={schedule.date.toISOString()} 
-              schedule={schedule}
-              members={members}
-              columns={columns}
-              getAssignedMemberIds={getAssignedMemberIds}
-              handleMemberChange={handleMemberChange}
-              handleClearAssignment={handleClearAssignment}
-              handleDateChange={handleDateChange}
-              handleRemoveDate={handleRemoveDate}
-              isReadOnly={isReadOnly}
-              isExporting={isExporting}
-            />
-          ))}
+  if (isExporting) {
+    if (exportFormat === 'mobile') {
+        return (
+          <div className="space-y-3">
+            {sortedSchedules.map((schedule) => (
+              <ScheduleListItem 
+                key={schedule.date.toISOString()} 
+                schedule={schedule}
+                members={members}
+                columns={columns}
+                getAssignedMemberIds={getAssignedMemberIds}
+                handleMemberChange={handleMemberChange}
+                handleClearAssignment={handleClearAssignment}
+                handleDateChange={handleDateChange}
+                handleRemoveDate={handleRemoveDate}
+                isReadOnly={isReadOnly}
+                isExporting={isExporting}
+              />
+            ))}
+          </div>
+        );
+    }
+
+    // Desktop Exporting
+    const splitIndex = Math.ceil(sortedSchedules.length / 2);
+    const firstHalf = sortedSchedules.slice(0, splitIndex);
+    const secondHalf = sortedSchedules.slice(splitIndex);
+
+    // If there are 5 or less, render in a single column to not waste space
+    if (sortedSchedules.length <= 5) {
+      return <div className="rounded-lg border overflow-x-auto">{renderTableForExport(sortedSchedules, columns, members)}</div>;
+    }
+    
+    return (
+      <div className="flex gap-4">
+        <div className="flex-1 rounded-lg border overflow-x-auto">
+          {renderTableForExport(firstHalf, columns, members)}
         </div>
-      );
+        {secondHalf.length > 0 && (
+          <div className="flex-1 rounded-lg border overflow-x-auto">
+             {renderTableForExport(secondHalf, columns, members)}
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (

@@ -42,7 +42,7 @@ const MemberSelector: React.FC<{
                     <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
                     <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <span className="text-black">{selectedMember.name}</span>
+                <span className="text-black truncate">{selectedMember.name}</span>
             </div>
         )
     }
@@ -57,19 +57,21 @@ const MemberSelector: React.FC<{
     
     return (
         <div className="flex items-center gap-1">
-            <Select value={assignedMemberId || ''} onValueChange={onValueChange} disabled={isReadOnly}>
-                <SelectTrigger className={cn("h-9 text-xs sm:text-sm", !assignedMemberId && "text-muted-foreground/60")}>
-                    {selectedMember ? (
-                        <div className="flex items-center gap-2">
-                            <Avatar className="w-5 h-5">
-                                <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
-                                <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <span>{selectedMember.name}</span>
-                        </div>
-                    ) : (
-                        <SelectValue placeholder="Selecione..." />
-                    )}
+             <Select value={assignedMemberId || ''} onValueChange={onValueChange} disabled={isReadOnly}>
+                <SelectTrigger className={cn("h-9 text-xs sm:text-sm w-full", !assignedMemberId && "text-muted-foreground/60")}>
+                    <div className="flex items-center gap-2 truncate">
+                         {selectedMember ? (
+                            <>
+                                <Avatar className="w-5 h-5">
+                                    <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
+                                    <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <span className="truncate">{selectedMember.name}</span>
+                            </>
+                        ) : (
+                            <SelectValue placeholder="Selecione..." />
+                        )}
+                    </div>
                 </SelectTrigger>
                 <SelectContent>
                     {filteredMembers.map((member) => (
