@@ -62,13 +62,13 @@ const MemberSelector: React.FC<{
                     <SelectValue asChild>
                          <div className="flex items-center gap-2">
                             {selectedMember ? (
-                                <div className="flex items-center gap-2">
+                                <>
                                     <Avatar className="w-5 h-5">
                                         <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
                                         <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <span>{selectedMember.name}</span>
-                                </div>
+                                </>
                             ) : (
                                 <span className="text-muted-foreground">Selecione...</span>
                             )}
