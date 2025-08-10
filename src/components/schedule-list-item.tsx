@@ -59,21 +59,17 @@ const MemberSelector: React.FC<{
         <div className="flex items-center gap-1">
             <Select value={assignedMemberId || ''} onValueChange={onValueChange} disabled={isReadOnly}>
                 <SelectTrigger className={cn("h-9 text-xs sm:text-sm", !assignedMemberId && "text-muted-foreground/60")}>
-                    <SelectValue asChild>
-                         <div className="flex items-center gap-2">
-                            {selectedMember ? (
-                                <>
-                                    <Avatar className="w-5 h-5">
-                                        <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
-                                        <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <span>{selectedMember.name}</span>
-                                </>
-                            ) : (
-                                <span className="text-muted-foreground">Selecione...</span>
-                            )}
+                    {selectedMember ? (
+                        <div className="flex items-center gap-2">
+                            <Avatar className="w-5 h-5">
+                                <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
+                                <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span>{selectedMember.name}</span>
                         </div>
-                    </SelectValue>
+                    ) : (
+                        <SelectValue placeholder="Selecione..." />
+                    )}
                 </SelectTrigger>
                 <SelectContent>
                     {filteredMembers.map((member) => (
