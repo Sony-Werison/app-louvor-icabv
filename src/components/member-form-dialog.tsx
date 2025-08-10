@@ -24,6 +24,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from './ui/checkbox';
+import { useState } from 'react';
+import { uploadAvatar } from '@/app/actions';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 interface MemberFormDialogProps {
   isOpen: boolean;
@@ -34,15 +39,37 @@ interface MemberFormDialogProps {
 
 const memberRoles: MemberRole[] = ['Dirigente', 'Pregador', 'Multimídia', 'Convidado'];
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
   roles: z.array(z.string()).refine(value => value.some(item => item), {
     message: "Você deve selecionar pelo menos uma função.",
   }),
-  avatar: z.string().url({ message: 'Por favor, insira uma URL de avatar válida.' }).optional().or(z.literal('')),
+  avatar: z.any()
+    .refine(
+        (file) => {
+            if (!file || typeof file === 'string') return true; // Allow existing URL string
+            return file?.size <= MAX_FILE_SIZE;
+        }, 
+        `O tamanho máximo da imagem é 5MB.`
+    )
+    .refine(
+        (file) => {
+             if (!file || typeof file === 'string') return true;
+             return ACCEPTED_IMAGE_TYPES.includes(file?.type)
+        },
+        "Apenas os formatos .jpg, .jpeg, .png e .webp são suportados."
+    )
+    .optional(),
 });
 
 export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: MemberFormDialogProps) {
+  const [preview, setPreview] = useState<string | null>(member?.avatar || null);
+  const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -52,13 +79,49 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const avatar = values.avatar || '';
-    if (member) {
-      onSave({ ...values, roles: values.roles as MemberRole[], avatar, id: member.id });
-    } else {
-      onSave({ ...values, roles: values.roles as MemberRole[], avatar });
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        form.setValue('avatar', file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+  };
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsUploading(true);
+    let avatarUrl = member?.avatar || '';
+
+    if (values.avatar && typeof values.avatar !== 'string') {
+        try {
+            const formData = new FormData();
+            formData.append('file', values.avatar);
+            const result = await uploadAvatar(formData);
+            if (result.url) {
+                avatarUrl = result.url;
+            } else {
+                 toast({ title: "Erro no Upload", description: result.error || "Não foi possível carregar a imagem.", variant: "destructive" });
+                 setIsUploading(false);
+                 return;
+            }
+        } catch (error) {
+            toast({ title: "Erro de Conexão", description: "Falha ao enviar imagem.", variant: "destructive" });
+            setIsUploading(false);
+            return;
+        }
     }
+    
+    const finalData = { ...values, roles: values.roles as MemberRole[], avatar: avatarUrl };
+
+    if (member) {
+      onSave({ ...finalData, id: member.id });
+    } else {
+      onSave(finalData);
+    }
+    setIsUploading(false);
   };
 
   return (
@@ -135,21 +198,30 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
             <FormField
               control={form.control}
               name="avatar"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
-                  <FormLabel>URL do Avatar</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://..." {...field} />
-                  </FormControl>
+                  <FormLabel>Foto do Perfil</FormLabel>
+                   <div className="flex items-center gap-4">
+                        <Avatar className="w-16 h-16">
+                            <AvatarImage src={preview || undefined} alt="Avatar preview" />
+                            <AvatarFallback>{form.watch('name')?.charAt(0) || '?'}</AvatarFallback>
+                        </Avatar>
+                        <FormControl>
+                            <Input type="file" accept="image/*" onChange={handleFileChange} className="max-w-xs file:text-primary"/>
+                        </FormControl>
+                   </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isUploading}>
                 Cancelar
               </Button>
-              <Button type="submit">Salvar</Button>
+              <Button type="submit" disabled={isUploading}>
+                {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar
+              </Button>
             </DialogFooter>
           </form>
         </Form>

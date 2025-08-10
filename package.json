@@ -48,6 +48,7 @@
     "genkit": "^1.14.1",
     "html-to-image": "^1.11.11",
     "lucide-react": "^0.475.0",
+    "nanoid": "^5.0.7",
     "next": "15.3.3",
     "papaparse": "^5.4.1",
     "patch-package": "^8.0.0",
