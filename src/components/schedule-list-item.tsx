@@ -61,7 +61,7 @@ const MemberSelector: React.FC<{
                 <SelectTrigger className={cn("h-9 text-xs sm:text-sm", !assignedMemberId && "text-muted-foreground/60")}>
                     <SelectValue asChild>
                          <div className="flex items-center gap-2">
-                             {selectedMember ? (
+                            {selectedMember ? (
                                 <div className="flex items-center gap-2">
                                     <Avatar className="w-5 h-5">
                                         <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
