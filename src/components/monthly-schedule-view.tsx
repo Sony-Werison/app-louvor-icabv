@@ -14,53 +14,50 @@ import { useSchedule } from '@/context/schedule-context';
 import { ScheduleListItem } from './schedule-list-item';
 import { useAuth } from '@/context/auth-context';
 
-interface MonthlyScheduleViewProps {
-  schedules: MonthlySchedule[];
-  members: Member[];
-  columns: ScheduleColumn[];
-  isExporting?: boolean;
-  isForDialog?: boolean;
-}
-
 const renderTableForExport = (
   schedules: MonthlySchedule[],
   columns: ScheduleColumn[],
-  members: Member[]
+  members: Member[],
+  isForDialog: boolean
 ) => {
   return (
-    <Table className="min-w-full">
-      <TableHeader className="bg-card">
-        <TableRow className="hover:bg-card">
-          <TableHead className="w-[180px] sticky left-0 z-20 bg-card text-card-foreground">Data</TableHead>
-          {columns.map((col) => (
-            <TableHead key={col.id} className="sticky top-0 z-10 bg-card text-card-foreground min-w-[180px]">
-              <div className="flex items-center gap-2">
-                {col.icon && <col.icon className="h-4 w-4 text-muted-foreground" />}
-                {col.label}
-              </div>
-            </TableHead>
-          ))}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {schedules.map((schedule) => (
-           <ScheduleListItem 
-             key={schedule.date.toISOString()}
-             schedule={schedule}
-             isDesktop 
-             members={members}
-             columns={columns}
-             getAssignedMemberIds={(date, columnId) => schedule.assignments[columnId] || []}
-             handleMemberChange={() => {}}
-             handleClearAssignment={() => {}}
-             handleDateChange={() => {}}
-             handleRemoveDate={() => {}}
-             isReadOnly={true}
-             isExporting={true}
-           />
-        ))}
-      </TableBody>
-    </Table>
+    <div className="rounded-lg border overflow-hidden">
+        <div className={isForDialog ? "relative overflow-x-auto" : ""}>
+            <Table className="min-w-full">
+            <TableHeader className="bg-card">
+                <TableRow className="hover:bg-card">
+                <TableHead className="w-[180px] sticky left-0 z-20 bg-card text-card-foreground">Data</TableHead>
+                {columns.map((col) => (
+                    <TableHead key={col.id} className="sticky top-0 z-10 bg-card text-card-foreground min-w-[180px]">
+                    <div className="flex items-center gap-2">
+                        {col.icon && <col.icon className="h-4 w-4 text-muted-foreground" />}
+                        {col.label}
+                    </div>
+                    </TableHead>
+                ))}
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {schedules.map((schedule) => (
+                <ScheduleListItem 
+                    key={schedule.date.toISOString()}
+                    schedule={schedule}
+                    isDesktop 
+                    members={members}
+                    columns={columns}
+                    getAssignedMemberIds={(date, columnId) => schedule.assignments[columnId] || []}
+                    handleMemberChange={() => {}}
+                    handleClearAssignment={() => {}}
+                    handleDateChange={() => {}}
+                    handleRemoveDate={() => {}}
+                    isReadOnly={true}
+                    isExporting={true}
+                />
+                ))}
+            </TableBody>
+            </Table>
+        </div>
+    </div>
   );
 };
 
@@ -119,38 +116,35 @@ export function MonthlyScheduleView({
   
   const sortedSchedules = [...schedules].sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  if (isExporting && !isForDialog) {
+  if (isExporting) {
     // Desktop Exporting for PNG
+    if (isForDialog) {
+       return renderTableForExport(sortedSchedules, columns, members, true);
+    }
+
     const splitIndex = Math.ceil(sortedSchedules.length / 2);
     const firstHalf = sortedSchedules.slice(0, splitIndex);
     const secondHalf = sortedSchedules.slice(splitIndex);
 
     // If there are 5 or less, render in a single column to not waste space
     if (sortedSchedules.length <= 5) {
-      return <div className="rounded-lg border overflow-hidden">{renderTableForExport(sortedSchedules, columns, members)}</div>;
+      return renderTableForExport(sortedSchedules, columns, members, false);
     }
     
     return (
       <div className="flex gap-4">
-        <div className="flex-1 rounded-lg border overflow-hidden">
-          {renderTableForExport(firstHalf, columns, members)}
+        <div className="flex-1">
+          {renderTableForExport(firstHalf, columns, members, false)}
         </div>
         {secondHalf.length > 0 && (
-          <div className="flex-1 rounded-lg border overflow-hidden">
-             {renderTableForExport(secondHalf, columns, members)}
+          <div className="flex-1">
+             {renderTableForExport(secondHalf, columns, members, false)}
           </div>
         )}
       </div>
     );
   }
 
-  if (isForDialog) {
-    return (
-      <div className="rounded-lg border overflow-x-auto">
-        {renderTableForExport(sortedSchedules, columns, members)}
-      </div>
-    )
-  }
 
   return (
     <>
