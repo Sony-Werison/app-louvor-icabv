@@ -42,8 +42,8 @@ export default function MonthlySchedulePage() {
         return Array.from(months).sort();
     }, [monthlySchedules]);
 
-    const handleExport = useCallback(async (format: ExportFormat, months: string[]) => {
-        if (months.length === 0) {
+    const handleExport = useCallback(async () => {
+        if (selectedMonthsForExport.length === 0) {
             toast({ title: 'Nenhum mês selecionado', description: 'Selecione pelo menos um mês para exportar.', variant: 'destructive'});
             return;
         }
@@ -63,10 +63,11 @@ export default function MonthlySchedulePage() {
                 quality: 1,
                 pixelRatio: 1.5,
                 backgroundColor: '#121212', // Dark mode background
+                skipFonts: true,
             });
             const link = document.createElement('a');
-            const monthNames = months.map(m => format(new Date(`${m}-02`), 'MMMM', { locale: ptBR })).join('_');
-            link.download = `escala_louvor_${monthNames}_${format}.png`;
+            const monthNames = selectedMonthsForExport.map(m => format(new Date(`${m}-02`), 'MMMM', { locale: ptBR })).join('_');
+            link.download = `escala_louvor_${monthNames}_${exportFormat}.png`;
             link.href = dataUrl;
             link.click();
             toast({ title: 'Exportação Concluída!', description: 'A imagem da escala foi baixada.' });
@@ -75,8 +76,9 @@ export default function MonthlySchedulePage() {
             toast({ title: 'Erro na Exportação', description: 'Não foi possível gerar a imagem da escala.', variant: 'destructive'});
         } finally {
             setIsExporting(false);
+            setSelectedMonthsForExport([]);
         }
-    }, [toast]);
+    }, [toast, exportFormat, selectedMonthsForExport]);
     
     if (!currentMonth) {
         return null;
@@ -225,7 +227,7 @@ export default function MonthlySchedulePage() {
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={() => handleExport(exportFormat, selectedMonthsForExport)} disabled={selectedMonthsForExport.length === 0 || isExporting}>
+                    <Button onClick={handleExport} disabled={selectedMonthsForExport.length === 0 || isExporting}>
                         {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4"/>}
                         {isExporting ? 'Exportando...' : 'Exportar'}
                     </Button>
