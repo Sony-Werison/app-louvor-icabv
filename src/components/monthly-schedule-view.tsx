@@ -14,14 +14,11 @@ import { useSchedule } from '@/context/schedule-context';
 import { ScheduleListItem } from './schedule-list-item';
 import { useAuth } from '@/context/auth-context';
 
-type ExportFormat = 'desktop' | 'mobile';
-
 interface MonthlyScheduleViewProps {
   schedules: MonthlySchedule[];
   members: Member[];
   columns: ScheduleColumn[];
   isExporting?: boolean;
-  exportFormat?: ExportFormat;
 }
 
 const renderTableForExport = (
@@ -71,7 +68,6 @@ export function MonthlyScheduleView({
   members,
   columns,
   isExporting = false,
-  exportFormat = 'desktop',
 }: MonthlyScheduleViewProps) {
   const { updateSchedule, removeSchedule } = useSchedule();
   const { can } = useAuth();
@@ -122,28 +118,6 @@ export function MonthlyScheduleView({
   const sortedSchedules = [...schedules].sort((a, b) => a.date.getTime() - b.date.getTime());
 
   if (isExporting) {
-    if (exportFormat === 'mobile') {
-        return (
-          <div className="space-y-3">
-            {sortedSchedules.map((schedule) => (
-              <ScheduleListItem 
-                key={schedule.date.toISOString()} 
-                schedule={schedule}
-                members={members}
-                columns={columns}
-                getAssignedMemberIds={getAssignedMemberIds}
-                handleMemberChange={handleMemberChange}
-                handleClearAssignment={handleClearAssignment}
-                handleDateChange={handleDateChange}
-                handleRemoveDate={handleRemoveDate}
-                isReadOnly={isReadOnly}
-                isExporting={isExporting}
-              />
-            ))}
-          </div>
-        );
-    }
-
     // Desktop Exporting
     const splitIndex = Math.ceil(sortedSchedules.length / 2);
     const firstHalf = sortedSchedules.slice(0, splitIndex);
@@ -184,6 +158,7 @@ export function MonthlyScheduleView({
             handleDateChange={handleDateChange}
             handleRemoveDate={handleRemoveDate}
             isReadOnly={isReadOnly}
+            isExporting={isExporting}
           />
         ))}
       </div>

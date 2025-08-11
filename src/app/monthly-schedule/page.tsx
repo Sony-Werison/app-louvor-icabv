@@ -5,7 +5,7 @@ import { useSchedule } from '@/context/schedule-context';
 import { MonthlyScheduleView } from '@/components/monthly-schedule-view';
 import type { MonthlySchedule } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Download, Loader2, Eye } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ptBR } from 'date-fns/locale';
@@ -16,10 +16,8 @@ import * as htmlToImage from 'html-to-image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-
-type ExportFormat = 'desktop' | 'mobile';
 
 export default function MonthlySchedulePage() {
     const { monthlySchedules, addSchedule, members, scheduleColumns } = useSchedule();
@@ -27,11 +25,12 @@ export default function MonthlySchedulePage() {
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const { toast } = useToast();
     const { can } = useAuth();
+    
     const [isExporting, setIsExporting] = useState(false);
     const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+    const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [selectedMonthsForExport, setSelectedMonthsForExport] = useState<string[]>([]);
-    const [exportFormat, setExportFormat] = useState<ExportFormat>('desktop');
-
+    
     const exportRef = useRef<HTMLDivElement>(null);
 
     const availableMonths = useMemo(() => {
@@ -41,6 +40,25 @@ export default function MonthlySchedulePage() {
         });
         return Array.from(months).sort();
     }, [monthlySchedules]);
+    
+    const exportSchedules = useMemo(() => {
+        return monthlySchedules.filter(schedule => {
+            const monthYear = format(schedule.date, 'yyyy-MM');
+            return selectedMonthsForExport.includes(monthYear);
+        });
+    }, [monthlySchedules, selectedMonthsForExport]);
+    
+    const groupedExportSchedules = useMemo(() => 
+        exportSchedules.reduce((acc, schedule) => {
+            const monthYear = format(schedule.date, 'yyyy-MM');
+            if (!acc[monthYear]) {
+                acc[monthYear] = [];
+            }
+            acc[monthYear].push(schedule);
+            return acc;
+        }, {} as Record<string, MonthlySchedule[]>)
+    , [exportSchedules]);
+
 
     const handleExport = useCallback(async () => {
         if (selectedMonthsForExport.length === 0) {
@@ -62,12 +80,12 @@ export default function MonthlySchedulePage() {
             const dataUrl = await htmlToImage.toPng(exportRef.current, { 
                 quality: 1,
                 pixelRatio: 1.5,
-                backgroundColor: '#121212', // Dark mode background
+                backgroundColor: '#121212',
                 skipFonts: true,
             });
             const link = document.createElement('a');
             const monthNames = selectedMonthsForExport.map(m => format(new Date(`${m}-02`), 'MMMM', { locale: ptBR })).join('_');
-            link.download = `escala_louvor_${monthNames}_${exportFormat}.png`;
+            link.download = `escala_louvor_${monthNames}.png`;
             link.href = dataUrl;
             link.click();
             toast({ title: 'Exportação Concluída!', description: 'A imagem da escala foi baixada.' });
@@ -76,10 +94,20 @@ export default function MonthlySchedulePage() {
             toast({ title: 'Erro na Exportação', description: 'Não foi possível gerar a imagem da escala.', variant: 'destructive'});
         } finally {
             setIsExporting(false);
-            setSelectedMonthsForExport([]);
+            // Don't reset selection so user can view it
+            // setSelectedMonthsForExport([]);
         }
-    }, [toast, exportFormat, selectedMonthsForExport]);
+    }, [toast, selectedMonthsForExport]);
     
+    const handleView = () => {
+         if (selectedMonthsForExport.length === 0) {
+            toast({ title: 'Nenhum mês selecionado', description: 'Selecione pelo menos um mês para visualizar.', variant: 'destructive'});
+            return;
+        }
+        setIsExportDialogOpen(false);
+        setIsViewDialogOpen(true);
+    }
+
     if (!currentMonth) {
         return null;
     }
@@ -113,20 +141,24 @@ export default function MonthlySchedulePage() {
         schedule => schedule.date.getMonth() === currentMonth.getMonth() &&
                     schedule.date.getFullYear() === currentMonth.getFullYear()
     );
-
-    const exportSchedules = isExporting ? monthlySchedules.filter(schedule => {
-        const monthYear = format(schedule.date, 'yyyy-MM');
-        return selectedMonthsForExport.includes(monthYear);
-    }) : [];
     
-    const groupedExportSchedules = exportSchedules.reduce((acc, schedule) => {
-        const monthYear = format(schedule.date, 'yyyy-MM');
-        if (!acc[monthYear]) {
-            acc[monthYear] = [];
-        }
-        acc[monthYear].push(schedule);
-        return acc;
-    }, {} as Record<string, MonthlySchedule[]>);
+    const ExportableView = () => (
+        <div className="space-y-8">
+            {Object.entries(groupedExportSchedules).sort(([a], [b]) => a.localeCompare(b)).map(([month, schedules]) => (
+                <div key={month}>
+                     <h2 className="text-3xl font-bold text-center mb-6 capitalize text-foreground">
+                        Escala - {format(new Date(`${month}-02`), 'MMMM yyyy', { locale: ptBR })}
+                    </h2>
+                    <MonthlyScheduleView 
+                        schedules={schedules}
+                        members={members}
+                        columns={scheduleColumns}
+                        isExporting={true}
+                    />
+                </div>
+            ))}
+        </div>
+    );
 
 
     return (
@@ -147,7 +179,7 @@ export default function MonthlySchedulePage() {
                 <div className="flex gap-2">
                     <Button size="sm" variant="outline" className="w-full" onClick={() => setIsExportDialogOpen(true)}>
                         <Download className="mr-2 h-4 w-4" />
-                        Exportar PNG
+                        Exportar / Visualizar
                     </Button>
                     {can('edit:schedule') && (
                         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -180,14 +212,14 @@ export default function MonthlySchedulePage() {
         <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Exportar Escala para PNG</DialogTitle>
+                    <DialogTitle>Exportar ou Visualizar Escala</DialogTitle>
                     <DialogDescription>
-                        Selecione os meses e o formato que você deseja exportar.
+                        Selecione os meses que você deseja incluir na ação.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div>
-                        <Label className="font-semibold">Meses</Label>
+                        <Label className="font-semibold">Meses Disponíveis</Label>
                         <div className="space-y-2 mt-2">
                             {availableMonths.map(month => (
                                 <div key={month} className="flex items-center space-x-2">
@@ -207,53 +239,41 @@ export default function MonthlySchedulePage() {
                             ))}
                         </div>
                     </div>
-                    <div>
-                        <Label className="font-semibold">Formato</Label>
-                         <RadioGroup defaultValue="desktop" value={exportFormat} onValueChange={(value: any) => setExportFormat(value)} className="mt-2 grid grid-cols-2 gap-4">
-                            <div>
-                                <RadioGroupItem value="desktop" id="desktop" className="peer sr-only" />
-                                <Label htmlFor="desktop" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                    Desktop
-                                </Label>
-                            </div>
-                            <div>
-                                <RadioGroupItem value="mobile" id="mobile" className="peer sr-only" />
-                                <Label htmlFor="mobile" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                    Celular
-                                </Label>
-                            </div>
-                        </RadioGroup>
-                    </div>
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleView} disabled={selectedMonthsForExport.length === 0}>
+                        <Eye className="mr-2 h-4 w-4"/>
+                        Visualizar
+                    </Button>
                     <Button onClick={handleExport} disabled={selectedMonthsForExport.length === 0 || isExporting}>
                         {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4"/>}
-                        {isExporting ? 'Exportando...' : 'Exportar'}
+                        {isExporting ? 'Exportando...' : 'Exportar PNG'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+        
+        {/* View Dialog */}
+         <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="max-w-6xl">
+              <DialogHeader>
+                  <DialogTitle>Visualização da Escala</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="max-h-[70vh] p-1">
+                  <div className="p-4 bg-background text-foreground">
+                     <ExportableView />
+                  </div>
+              </ScrollArea>
+          </DialogContent>
+      </Dialog>
 
 
         {/* Hidden element for export */}
-        {isExporting && (
-             <div className={cn("fixed top-0 left-0 -z-50 opacity-0 dark", exportFormat === 'desktop' ? 'w-[1200px]' : 'w-[450px]')}>
-                <div ref={exportRef} className="p-8 bg-background space-y-8">
-                    {Object.entries(groupedExportSchedules).sort(([a], [b]) => a.localeCompare(b)).map(([month, schedules]) => (
-                        <div key={month}>
-                             <h2 className="text-3xl font-bold text-center mb-6 capitalize text-foreground">
-                                Escala - {format(new Date(`${month}-02`), 'MMMM yyyy', { locale: ptBR })}
-                            </h2>
-                            <MonthlyScheduleView 
-                                schedules={schedules}
-                                members={members}
-                                columns={scheduleColumns}
-                                isExporting={true}
-                                exportFormat={exportFormat}
-                            />
-                        </div>
-                    ))}
+        {(isExporting || isViewDialogOpen) && (
+             <div className="fixed top-0 left-0 -z-50 opacity-0 dark w-[1200px]">
+                <div ref={exportRef} className="p-8 bg-background">
+                    <ExportableView />
                 </div>
             </div>
         )}
