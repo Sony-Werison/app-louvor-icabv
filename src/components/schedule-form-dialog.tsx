@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Member, Schedule } from '@/types';
@@ -42,7 +43,7 @@ const formSchema = z.object({
   date: z.date({
     required_error: 'A data é obrigatória.',
   }),
-  leaderId: z.string({ required_error: 'Selecione um dirigente.' }),
+  leaderId: z.string({ required_error: 'Selecione quem fará a abertura.' }),
 });
 
 export function ScheduleFormDialog({ isOpen, onOpenChange, onSave, schedule, members }: ScheduleFormDialogProps) {
@@ -55,7 +56,7 @@ export function ScheduleFormDialog({ isOpen, onOpenChange, onSave, schedule, mem
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: z.infer<typeof formSchema>>) => {
     if (schedule) {
       onSave({ ...values, id: schedule.id });
     } else {
@@ -144,11 +145,11 @@ export function ScheduleFormDialog({ isOpen, onOpenChange, onSave, schedule, mem
               name="leaderId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Dirigente</FormLabel>
+                  <FormLabel>Abertura</FormLabel>
                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o dirigente" />
+                        <SelectValue placeholder="Selecione quem fará a abertura" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>

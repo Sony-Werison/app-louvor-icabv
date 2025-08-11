@@ -117,7 +117,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                             </Avatar>
                             <div>
                             <p className="font-semibold text-xs leading-none">{leader.name}</p>
-                            <span className="text-xs text-muted-foreground flex items-center gap-1"><Mic className="w-3 h-3"/>Dirigente</span>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1"><Mic className="w-3 h-3"/>Abertura</span>
                             </div>
                         </div>
                         )}

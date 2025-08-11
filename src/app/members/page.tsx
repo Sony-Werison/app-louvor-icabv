@@ -39,6 +39,16 @@ type MemberSchedule = {
   roles: string[];
 };
 
+const roleColorMap: Record<string, string> = {
+    'Abertura Manhã': 'text-blue-400',
+    'Abertura Noite': 'text-blue-500',
+    'Pregação Manhã': 'text-yellow-400',
+    'Pregação Noite': 'text-yellow-500',
+    'Multimídia': 'text-green-400',
+    'Convidado': 'text-purple-400',
+};
+
+
 export default function MembersPage() {
   const { can } = useAuth();
   const { members, monthlySchedules, scheduleColumns, addMember, updateMember, removeMember } = useSchedule();
@@ -147,7 +157,7 @@ export default function MembersPage() {
     return acc;
   }, {} as Record<MemberRole, Member[]>);
 
-  const roleOrder: MemberRole[] = ['Dirigente', 'Pregador', 'Multimídia'];
+  const roleOrder: MemberRole[] = ['Abertura', 'Pregador', 'Multimídia'];
   const sortedRoles = Object.keys(groupedMembers).sort((a,b) => {
     const aIndex = roleOrder.indexOf(a as any);
     const bIndex = roleOrder.indexOf(b as any);
@@ -325,7 +335,11 @@ export default function MembersPage() {
                             <div className="space-y-3">
                                 {schedules.map((schedule, index) => (
                                      <div key={index} className="flex items-start gap-3 text-sm">
-                                        <CalendarCheck2 className="h-4 w-4 mt-1 text-primary shrink-0"/>
+                                        <div className="mt-1 shrink-0">
+                                        {schedule.roles.map((role, r_index) => (
+                                            <CalendarCheck2 key={r_index} className={cn("h-4 w-4", roleColorMap[role] || 'text-primary')}/>
+                                        ))}
+                                        </div>
                                         <div>
                                             <p className="font-semibold capitalize">{format(schedule.date, "EEEE, dd/MM", { locale: ptBR })}</p>
                                             <ul className="list-disc list-inside text-xs text-muted-foreground">

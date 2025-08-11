@@ -1,7 +1,7 @@
 
 
 import type { Member, Song, MonthlySchedule, ScheduleColumn, SongCategory, Role } from '@/types';
-import { Tv, Sun, Moon, BookUser } from 'lucide-react';
+import { Tv, Sun, Moon, BookUser, Mic } from 'lucide-react';
 import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths } from 'date-fns';
 
 export const members: Member[] = [];
@@ -126,9 +126,9 @@ For [G]I am [A]Yours and [Bm]You are mine`
 ];
 
 export const scheduleColumns: ScheduleColumn[] = [
-    { id: 'dirigente_manha', label: 'Dirigente Manhã', icon: Sun, role: 'Dirigente' },
+    { id: 'dirigente_manha', label: 'Abertura Manhã', icon: Sun, role: 'Abertura' },
     { id: 'pregacao_manha', label: 'Pregação Manhã', icon: BookUser, role: 'Pregador' },
-    { id: 'dirigente_noite', label: 'Dirigente Noite', icon: Moon, role: 'Dirigente' },
+    { id: 'dirigente_noite', label: 'Abertura Noite', icon: Moon, role: 'Abertura' },
     { id: 'pregacao_noite', label: 'Pregação Noite', icon: BookUser, role: 'Pregador' },
     { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true, role: 'Multimídia' },
 ];
@@ -164,7 +164,7 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
       .sort((a,b) => a.getTime() - b.getTime());
 
     const preachers = members.filter(m => m.roles.includes('Pregador'));
-    const leaders = members.filter(m => m.roles.includes('Dirigente'));
+    const leaders = members.filter(m => m.roles.includes('Abertura'));
     const multimedia = members.filter(m => m.roles.includes('Multimídia'));
 
     if (preachers.length === 0) preachers.push(members[0]);

@@ -13,19 +13,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import type { Role } from '@/types';
-import { Shield, Users, Eye, Check, ChevronDown } from 'lucide-react';
+import { Shield, Users, Eye, Check, ChevronDown, UserCheck } from 'lucide-react';
 import { LoginDialog } from './login-dialog';
 
 
 const roleIcons: Record<Role, React.ElementType> = {
     admin: Shield,
-    dirigente: Users,
+    dirigente: UserCheck,
     viewer: Eye,
 };
 
 const roleLabels: Record<Role, string> = {
     admin: 'Admin',
-    dirigente: 'Dirigente',
+    dirigente: 'Abertura',
     viewer: 'Visualização',
 };
 
