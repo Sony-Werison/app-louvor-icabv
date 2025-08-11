@@ -142,7 +142,7 @@ export default function MonthlySchedulePage() {
                     schedule.date.getFullYear() === currentMonth.getFullYear()
     );
     
-    const ExportableView = () => (
+    const ExportableView = ({ isForDialog = false }: { isForDialog?: boolean}) => (
         <div className="space-y-8">
             {Object.entries(groupedExportSchedules).sort(([a], [b]) => a.localeCompare(b)).map(([month, schedules]) => (
                 <div key={month}>
@@ -154,6 +154,7 @@ export default function MonthlySchedulePage() {
                         members={members}
                         columns={scheduleColumns}
                         isExporting={true}
+                        isForDialog={isForDialog}
                     />
                 </div>
             ))}
@@ -179,7 +180,7 @@ export default function MonthlySchedulePage() {
                 <div className="flex gap-2">
                     <Button size="sm" variant="outline" className="w-full" onClick={() => setIsExportDialogOpen(true)}>
                         <Download className="mr-2 h-4 w-4" />
-                        Exportar / Visualizar
+                        Escala Completa
                     </Button>
                     {can('edit:schedule') && (
                         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -212,7 +213,7 @@ export default function MonthlySchedulePage() {
         <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Exportar ou Visualizar Escala</DialogTitle>
+                    <DialogTitle>Visualizar ou Exportar Escala Completa</DialogTitle>
                     <DialogDescription>
                         Selecione os meses que você deseja incluir na ação.
                     </DialogDescription>
@@ -262,7 +263,7 @@ export default function MonthlySchedulePage() {
               </DialogHeader>
               <ScrollArea className="max-h-[70vh] p-1">
                   <div className="p-4 bg-background text-foreground">
-                     <ExportableView />
+                     <ExportableView isForDialog={true} />
                   </div>
               </ScrollArea>
           </DialogContent>
@@ -270,7 +271,7 @@ export default function MonthlySchedulePage() {
 
 
         {/* Hidden element for export */}
-        {(isExporting || isViewDialogOpen) && (
+        {(isExporting) && (
              <div className="fixed top-0 left-0 -z-50 opacity-0 dark w-[1200px]">
                 <div ref={exportRef} className="p-8 bg-background">
                     <ExportableView />

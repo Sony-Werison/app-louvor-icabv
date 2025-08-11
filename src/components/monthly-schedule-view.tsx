@@ -19,6 +19,7 @@ interface MonthlyScheduleViewProps {
   members: Member[];
   columns: ScheduleColumn[];
   isExporting?: boolean;
+  isForDialog?: boolean;
 }
 
 const renderTableForExport = (
@@ -68,6 +69,7 @@ export function MonthlyScheduleView({
   members,
   columns,
   isExporting = false,
+  isForDialog = false,
 }: MonthlyScheduleViewProps) {
   const { updateSchedule, removeSchedule } = useSchedule();
   const { can } = useAuth();
@@ -117,8 +119,8 @@ export function MonthlyScheduleView({
   
   const sortedSchedules = [...schedules].sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  if (isExporting) {
-    // Desktop Exporting
+  if (isExporting && !isForDialog) {
+    // Desktop Exporting for PNG
     const splitIndex = Math.ceil(sortedSchedules.length / 2);
     const firstHalf = sortedSchedules.slice(0, splitIndex);
     const secondHalf = sortedSchedules.slice(splitIndex);
@@ -140,6 +142,14 @@ export function MonthlyScheduleView({
         )}
       </div>
     );
+  }
+
+  if (isForDialog) {
+    return (
+      <div className="rounded-lg border overflow-x-auto">
+        {renderTableForExport(sortedSchedules, columns, members)}
+      </div>
+    )
   }
 
   return (
