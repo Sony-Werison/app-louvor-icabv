@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useSchedule } from '@/context/schedule-context';
 import { MonthlyScheduleView } from '@/components/monthly-schedule-view';
 import type { MonthlySchedule } from '@/types';
@@ -9,7 +9,7 @@ import { Plus, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ptBR } from 'date-fns/locale';
-import { addMonths, format, startOfDay, getMonth, getYear } from 'date-fns';
+import { addMonths, format, startOfDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import * as htmlToImage from 'html-to-image';
@@ -17,12 +17,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { cn } from '@/lib/utils';
 
 type ExportFormat = 'desktop' | 'mobile';
 
 export default function MonthlySchedulePage() {
     const { monthlySchedules, addSchedule, members, scheduleColumns } = useSchedule();
-    const [currentMonth, setCurrentMonth] = useState<Date | null>(null);
+    const [currentMonth, setCurrentMonth] = useState<Date | null>(new Date());
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const { toast } = useToast();
     const { can } = useAuth();
@@ -33,10 +34,6 @@ export default function MonthlySchedulePage() {
 
     const exportRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        setCurrentMonth(new Date());
-    }, []);
-
     const availableMonths = useMemo(() => {
         const months = new Set<string>();
         monthlySchedules.forEach(schedule => {
@@ -45,8 +42,8 @@ export default function MonthlySchedulePage() {
         return Array.from(months).sort();
     }, [monthlySchedules]);
 
-    const handleExport = async () => {
-        if (selectedMonthsForExport.length === 0) {
+    const handleExport = useCallback(async (format: ExportFormat, months: string[]) => {
+        if (months.length === 0) {
             toast({ title: 'Nenhum mês selecionado', description: 'Selecione pelo menos um mês para exportar.', variant: 'destructive'});
             return;
         }
@@ -56,21 +53,20 @@ export default function MonthlySchedulePage() {
         toast({ title: 'Preparando exportação...', description: 'Aguarde enquanto a imagem da escala é gerada.' });
 
         try {
-            // Delay to allow DOM updates
             await new Promise(resolve => setTimeout(resolve, 500));
             
             if (!exportRef.current) {
                  throw new Error("Elemento de exportação não encontrado.");
             }
-
+            
             const dataUrl = await htmlToImage.toPng(exportRef.current, { 
                 quality: 1,
                 pixelRatio: 1.5,
-                backgroundColor: '#ffffff',
+                backgroundColor: '#121212', // Dark mode background
             });
             const link = document.createElement('a');
-            const monthNames = selectedMonthsForExport.map(m => format(new Date(`${m}-02`), 'MMMM', { locale: ptBR })).join('_');
-            link.download = `escala_louvor_${monthNames}_${exportFormat}.png`;
+            const monthNames = months.map(m => format(new Date(`${m}-02`), 'MMMM', { locale: ptBR })).join('_');
+            link.download = `escala_louvor_${monthNames}_${format}.png`;
             link.href = dataUrl;
             link.click();
             toast({ title: 'Exportação Concluída!', description: 'A imagem da escala foi baixada.' });
@@ -79,10 +75,8 @@ export default function MonthlySchedulePage() {
             toast({ title: 'Erro na Exportação', description: 'Não foi possível gerar a imagem da escala.', variant: 'destructive'});
         } finally {
             setIsExporting(false);
-            // We don't clear the selected months here to allow re-exporting with different settings
-            // setSelectedMonthsForExport([]);
         }
-    };
+    }, [toast]);
     
     if (!currentMonth) {
         return null;
@@ -231,7 +225,7 @@ export default function MonthlySchedulePage() {
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleExport} disabled={selectedMonthsForExport.length === 0 || isExporting}>
+                    <Button onClick={() => handleExport(exportFormat, selectedMonthsForExport)} disabled={selectedMonthsForExport.length === 0 || isExporting}>
                         {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4"/>}
                         {isExporting ? 'Exportando...' : 'Exportar'}
                     </Button>
@@ -242,11 +236,11 @@ export default function MonthlySchedulePage() {
 
         {/* Hidden element for export */}
         {isExporting && (
-             <div className="fixed top-0 left-0 -z-50 opacity-0" style={{ width: exportFormat === 'desktop' ? '1200px' : '450px' }}>
-                <div ref={exportRef} className="p-8 bg-white space-y-8">
+             <div className={cn("fixed top-0 left-0 -z-50 opacity-0 dark", exportFormat === 'desktop' ? 'w-[1200px]' : 'w-[450px]')}>
+                <div ref={exportRef} className="p-8 bg-background space-y-8">
                     {Object.entries(groupedExportSchedules).sort(([a], [b]) => a.localeCompare(b)).map(([month, schedules]) => (
                         <div key={month}>
-                             <h2 className="text-3xl font-bold text-center mb-6 capitalize text-black">
+                             <h2 className="text-3xl font-bold text-center mb-6 capitalize text-foreground">
                                 Escala - {format(new Date(`${month}-02`), 'MMMM yyyy', { locale: ptBR })}
                             </h2>
                             <MonthlyScheduleView 

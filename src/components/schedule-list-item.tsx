@@ -37,20 +37,20 @@ const MemberSelector: React.FC<{
     
     if (isExporting && selectedMember) {
         return (
-            <div className="flex items-center gap-2 h-9 text-xs sm:text-sm px-3 py-2 rounded-md border border-input">
+            <div className="flex items-center gap-2 h-9 text-xs sm:text-sm px-3 py-2 rounded-md border border-input bg-card text-card-foreground">
                 <Avatar className="w-5 h-5">
                     <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
                     <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <span className="text-black truncate">{selectedMember.name}</span>
+                <span className="truncate">{selectedMember.name}</span>
             </div>
         )
     }
 
     if (isExporting && !selectedMember) {
         return (
-            <div className="flex items-center gap-2 h-9 text-xs sm:text-sm px-3 py-2 rounded-md border border-input">
-                 <span className="text-gray-400">N/A</span>
+            <div className="flex items-center justify-center gap-2 h-9 text-xs sm:text-sm px-3 py-2 rounded-md border border-input bg-card text-card-foreground">
+                 <span className="text-muted-foreground">N/A</span>
             </div>
         )
     }
@@ -158,8 +158,8 @@ export function ScheduleListItem({
   
   if (isDesktop) {
     return (
-        <TableRow key={schedule.date.toISOString()} className={isExporting ? 'bg-white' : ''}>
-            <TableCell className={cn("font-medium p-2 sticky left-0 z-10", isExporting ? 'bg-white text-black' : 'bg-background group-hover:bg-muted/50')}>
+        <TableRow key={schedule.date.toISOString()} className={isExporting ? 'bg-card' : ''}>
+            <TableCell className={cn("font-medium p-2 sticky left-0 z-10", isExporting ? 'bg-card text-card-foreground' : 'bg-background group-hover:bg-muted/50')}>
              {isReadOnly ? (
                 <div className="text-left font-normal capitalize h-9 px-3 py-2 text-xs sm:text-sm">
                      {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
@@ -184,12 +184,12 @@ export function ScheduleListItem({
             )}
             </TableCell>
             {columns.map((col) => (
-                <TableCell key={col.id} className="p-2">
+                <TableCell key={col.id} className="p-2 min-w-44">
                     {renderDesktopAssignment(col)}
                 </TableCell>
             ))}
             {!isReadOnly && (
-                <TableCell className={cn("p-2 sticky right-0 z-10", isExporting ? 'bg-white' : 'bg-background group-hover:bg-muted/50')}>
+                <TableCell className={cn("p-2 sticky right-0 z-10", isExporting ? 'bg-card' : 'bg-background group-hover:bg-muted/50')}>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -217,9 +217,9 @@ export function ScheduleListItem({
 
   // Mobile View
   return (
-    <Card className={isExporting ? 'bg-white border-gray-300 shadow-lg' : ''}>
+    <Card className={isExporting ? 'bg-card border-border shadow-lg' : ''}>
         <CardHeader className="flex flex-row items-center justify-between p-3 border-b">
-             <div className={cn("font-semibold capitalize text-base flex-grow justify-start", isExporting ? 'text-black' : '')}>
+             <div className={cn("font-semibold capitalize text-base flex-grow justify-start", isExporting ? 'text-card-foreground' : '')}>
                 {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
              </div>
             {!isReadOnly && (
@@ -253,7 +253,7 @@ export function ScheduleListItem({
                          const filteredMembersForColumn = getFilteredMembersForColumn(col);
                          return (
                              <div key={col.id}>
-                                 <label className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-1.5">
+                                 <label className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-1.5">
                                      {col.icon && <col.icon className="h-4 w-4" />}
                                      {col.label}
                                  </label>

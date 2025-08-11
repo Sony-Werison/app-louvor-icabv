@@ -30,14 +30,14 @@ const renderTableForExport = (
   members: Member[]
 ) => {
   return (
-    <Table className="min-w-max">
-      <TableHeader className="bg-white">
-        <TableRow className="hover:bg-white">
-          <TableHead className="w-[180px] sticky left-0 z-20 bg-white text-black">Data</TableHead>
+    <Table className="min-w-full">
+      <TableHeader className="bg-card">
+        <TableRow className="hover:bg-card">
+          <TableHead className="w-[180px] sticky left-0 z-20 bg-card text-card-foreground">Data</TableHead>
           {columns.map((col) => (
-            <TableHead key={col.id} className="sticky top-0 z-10 bg-white text-black min-w-[180px]">
+            <TableHead key={col.id} className="sticky top-0 z-10 bg-card text-card-foreground min-w-[180px]">
               <div className="flex items-center gap-2">
-                {col.icon && <col.icon className="h-4 w-4 text-gray-500" />}
+                {col.icon && <col.icon className="h-4 w-4 text-muted-foreground" />}
                 {col.label}
               </div>
             </TableHead>
@@ -151,16 +151,16 @@ export function MonthlyScheduleView({
 
     // If there are 5 or less, render in a single column to not waste space
     if (sortedSchedules.length <= 5) {
-      return <div className="rounded-lg border overflow-x-auto">{renderTableForExport(sortedSchedules, columns, members)}</div>;
+      return <div className="rounded-lg border overflow-hidden">{renderTableForExport(sortedSchedules, columns, members)}</div>;
     }
     
     return (
       <div className="flex gap-4">
-        <div className="flex-1 rounded-lg border overflow-x-auto">
+        <div className="flex-1 rounded-lg border overflow-hidden">
           {renderTableForExport(firstHalf, columns, members)}
         </div>
         {secondHalf.length > 0 && (
-          <div className="flex-1 rounded-lg border overflow-x-auto">
+          <div className="flex-1 rounded-lg border overflow-hidden">
              {renderTableForExport(secondHalf, columns, members)}
           </div>
         )}
