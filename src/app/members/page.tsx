@@ -22,7 +22,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useSchedule } from '@/context/schedule-context';
 import { format } from 'date-fns';
@@ -40,10 +39,10 @@ type MemberSchedule = {
 };
 
 const roleColorMap: Record<string, string> = {
-    'Abertura Manhã': 'text-blue-400',
-    'Abertura Noite': 'text-blue-500',
-    'Pregação Manhã': 'text-yellow-400',
-    'Pregação Noite': 'text-yellow-500',
+    'Abertura Manhã': 'text-yellow-400',
+    'Abertura Noite': 'text-yellow-500',
+    'Pregação Manhã': 'text-red-400',
+    'Pregação Noite': 'text-red-500',
     'Multimídia': 'text-green-400',
     'Convidado': 'text-purple-400',
 };
@@ -157,7 +156,7 @@ export default function MembersPage() {
     return acc;
   }, {} as Record<MemberRole, Member[]>);
 
-  const roleOrder: MemberRole[] = ['Abertura', 'Pregador', 'Multimídia'];
+  const roleOrder: MemberRole[] = ['Abertura', 'Pregador', 'Multimídia', 'Convidado'];
   const sortedRoles = Object.keys(groupedMembers).sort((a,b) => {
     const aIndex = roleOrder.indexOf(a as any);
     const bIndex = roleOrder.indexOf(b as any);
@@ -336,15 +335,13 @@ export default function MembersPage() {
                                 {schedules.map((schedule, index) => (
                                      <div key={index} className="flex items-start gap-3 text-sm">
                                         <div className="mt-1 shrink-0">
-                                        {schedule.roles.map((role, r_index) => (
-                                            <CalendarCheck2 key={r_index} className={cn("h-4 w-4", roleColorMap[role] || 'text-primary')}/>
-                                        ))}
+                                            <CalendarCheck2 className="h-4 w-4 text-primary" />
                                         </div>
                                         <div>
                                             <p className="font-semibold capitalize">{format(schedule.date, "EEEE, dd/MM", { locale: ptBR })}</p>
-                                            <ul className="list-disc list-inside text-xs text-muted-foreground">
+                                            <ul className="list-disc list-inside text-xs">
                                                 {schedule.roles.map((role, r_index) => (
-                                                    <li key={r_index}>{role}</li>
+                                                    <li key={r_index} className={cn("text-muted-foreground", roleColorMap[role])}>{role}</li>
                                                 ))}
                                             </ul>
                                         </div>
