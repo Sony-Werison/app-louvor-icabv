@@ -91,7 +91,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
       }
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsUploading(true);
     let avatarUrl = member?.avatar || '';
 
