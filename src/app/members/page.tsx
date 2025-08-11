@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MemberFormDialog } from '@/components/member-form-dialog';
-import { Plus, MoreVertical, Edit, Trash2, CalendarCheck2, Download, Loader2 } from 'lucide-react';
+import { Plus, MoreVertical, Edit, Trash2, CalendarCheck2, Download, Loader2, Eye } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +32,7 @@ import { useAuth } from '@/context/auth-context';
 import * as htmlToImage from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Card } from '@/components/ui/card';
 
 type MemberSchedule = {
   date: Date;
@@ -54,6 +55,7 @@ export default function MembersPage() {
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isScheduleViewOpen, setIsScheduleViewOpen] = useState(false);
+  const [isGeneralScheduleViewOpen, setIsGeneralScheduleViewOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
   const [memberToView, setMemberToView] = useState<Member | null>(null);
@@ -195,16 +197,55 @@ export default function MembersPage() {
         setIsExporting(false);
     }
   };
+  
+  const GeneralScheduleContent = () => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {allMembersSchedules.map(({ member, schedules }) => (
+              <div key={member.id} className="p-4 rounded-lg border border-border bg-card break-inside-avoid-column">
+                  <div className="flex items-center gap-3 mb-4">
+                      <Avatar className="w-10 h-10">
+                          <AvatarImage src={member.avatar} alt={member.name} />
+                          <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <h3 className="font-bold text-lg">{member.name}</h3>
+                  </div>
+                  <div className="space-y-3">
+                      {schedules.map((schedule, index) => (
+                           <div key={index} className="flex items-start gap-3 text-sm">
+                              <div className="mt-1 shrink-0">
+                                  <CalendarCheck2 className="h-4 w-4 text-foreground" />
+                              </div>
+                              <div>
+                                  <p className="font-semibold capitalize">{format(schedule.date, "EEEE, dd/MM", { locale: ptBR })}</p>
+                                  <ul className="list-disc list-inside text-xs">
+                                      {schedule.roles.map((role, r_index) => (
+                                          <li key={r_index} className={cn("text-muted-foreground", roleColorMap[role])}>{role}</li>
+                                      ))}
+                                  </ul>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+          ))}
+      </div>
+  );
 
 
   return (
     <>
     <div className="p-4 md:p-6">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8 gap-4">
-        <Button onClick={handleExportSchedules} size="sm" variant="outline" disabled={isExporting}>
-            {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-            {isExporting ? 'Exportando...' : 'Exportar Agenda Geral'}
-        </Button>
+        <div className="flex gap-2">
+            <Button onClick={() => setIsGeneralScheduleViewOpen(true)} size="sm" variant="outline">
+                <Eye className="mr-2 h-4 w-4" />
+                Visualizar Agenda Geral
+            </Button>
+            <Button onClick={handleExportSchedules} size="sm" variant="outline" disabled={isExporting}>
+                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                {isExporting ? 'Exportando...' : 'Exportar PNG'}
+            </Button>
+        </div>
         {can('edit:members') && (
             <Button onClick={handleAddNew} size="sm" className="sm:size-auto">
             <Plus className="mr-2" />
@@ -300,6 +341,20 @@ export default function MembersPage() {
           </Dialog>
       )}
 
+      <Dialog open={isGeneralScheduleViewOpen} onOpenChange={setIsGeneralScheduleViewOpen}>
+          <DialogContent className="max-w-6xl">
+              <DialogHeader>
+                  <DialogTitle>Agenda Geral de Membros</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="max-h-[70vh] p-1">
+                  <div className="p-4 bg-background text-foreground">
+                     <GeneralScheduleContent />
+                  </div>
+              </ScrollArea>
+          </DialogContent>
+      </Dialog>
+
+
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
           <AlertDialogContent>
               <AlertDialogHeader>
@@ -321,36 +376,7 @@ export default function MembersPage() {
         <div className={cn("fixed top-0 left-0 -z-50 opacity-0 dark")}>
             <div ref={exportRef} className="p-8 bg-background text-foreground w-[1200px]">
                 <h1 className="text-3xl font-bold text-center mb-8">Agenda Geral de Membros</h1>
-                <div className="grid grid-cols-3 gap-6">
-                    {allMembersSchedules.map(({ member, schedules }) => (
-                        <div key={member.id} className="p-4 rounded-lg border border-border bg-card break-inside-avoid-column">
-                            <div className="flex items-center gap-3 mb-4">
-                                <Avatar className="w-10 h-10">
-                                    <AvatarImage src={member.avatar} alt={member.name} />
-                                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <h3 className="font-bold text-lg">{member.name}</h3>
-                            </div>
-                            <div className="space-y-3">
-                                {schedules.map((schedule, index) => (
-                                     <div key={index} className="flex items-start gap-3 text-sm">
-                                        <div className="mt-1 shrink-0">
-                                            <CalendarCheck2 className="h-4 w-4 text-primary" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold capitalize">{format(schedule.date, "EEEE, dd/MM", { locale: ptBR })}</p>
-                                            <ul className="list-disc list-inside text-xs">
-                                                {schedule.roles.map((role, r_index) => (
-                                                    <li key={r_index} className={cn("text-muted-foreground", roleColorMap[role])}>{role}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <GeneralScheduleContent />
             </div>
         </div>
     )}
@@ -358,3 +384,4 @@ export default function MembersPage() {
     </>
   );
 }
+
