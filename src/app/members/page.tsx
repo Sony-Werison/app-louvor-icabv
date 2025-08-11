@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import type { Member, MemberRole } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MemberFormDialog } from '@/components/member-form-dialog';
-import { Plus, MoreVertical, Edit, Trash2, CalendarCheck2 } from 'lucide-react';
+import { Plus, MoreVertical, Edit, Trash2, CalendarCheck2, Download, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +30,14 @@ import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/auth-context';
+import * as htmlToImage from 'html-to-image';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+type MemberSchedule = {
+  date: Date;
+  roles: string[];
+};
 
 export default function MembersPage() {
   const { can } = useAuth();
@@ -40,6 +48,10 @@ export default function MembersPage() {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
   const [memberToView, setMemberToView] = useState<Member | null>(null);
+
+  const [isExporting, setIsExporting] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const handleSaveMember = (memberData: Omit<Member, 'id'> & { id?: string }) => {
     if (memberData.id) {
@@ -79,10 +91,8 @@ export default function MembersPage() {
     setIsScheduleViewOpen(true);
   };
 
-  const memberUpcomingSchedules = useMemo(() => {
-    if (!memberToView) return [];
-    
-    const today = new Date();
+  const getUpcomingSchedulesForMember = (member: Member): MemberSchedule[] => {
+     const today = new Date();
     today.setHours(0,0,0,0);
 
     const upcoming = monthlySchedules
@@ -90,7 +100,7 @@ export default function MembersPage() {
       .map(schedule => {
         const roles: string[] = [];
         Object.entries(schedule.assignments).forEach(([columnId, memberIds]) => {
-          if (memberIds.includes(memberToView.id)) {
+          if (memberIds.includes(member.id)) {
             const column = scheduleColumns.find(c => c.id === columnId);
             if(column) {
                 roles.push(column.label);
@@ -105,12 +115,25 @@ export default function MembersPage() {
         }
         return null;
       })
-      .filter((item): item is { date: Date; roles: string[] } => item !== null)
+      .filter((item): item is MemberSchedule => item !== null)
       .sort((a, b) => a.date.getTime() - b.date.getTime());
+    
+    return upcoming;
+  }
 
-      return upcoming;
-
+  const memberUpcomingSchedules = useMemo(() => {
+    if (!memberToView) return [];
+    return getUpcomingSchedulesForMember(memberToView);
   }, [memberToView, monthlySchedules, scheduleColumns]);
+
+  const allMembersSchedules = useMemo(() => {
+    return members.map(member => ({
+      member,
+      schedules: getUpcomingSchedulesForMember(member)
+    })).filter(item => item.schedules.length > 0)
+       .sort((a, b) => a.member.name.localeCompare(b.member.name));
+  }, [members, monthlySchedules, scheduleColumns]);
+
 
   const groupedMembers = members.reduce((acc, member) => {
     member.roles.forEach(role => {
@@ -134,11 +157,45 @@ export default function MembersPage() {
     return aIndex - bIndex;
   });
 
+  const handleExportSchedules = async () => {
+    setIsExporting(true);
+    toast({ title: 'Preparando exportação...', description: 'Aguarde enquanto a imagem da agenda é gerada.' });
+
+    try {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (!exportRef.current) {
+             throw new Error("Elemento de exportação não encontrado.");
+        }
+        
+        const dataUrl = await htmlToImage.toPng(exportRef.current, { 
+            quality: 1,
+            pixelRatio: 1.5,
+            backgroundColor: '#121212',
+            skipFonts: true,
+        });
+        const link = document.createElement('a');
+        link.download = `agenda_geral_membros.png`;
+        link.href = dataUrl;
+        link.click();
+        toast({ title: 'Exportação Concluída!', description: 'A imagem da agenda foi baixada.' });
+    } catch (error) {
+        console.error('oops, something went wrong!', error);
+        toast({ title: 'Erro na Exportação', description: 'Não foi possível gerar a imagem.', variant: 'destructive'});
+    } finally {
+        setIsExporting(false);
+    }
+  };
+
 
   return (
+    <>
     <div className="p-4 md:p-6">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8 gap-4">
-        <div/>
+        <Button onClick={handleExportSchedules} size="sm" variant="outline" disabled={isExporting}>
+            {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+            {isExporting ? 'Exportando...' : 'Exportar Agenda Geral'}
+        </Button>
         {can('edit:members') && (
             <Button onClick={handleAddNew} size="sm" className="sm:size-auto">
             <Plus className="mr-2" />
@@ -249,5 +306,44 @@ export default function MembersPage() {
           </AlertDialogContent>
       </AlertDialog>
     </div>
+
+    {/* Hidden element for export */}
+    {isExporting && (
+        <div className={cn("fixed top-0 left-0 -z-50 opacity-0 dark")}>
+            <div ref={exportRef} className="p-8 bg-background text-foreground w-[1200px]">
+                <h1 className="text-3xl font-bold text-center mb-8">Agenda Geral de Membros</h1>
+                <div className="grid grid-cols-3 gap-6">
+                    {allMembersSchedules.map(({ member, schedules }) => (
+                        <div key={member.id} className="p-4 rounded-lg border border-border bg-card break-inside-avoid-column">
+                            <div className="flex items-center gap-3 mb-4">
+                                <Avatar className="w-10 h-10">
+                                    <AvatarImage src={member.avatar} alt={member.name} />
+                                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <h3 className="font-bold text-lg">{member.name}</h3>
+                            </div>
+                            <div className="space-y-3">
+                                {schedules.map((schedule, index) => (
+                                     <div key={index} className="flex items-start gap-3 text-sm">
+                                        <CalendarCheck2 className="h-4 w-4 mt-1 text-primary shrink-0"/>
+                                        <div>
+                                            <p className="font-semibold capitalize">{format(schedule.date, "EEEE, dd/MM", { locale: ptBR })}</p>
+                                            <ul className="list-disc list-inside text-xs text-muted-foreground">
+                                                {schedule.roles.map((role, r_index) => (
+                                                    <li key={r_index}>{role}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    )}
+
+    </>
   );
 }
