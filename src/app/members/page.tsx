@@ -158,7 +158,7 @@ export default function MembersPage() {
     return acc;
   }, {} as Record<MemberRole, Member[]>);
 
-  const roleOrder: MemberRole[] = ['Abertura', 'Pregador', 'Multimídia', 'Convidado'];
+  const roleOrder: MemberRole[] = ['Abertura', 'Pregação', 'Multimídia', 'Convidado'];
   const sortedRoles = Object.keys(groupedMembers).sort((a,b) => {
     const aIndex = roleOrder.indexOf(a as any);
     const bIndex = roleOrder.indexOf(b as any);

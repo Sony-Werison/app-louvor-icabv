@@ -125,7 +125,7 @@ export function ScheduleListItem({
 
   const getFilteredMembersForColumn = (column: ScheduleColumn): Member[] => {
     if (column.id.includes('pregacao')) {
-        return members.filter(m => m.roles.includes('Pregador') || m.roles.includes('Convidado'));
+        return members.filter(m => m.roles.includes('Pregação') || m.roles.includes('Convidado'));
     }
     if (column.role) {
         return members.filter(m => m.roles.includes(column.role!));
