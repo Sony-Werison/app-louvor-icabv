@@ -135,8 +135,8 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
-  const { updateSchedulePlaylist, shareMessage } = useSchedule();
-  const { can } = useAuth();
+  const { updateSchedulePlaylist } = useSchedule();
+  const { can, shareMessage } = useAuth();
   const { toast } = useToast();
 
   const [exportingSchedule, setExportingSchedule] = useState<Schedule | null>(null);
@@ -167,15 +167,9 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     setSelectedSchedule(schedule);
     setIsPlaylistViewerOpen(true);
   }
-
-  const handleDownloadClick = (schedule: Schedule) => {
-    if (isCapturing) return;
-    setExportingSchedule(schedule);
-    setIsCapturing(true);
-  };
   
-  const captureAndAct = useCallback(async () => {
-    if (!exportingSchedule || !exportCardRef.current) {
+  const captureAndAct = useCallback(async (schedule: Schedule) => {
+    if (!exportCardRef.current) {
         setIsCapturing(false);
         setExportingSchedule(null);
         return;
@@ -189,11 +183,25 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       });
 
       const link = document.createElement('a');
-      const fileName = `repertorio_${exportingSchedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
+      const fileName = `repertorio_${schedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
       link.download = fileName;
       link.href = dataUrl;
       link.click();
-      toast({ title: 'Exportação Concluída!', description: 'A imagem do repertório foi baixada.' });
+      
+      const scheduleNameLower = schedule.name.toLowerCase();
+      let dayDescription = schedule.name;
+      if (scheduleNameLower.includes('manhã')) {
+          dayDescription = "manhã";
+      } else if (scheduleNameLower.includes('noite')) {
+          dayDescription = "noite";
+      }
+      const dateText = format(schedule.date, "dd/MM/yyyy", { locale: ptBR });
+      const message = shareMessage
+        .replace(/\[PERIODO\]/g, dayDescription)
+        .replace(/\[DATA\]/g, dateText);
+      
+      await navigator.clipboard.writeText(message);
+      toast({ title: 'Baixado!', description: 'A imagem foi baixada e a mensagem foi copiada.' });
       
     } catch (error: any) {
         console.error(`Download failed:`, error);
@@ -202,35 +210,22 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       setIsCapturing(false);
       setExportingSchedule(null);
     }
-  }, [exportingSchedule, toast]);
+  }, [toast, shareMessage]);
 
-  const handleWhatsAppShare = (schedule: Schedule) => {
-    const scheduleNameLower = schedule.name.toLowerCase();
-    let dayDescription = schedule.name;
-    if (scheduleNameLower.includes('manhã')) {
-        dayDescription = "manhã";
-    } else if (scheduleNameLower.includes('noite')) {
-        dayDescription = "noite";
-    }
-
-    const dateText = format(schedule.date, "dd/MM/yyyy", { locale: ptBR });
-    
-    const message = shareMessage
-      .replace(/\[PERIODO\]/g, dayDescription)
-      .replace(/\[DATA\]/g, dateText);
-    
-    const whatsappLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappLink, '_blank');
+  const handleDownloadClick = (schedule: Schedule) => {
+    if (isCapturing) return;
+    setExportingSchedule(schedule);
+    setIsCapturing(true);
   };
 
   useEffect(() => {
-    if (isCapturing) {
+    if (isCapturing && exportingSchedule) {
       const timer = setTimeout(() => {
-          captureAndAct();
+          captureAndAct(exportingSchedule);
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [isCapturing, captureAndAct]);
+  }, [isCapturing, exportingSchedule, captureAndAct]);
 
 
   return (
@@ -337,21 +332,18 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                               <Eye className="w-4 h-4 mr-2" />
                               Visualizar
                           </Button>
+                          
                            {can('manage:playlists') && (
-                            <Button variant="outline" onClick={() => handleWhatsAppShare(schedule)} className="h-8 text-xs w-full" disabled={!hasPlaylist}>
-                                <MessageSquare className="w-4 h-4 mr-2" />
-                                WhatsApp
+                            <Button variant="outline" onClick={() => handleDownloadClick(schedule)} className="h-8 text-xs w-full" disabled={isCapturing || !hasPlaylist}>
+                                {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                                Baixar PNG
                             </Button>
                            )}
                        </div>
-
+                       
                        {can('manage:playlists') && (
                          <div className="flex w-full gap-2">
-                             <Button variant="outline" onClick={() => handleDownloadClick(schedule)} className="h-8 text-xs w-1/2" disabled={isCapturing || !hasPlaylist}>
-                                {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                                Baixar PNG
-                             </Button>
-                             <Button onClick={() => handleOpenPlaylist(schedule)} className="h-8 text-xs w-1/2">
+                             <Button onClick={() => handleOpenPlaylist(schedule)} className="h-8 text-xs w-full">
                                 <ListMusic className="w-4 h-4 mr-2" />
                                 Gerenciar
                              </Button>

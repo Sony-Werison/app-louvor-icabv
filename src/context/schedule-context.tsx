@@ -34,7 +34,6 @@ interface ScheduleContextType {
   importSongsFromTxt: (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => void;
   updateSongs: (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords'>>) => void;
   isLoading: boolean;
-  shareMessage: string;
 }
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
@@ -45,10 +44,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [scheduleColumns] = useState<ScheduleColumn[]>(initialScheduleColumns);
   const [isLoading, setIsLoading] = useState(true);
-
-  // This is a placeholder, it should be updated via auth context
-  const [shareMessage] = useState('Confira o repertório!');
-
 
   // Load data from blob storage on initial render
   useEffect(() => {
@@ -298,7 +293,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       importSongsFromTxt,
       updateSongs,
       isLoading,
-      shareMessage,
     }}>
       {isLoading ? (
           <div className="flex items-center justify-center h-screen bg-background">
