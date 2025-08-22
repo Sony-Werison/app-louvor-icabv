@@ -124,13 +124,15 @@ export function ScheduleListItem({
 }) {
 
   const getFilteredMembersForColumn = (column: ScheduleColumn): Member[] => {
+    let filtered: Member[] = [];
     if (column.id.includes('pregacao')) {
-        return members.filter(m => m.roles.includes('Pregação') || m.roles.includes('Convidado'));
+        filtered = members.filter(m => m.roles.includes('Pregação') || m.roles.includes('Convidado'));
+    } else if (column.role) {
+        filtered = members.filter(m => m.roles.includes(column.role!));
+    } else {
+        filtered = [...members];
     }
-    if (column.role) {
-        return members.filter(m => m.roles.includes(column.role!));
-    }
-    return members;
+    return filtered.sort((a, b) => a.name.localeCompare(b.name));
   };
 
   const renderDesktopAssignment = (col: ScheduleColumn) => {
