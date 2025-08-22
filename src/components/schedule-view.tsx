@@ -45,15 +45,63 @@ type ExportableCardProps = {
     schedule: Schedule;
     members: Member[];
     songs: Song[];
+    onReady: () => void;
 };
 
-const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ schedule, members, songs }, ref) => {
+const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ schedule, members, songs, onReady }, ref) => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [imageMap, setImageMap] = useState<Record<string, string>>({});
+
     const leader = getMemberById(members, schedule.leaderId);
     const preacher = getMemberById(members, schedule.preacherId);
     const playlistSongs = schedule.playlist.map(id => getSongById(songs, id)).filter((s): s is Song => !!s);
     const teamMembers = (schedule.team?.multimedia || [])
         .map(id => getMemberById(members, id))
         .filter((m): m is Member => !!m);
+    
+    const imageToDataURL = useCallback(async (url: string) => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            return new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (error) {
+            console.error('Failed to convert image to data URL', error);
+            // Return a transparent pixel as a fallback
+            return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        }
+    }, []);
+
+    useEffect(() => {
+        const embedImages = async () => {
+            const allMembersInCard = [leader, preacher, ...teamMembers].filter(Boolean) as Member[];
+            const newImageMap: Record<string, string> = {};
+            
+            await Promise.all(
+                allMembersInCard.map(async (member) => {
+                    if (member.avatar && !member.avatar.startsWith('data:')) {
+                        const dataUrl = await imageToDataURL(member.avatar);
+                        newImageMap[member.avatar] = dataUrl;
+                    }
+                })
+            );
+            
+            setImageMap(newImageMap);
+            setIsLoading(false);
+        };
+
+        embedImages();
+    }, [schedule.id, leader, preacher, teamMembers, imageToDataURL]);
+
+    useEffect(() => {
+        if (!isLoading) {
+            onReady();
+        }
+    }, [isLoading, onReady]);
 
   return (
     <div ref={ref} className="w-[380px] bg-card text-card-foreground p-4 flex flex-col gap-3 rounded-lg border">
@@ -71,7 +119,7 @@ const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ 
             {leader && (
             <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                <AvatarImage src={leader.avatar} alt={leader.name} />
+                <AvatarImage src={imageMap[leader.avatar] || leader.avatar} alt={leader.name} />
                 <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -83,7 +131,7 @@ const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ 
             {preacher && (
             <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                <AvatarImage src={preacher.avatar} alt={preacher.name} />
+                <AvatarImage src={imageMap[preacher.avatar] || preacher.avatar} alt={preacher.name} />
                 <AvatarFallback>{getMemberInitial(preacher.name)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -103,7 +151,7 @@ const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ 
                     {teamMembers.map(member => (
                         <div key={member.id} className="flex items-center gap-2 text-sm">
                             <Avatar className="h-6 w-6">
-                                <AvatarImage src={member.avatar} alt={member.name} />
+                                <AvatarImage src={imageMap[member.avatar] || member.avatar} alt={member.name} />
                                 <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
                             </Avatar>
                             <span className="text-muted-foreground">{member.name}</span>
@@ -135,7 +183,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
   const { updateSchedulePlaylist } = useSchedule();
-  const { can, shareMessage } = useAuth();
+  const { can } = useAuth();
   const { toast } = useToast();
 
   const [exportingSchedule, setExportingSchedule] = useState<Schedule | null>(null);
@@ -166,13 +214,13 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     setSelectedSchedule(schedule);
     setIsPlaylistViewerOpen(true);
   }
-  
-  const captureAndAct = useCallback(async (schedule: Schedule) => {
-    if (!exportCardRef.current) {
-        setIsCapturing(false);
-        setExportingSchedule(null);
-        return;
-    };
+
+  const captureAndAct = useCallback(async () => {
+    if (!exportCardRef.current || !exportingSchedule) {
+      setIsCapturing(false);
+      setExportingSchedule(null);
+      return;
+    }
 
     try {
       const dataUrl = await htmlToImage.toPng(exportCardRef.current, {
@@ -182,7 +230,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       });
 
       const link = document.createElement('a');
-      const fileName = `repertorio_${schedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
+      const fileName = `repertorio_${exportingSchedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
       link.download = fileName;
       link.href = dataUrl;
       link.click();
@@ -196,22 +244,13 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       setIsCapturing(false);
       setExportingSchedule(null);
     }
-  }, [toast]);
+  }, [toast, exportingSchedule]);
 
   const handleDownloadClick = (schedule: Schedule) => {
     if (isCapturing) return;
     setExportingSchedule(schedule);
     setIsCapturing(true);
   };
-
-  useEffect(() => {
-    if (isCapturing && exportingSchedule) {
-      const timer = setTimeout(() => {
-          captureAndAct(exportingSchedule);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isCapturing, exportingSchedule, captureAndAct]);
 
 
   return (
@@ -313,19 +352,19 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                     )}
                     </CardContent>
                     <CardFooter className="p-2 flex flex-col gap-2">
-                       <div className="flex w-full gap-2">
-                          <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-full">
-                              <Eye className="w-4 h-4 mr-2" />
-                              Visualizar
-                          </Button>
-                          
-                           {can('manage:playlists') && (
-                            <Button variant="outline" onClick={() => handleDownloadClick(schedule)} className="h-8 text-xs w-full" disabled={isCapturing || !hasPlaylist}>
-                                {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                                Baixar PNG
+                        <div className="flex w-full gap-2">
+                            <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/2">
+                                <Eye className="w-4 h-4 mr-2" />
+                                Visualizar
                             </Button>
-                           )}
-                       </div>
+                            
+                            {can('manage:playlists') && (
+                                <Button variant="outline" onClick={() => handleDownloadClick(schedule)} className="h-8 text-xs w-1/2" disabled={isCapturing || !hasPlaylist}>
+                                    {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                                    Baixar PNG
+                                </Button>
+                            )}
+                        </div>
                        
                        {can('manage:playlists') && (
                          <div className="flex w-full gap-2">
@@ -352,6 +391,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                 schedule={exportingSchedule} 
                 members={members} 
                 songs={songs}
+                onReady={captureAndAct}
             />
         </div>
     )}
