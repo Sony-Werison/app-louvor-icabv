@@ -1,8 +1,8 @@
 
 'use client';
 
-import type { Schedule, Member, Song } from '@/types';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import type { Schedule, Member, Song } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -290,7 +290,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                         </div>
                     )}
                     </CardContent>
-                    <CardFooter className="p-2 flex gap-2">
+                    <CardFooter className="p-2 flex flex-wrap gap-2">
                       <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="w-full h-8 text-xs" disabled={schedule.playlist.length === 0}>
                           <Eye className="mr-2 h-3 w-3" />
                           Visualizar
