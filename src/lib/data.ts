@@ -143,7 +143,7 @@ export const whatsappMessage: string = `Olá, [NOME]! Essa é uma mensagem autom
 
 Para montar o repertório, siga estes passos:
 1. Acesse o app: https://app-louvor-icabv.vercel.app/schedule
-2. No canto superior direito, clique em "Visualização" e troque para o perfil "Abertura" (senha: abertura).
+2. No canto superior direito, clique em "Visualização" e troque para o perfil "Abertura" (senha: [SENHA]).
 3. Na sua escala da semana, clique em "Gerenciar".
 
 Não se esqueça de enviar o quanto antes ao grupo de louvor. Obrigado!`;

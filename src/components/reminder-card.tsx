@@ -32,7 +32,7 @@ const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export function ReminderCard({ schedules, members }: ReminderCardProps) {
-  const { can, whatsappMessage } = useAuth();
+  const { can, whatsappMessage, aberturaPassword } = useAuth();
   if (!can('manage:playlists')) return null;
   
   const getMemberById = (id: string) => members.find(m => m.id === id);
@@ -59,7 +59,8 @@ export function ReminderCard({ schedules, members }: ReminderCardProps) {
 
     const message = whatsappMessage
       .replace(/\[NOME\]/g, firstName)
-      .replace(/\[PERIODO\]/g, dayDescription);
+      .replace(/\[PERIODO\]/g, dayDescription)
+      .replace(/\[SENHA\]/g, aberturaPassword);
 
     const whatsappLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 

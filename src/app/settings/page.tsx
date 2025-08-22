@@ -220,7 +220,7 @@ export default function SettingsPage() {
                                     <Textarea rows={10} {...field} />
                                 </FormControl>
                                 <FormDesc>
-                                    Use as variáveis: `[NOME]`, `[PERIODO]`.
+                                    Use as variáveis: `[NOME]`, `[PERIODO]`, `[SENHA]`.
                                 </FormDesc>
                                 <FormMessage />
                                 </FormItem>

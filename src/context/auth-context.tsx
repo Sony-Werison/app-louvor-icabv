@@ -16,6 +16,7 @@ interface AuthContextType {
   updatePassword: (roleToUpdate: Role, currentPassword: string, newPassword: string) => Promise<boolean>;
   whatsappMessage: string;
   updateWhatsappMessage: (newMessage: string) => Promise<boolean>;
+  aberturaPassword: string;
   isLoading: boolean;
 }
 
@@ -143,6 +144,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       updatePassword,
       whatsappMessage,
       updateWhatsappMessage,
+      aberturaPassword: rolePasswords?.abertura || '',
       isLoading: isLoading || !role, // Consider loading until role is also set
   };
 
