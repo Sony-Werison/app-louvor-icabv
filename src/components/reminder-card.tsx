@@ -27,7 +27,6 @@ const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
     {...props}
   >
     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-    <path d="M14.05 16.94A8.91 8.91 0 0 1 12.9 19.4a1.86 1.86 0 0 1-1.21.61 3.5 3.5 0 0 1-2.15-.69L8 18.83l.63-1.42a5.53 5.53 0 0 1 1.5-2.5 5.53 5.53 0 0 1 2.5-1.5L14.05 16.94z" />
   </svg>
 );
 
@@ -45,7 +44,8 @@ export function ReminderCard({ schedules, members }: ReminderCardProps) {
     }
 
     const phone = member.phone.replace(/\D/g, ''); // Remove non-numeric characters
-    const message = `Olá, ${member.name}! Passando para lembrar de montar o repertório para o culto de "${schedule.name}". Obrigado!`;
+    const firstName = member.name.split(' ')[0];
+    const message = `Olá, ${firstName}! Essa é uma mensagem automática para lembrar que você está escalado para a abertura de ${schedule.name}. Não se esqueça de montar a sua lista de músicas e enviar o quanto antes ao grupo de louvor. Obrigado!`;
     const whatsappLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
     window.open(whatsappLink, '_blank');
@@ -59,7 +59,7 @@ export function ReminderCard({ schedules, members }: ReminderCardProps) {
           <CardTitle className="text-lg text-amber-200">Lembretes Pendentes</CardTitle>
         </div>
         <CardDescription className="text-amber-300/80 pl-9">
-          Os seguintes líderes ainda não montaram o repertório para esta semana.
+          Os seguintes membros ainda não montaram o repertório da semana:
         </CardDescription>
       </CardHeader>
       <CardContent>
