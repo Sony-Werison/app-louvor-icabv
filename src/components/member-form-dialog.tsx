@@ -45,6 +45,7 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/web
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
   email: z.string().email({ message: 'Por favor, insira um e-mail válido.' }).optional().or(z.literal('')),
+  phone: z.string().optional().or(z.literal('')),
   roles: z.array(z.string()).refine(value => value.some(item => item), {
     message: "Você deve selecionar pelo menos uma função.",
   }),
@@ -76,6 +77,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
     defaultValues: {
       name: member?.name || '',
       email: member?.email || '',
+      phone: member?.phone || '',
       roles: member?.roles || [],
       avatar: member?.avatar || '',
     },
@@ -158,6 +160,19 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input placeholder="email@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone (WhatsApp)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="5511999998888" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
