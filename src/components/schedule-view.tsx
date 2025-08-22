@@ -186,6 +186,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       const dataUrl = await htmlToImage.toPng(exportCardRef.current, {
         quality: 1,
         pixelRatio: 2,
+        skipFonts: true,
       });
 
       const link = document.createElement('a');
@@ -312,15 +313,15 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                     )}
                     </CardContent>
                     <CardFooter className="p-2 flex flex-col gap-2">
-                       <div className="flex w-full gap-2">
-                            <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/2">
-                                <Eye className="w-4 h-4 mr-2" />
-                                Visualizar
-                            </Button>
-                            <Button onClick={() => handleShareClick(schedule)} className="h-8 text-xs w-1/2" disabled={isCapturing}>
-                                {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                                Compartilhar
-                            </Button>
+                        <div className="flex w-full gap-2">
+                          <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/2">
+                              <Eye className="w-4 h-4 mr-2" />
+                              Visualizar
+                          </Button>
+                          <Button onClick={() => handleShareClick(schedule)} className="h-8 text-xs w-1/2" disabled={isCapturing}>
+                              {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                              Compartilhar
+                          </Button>
                         </div>
                         {can('manage:playlists') && (
                         <Button onClick={() => handleOpenPlaylist(schedule)} className="h-8 text-xs w-full">
