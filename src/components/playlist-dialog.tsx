@@ -14,12 +14,13 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { X, Music, Search, ArrowDownUp, ArrowUp, ArrowDown } from 'lucide-react';
+import { X, Music, Search, ArrowDownUp, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 
 interface PlaylistDialogProps {
@@ -27,6 +28,7 @@ interface PlaylistDialogProps {
   allSongs: Song[];
   onSave: (scheduleId: string, newPlaylist: string[]) => void;
   onOpenChange: (open: boolean) => void;
+  repeatedSongIds?: Set<string>;
 }
 
 type SortKey = 'title' | 'quarterly' | 'total';
@@ -55,7 +57,7 @@ const getTotalColorClass = (count: number = 0) => {
     return 'bg-transparent';
 }
 
-export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: PlaylistDialogProps) {
+export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repeatedSongIds = new Set() }: PlaylistDialogProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [currentPlaylist, setCurrentPlaylist] = useState<string[]>(schedule.playlist);
   const [searchTerm, setSearchTerm] = useState('');
@@ -186,6 +188,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                     </button>
                 </div>
                 <ScrollArea className="flex-grow">
+                    <TooltipProvider>
                     <Accordion type="multiple" defaultValue={songCategories} className="w-full">
                         {Object.entries(groupedAvailableSongs).map(([category, songs]) => (
                             <AccordionItem value={category} key={category} className="border-b-0">
@@ -209,6 +212,16 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                                                   <div className="font-medium flex items-center gap-2">
                                                     {hasChords(song) && <Music className="h-3 w-3 text-muted-foreground" />}
                                                     <span>{song.title}</span>
+                                                    {repeatedSongIds.has(song.id) && (
+                                                      <Tooltip>
+                                                        <TooltipTrigger>
+                                                          <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                          <p>Essa música já está em outro repertório esta semana.</p>
+                                                        </TooltipContent>
+                                                      </Tooltip>
+                                                    )}
                                                   </div>
                                                   <div className="text-sm text-muted-foreground">{song.artist}</div>
                                                 </div>
@@ -225,6 +238,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange }: Pla
                             </AccordionItem>
                         ))}
                     </Accordion>
+                    </TooltipProvider>
                 </ScrollArea>
             </TabsContent>
             <TabsContent value="selected" className="flex-grow mt-0 flex flex-col min-h-0">

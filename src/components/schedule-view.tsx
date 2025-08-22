@@ -187,7 +187,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
   const { updateSchedulePlaylist } = useSchedule();
-  const { can } = useAuth();
+  const { can, shareMessage } = useAuth();
   const { toast } = useToast();
 
   const [exportingSchedule, setExportingSchedule] = useState<Schedule | null>(null);
@@ -269,7 +269,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       setIsPreparingImage(false);
       setExportingSchedule(null);
     }
-  }, [toast, exportingSchedule, isMobile, canShare]);
+  }, [toast, exportingSchedule, isMobile, canShare, shareMessage]);
   
   useEffect(() => {
       if (isPreparingImage) {
@@ -287,6 +287,29 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     if (isCapturing) return;
     setExportingSchedule(schedule);
     setIsPreparingImage(true);
+  };
+  
+  const weeklyRepeatedSongIds = useMemo(() => {
+    const songCounts = new Map<string, number>();
+    schedules.forEach(s => {
+      s.playlist.forEach(songId => {
+        songCounts.set(songId, (songCounts.get(songId) || 0) + 1);
+      });
+    });
+    const repeated = new Set<string>();
+    for (const [songId, count] of songCounts.entries()) {
+      if (count > 1) {
+        repeated.add(songId);
+      }
+    }
+    return repeated;
+  }, [schedules]);
+  
+  const getRepeatedIdsForSchedule = (currentScheduleId: string) => {
+    const otherPlaylists = schedules
+      .filter(s => s.id !== currentScheduleId)
+      .flatMap(s => s.playlist);
+    return new Set(otherPlaylists);
   };
 
 
@@ -388,8 +411,9 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                         </div>
                     )}
                     </CardContent>
-                    <CardFooter className="p-2 flex flex-col gap-2">
-                        <div className="flex w-full gap-2">
+                    <CardFooter className="p-2">
+                       <div className="w-full flex flex-col gap-2">
+                         <div className="flex w-full gap-2">
                             <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs flex-1">
                                 <Eye className="w-4 h-4 mr-2" />
                                 Visualizar
@@ -402,17 +426,15 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                                     {isMobile && canShare ? 'Compartilhar' : 'Baixar PNG'}
                                 </Button>
                              )}
-                        </div>
+                         </div>
                        
                        {can('manage:playlists') && (
-                         <div className="flex w-full gap-2">
-                             <Button onClick={() => handleOpenPlaylist(schedule)} className="h-8 text-xs w-full">
-                                <ListMusic className="w-4 h-4 mr-2" />
-                                Gerenciar
-                             </Button>
-                         </div>
+                         <Button onClick={() => handleOpenPlaylist(schedule)} className="h-8 text-xs w-full">
+                            <ListMusic className="w-4 h-4 mr-2" />
+                            Gerenciar
+                         </Button>
                        )}
-
+                       </div>
                     </CardFooter>
                 </Card>
                 );
@@ -444,6 +466,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                     setSelectedSchedule(null);
                 }
             }}
+            repeatedSongIds={getRepeatedIdsForSchedule(selectedSchedule.id)}
         />
     )}
      {isPlaylistViewerOpen && selectedSchedule && (
@@ -461,4 +484,3 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     </>
   );
 }
-
