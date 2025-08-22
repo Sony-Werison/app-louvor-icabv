@@ -18,6 +18,7 @@ import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import * as htmlToImage from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ScheduleViewProps {
   initialSchedules: Schedule[];
@@ -41,13 +42,49 @@ const getSongById = (songs: Song[], id: string) => songs.find(s => s.id === id);
 const getMemberInitial = (name: string) => name.charAt(0).toUpperCase();
 
 
+const imageToDataURL = async (url: string) => {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const blob = await response.blob();
+        return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.error('Error converting image to data URL:', error);
+        return url; // fallback to original url
+    }
+};
+
+
 // Componente para o layout do PNG
-const ExportableCard = React.forwardRef<HTMLDivElement, { schedule: Schedule, members: Member[], songs: Song[] }>(({ schedule, members, songs }, ref) => {
-  const leader = getMemberById(members, schedule.leaderId);
-  const preacher = getMemberById(members, schedule.preacherId);
+const ExportableCard = React.forwardRef<HTMLDivElement, { schedule: Schedule, members: Member[], songs: Song[], shareMessage: string }>(({ schedule, members, songs, shareMessage }, ref) => {
+    const [membersWithDataImages, setMembersWithDataImages] = useState<Member[]>([]);
+    
+    useEffect(() => {
+        const convertImages = async () => {
+            const updatedMembers = await Promise.all(
+                members.map(async member => {
+                    if (member.avatar) {
+                        const dataUrl = await imageToDataURL(member.avatar);
+                        return { ...member, avatar: dataUrl };
+                    }
+                    return member;
+                })
+            );
+            setMembersWithDataImages(updatedMembers);
+        };
+        convertImages();
+    }, [members]);
+
+  const leader = getMemberById(membersWithDataImages, schedule.leaderId);
+  const preacher = getMemberById(membersWithDataImages, schedule.preacherId);
   const playlistSongs = schedule.playlist.map(id => getSongById(songs, id)).filter((s): s is Song => !!s);
   const teamMembers = (schedule.team?.multimedia || [])
-    .map(id => getMemberById(members, id))
+    .map(id => getMemberById(membersWithDataImages, id))
     .filter((m): m is Member => !!m);
 
   return (
@@ -129,10 +166,11 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
-  const { updateSchedulePlaylist } = useSchedule();
+  const { updateSchedulePlaylist, shareMessage } = useSchedule();
   const { can } = useAuth();
   const { toast } = useToast();
   const [canShare, setCanShare] = useState(false);
+  const isMobile = useIsMobile();
 
   const [exportingScheduleId, setExportingScheduleId] = useState<string | null>(null);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -212,9 +250,13 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], 'repertorio.png', { type: 'image/png' });
 
+        const text = shareMessage
+            .replace(/\[PERIODO\]/g, schedule.name)
+            .replace(/\[DATA\]/g, format(schedule.date, 'dd/MM/yyyy', { locale: ptBR }));
+
         await navigator.share({
             title: `Repertório - ${schedule.name}`,
-            text: `Repertório para ${schedule.name}`,
+            text,
             files: [file],
         });
     } catch (error: any) {
@@ -227,7 +269,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     } finally {
         setExportingScheduleId(null);
     }
-  }, [toast]);
+  }, [toast, shareMessage]);
   
 
   return (
@@ -249,6 +291,8 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                 const teamMembers = (schedule.team?.multimedia || [])
                 .map(id => getMemberById(members, id))
                 .filter((m): m is Member => !!m);
+                
+                const isCurrentlyExporting = exportingScheduleId === schedule.id;
 
                 return (
                 <Card key={schedule.id} className="flex flex-col relative">
@@ -325,24 +369,26 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                         </div>
                     )}
                     </CardContent>
-                    <CardFooter className="p-2 flex flex-wrap gap-2">
-                        <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs flex-1">
+                    <CardFooter className="p-2 grid grid-cols-2 gap-2">
+                        <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs col-span-2">
                             <Eye />
                             Visualizar
                         </Button>
                         {can('manage:playlists') && (
                             <>
-                                <Button variant="outline" onClick={() => handleExport(schedule)} className="h-8 text-xs flex-1" disabled={playlistSongs.length === 0 || !!exportingScheduleId}>
-                                    {exportingScheduleId === schedule.id ? <Loader2 className="animate-spin" /> : <Download />}
-                                    Exportar
-                                </Button>
-                                {canShare && (
-                                     <Button variant="outline" onClick={() => handleShare(schedule)} className="h-8 text-xs flex-1" disabled={playlistSongs.length === 0 || !!exportingScheduleId}>
-                                        {exportingScheduleId === schedule.id ? <Loader2 className="animate-spin" /> : <Share2 />}
+                                {canShare && isMobile && (
+                                     <Button variant="outline" onClick={() => handleShare(schedule)} className="h-8 text-xs" disabled={playlistSongs.length === 0 || !!exportingScheduleId}>
+                                        {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Share2 />}
                                         Compartilhar
                                     </Button>
                                 )}
-                                <Button onClick={() => handleOpenPlaylist(schedule)} variant="destructive" className="h-8 text-xs flex-1">
+                                {!isMobile && (
+                                    <Button variant="outline" onClick={() => handleExport(schedule)} className="h-8 text-xs" disabled={playlistSongs.length === 0 || !!exportingScheduleId}>
+                                        {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download />}
+                                        Exportar
+                                    </Button>
+                                )}
+                                <Button onClick={() => handleOpenPlaylist(schedule)} variant="destructive" className="h-8 text-xs">
                                     <ListMusic/>
                                     Gerenciar
                                 </Button>
@@ -382,11 +428,10 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                 schedule={schedules.find(s => s.id === exportingScheduleId)!}
                 members={members}
                 songs={songs}
+                shareMessage={shareMessage}
             />
         </div>
     )}
     </>
   );
 }
-
-    
