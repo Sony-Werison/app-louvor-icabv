@@ -79,6 +79,7 @@ const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ 
 
     useEffect(() => {
         const embedImages = async () => {
+            setIsLoading(true);
             const allMembersInCard = [leader, preacher, ...teamMembers].filter(Boolean) as Member[];
             const newImageMap: Record<string, string> = {};
             
@@ -195,6 +196,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const exportCardRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [canShare, setCanShare] = useState(false);
+  const [repeatedSongIds, setRepeatedSongIds] = useState<Set<string>>(new Set());
   
   useEffect(() => {
     setSchedules(initialSchedules);
@@ -217,8 +219,14 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     setSelectedSchedule(null);
   };
   
-  const handleOpenPlaylist = (schedule: Schedule) => {
-    setSelectedSchedule(schedule);
+  const handleOpenPlaylist = (scheduleToOpen: Schedule) => {
+    // Get all song IDs from other playlists in the current view
+    const otherPlaylists = schedules
+      .filter(s => s.id !== scheduleToOpen.id)
+      .flatMap(s => s.playlist || []);
+    setRepeatedSongIds(new Set(otherPlaylists));
+    
+    setSelectedSchedule(scheduleToOpen);
     setIsPlaylistDialogOpen(true);
   }
 
@@ -275,30 +283,6 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       setExportingSchedule(null);
     }
   }, [toast, isMobile, canShare]);
-  
-  
-  const weeklyRepeatedSongIds = useMemo(() => {
-    const songCounts = new Map<string, number>();
-    schedules.forEach(s => {
-      (s.playlist || []).forEach(songId => {
-        songCounts.set(songId, (songCounts.get(songId) || 0) + 1);
-      });
-    });
-    const repeated = new Set<string>();
-    for (const [songId, count] of songCounts.entries()) {
-      if (count > 1) {
-        repeated.add(songId);
-      }
-    }
-    return repeated;
-  }, [schedules]);
-  
-  const getRepeatedIdsForSchedule = (currentScheduleId: string) => {
-    const otherPlaylists = schedules
-      .filter(s => s.id !== currentScheduleId)
-      .flatMap(s => s.playlist || []);
-    return new Set(otherPlaylists);
-  };
 
 
   return (
@@ -402,7 +386,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                     <CardFooter className="p-2">
                         <div className="flex flex-col gap-2 w-full">
                             <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="flex-1 h-8 text-xs w-1/2">
+                                <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/2">
                                     <Eye className="w-4 h-4 mr-2" />
                                     Visualizar
                                 </Button>
@@ -410,7 +394,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                                     <Button 
                                         variant="outline"
                                         onClick={() => captureAndAct(schedule)} 
-                                        className="flex-1 h-8 text-xs w-1/2" 
+                                        className="h-8 text-xs w-1/2" 
                                         disabled={isCapturing || !hasPlaylist}>
                                         {isCurrentlyExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : (isMobile && canShare ? <Share2 className="w-4 h-4 mr-2" /> : <Download className="w-4 h-4 mr-2" />)}
                                         {isMobile && canShare ? 'Compartilhar' : 'Baixar PNG'}
@@ -455,7 +439,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                     setSelectedSchedule(null);
                 }
             }}
-            repeatedSongIds={getRepeatedIdsForSchedule(selectedSchedule.id)}
+            repeatedSongIds={repeatedSongIds}
         />
     )}
      {isPlaylistViewerOpen && selectedSchedule && (
@@ -473,3 +457,4 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     </>
   );
 }
+
