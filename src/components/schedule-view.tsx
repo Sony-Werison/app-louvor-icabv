@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
 import { PlaylistViewer } from '@/components/playlist-viewer';
-import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2, Share2 } from 'lucide-react';
+import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useSchedule } from '@/context/schedule-context';
 import { Separator } from './ui/separator';
@@ -182,11 +182,10 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
-  const { updateSchedulePlaylist, shareMessage } = useSchedule();
+  const { updateSchedulePlaylist } = useSchedule();
   const { can } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const [canShare, setCanShare] = useState(false);
 
   const [exportingSchedule, setExportingSchedule] = useState<Schedule | null>(null);
   const exportCardRef = useRef<HTMLDivElement>(null);
@@ -195,12 +194,6 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   useEffect(() => {
     setSchedules(initialSchedules);
   }, [initialSchedules]);
-
-  useEffect(() => {
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([], '')] })) {
-      setCanShare(true);
-    }
-  }, []);
 
 
   const handlePlaylistSave = (scheduleId: string, newPlaylist: string[]) => {
@@ -223,7 +216,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     setIsPlaylistViewerOpen(true);
   }
 
- const captureAndAct = useCallback(async (action: 'download' | 'share', schedule?: Schedule) => {
+ const captureAndAct = useCallback(async (schedule?: Schedule) => {
     if (!exportCardRef.current || !schedule) return;
     setIsCapturing(true);
 
@@ -234,37 +227,20 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
         backgroundColor: 'hsl(var(--card))',
       });
 
-      if (action === 'download') {
         const link = document.createElement('a');
         link.download = `repertorio_${schedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
         link.href = dataUrl;
         link.click();
         toast({ title: 'Exportação Concluída!', description: 'A imagem do repertório foi baixada.' });
-      } else if (action === 'share') {
-        const blob = await (await fetch(dataUrl)).blob();
-        const file = new File([blob], 'repertorio.png', { type: 'image/png' });
-        
-        const period = schedule.name.toLowerCase().includes('manhã') ? 'da manhã' : 'da noite';
-        const date = format(schedule.date, 'dd/MM/yyyy', { locale: ptBR });
-        const text = shareMessage.replace(/\[PERIODO\]/g, period).replace(/\[DATA\]/g, date);
-
-        await navigator.share({
-          title: `Repertório - ${schedule.name}`,
-          text: text,
-          files: [file],
-        });
-      }
+      
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        return;
-      }
-      console.error(`${action} failed:`, error);
-      toast({ title: `Falha no ${action === 'download' ? 'Download' : 'Compartilhamento'}`, description: 'Não foi possível processar a imagem.', variant: 'destructive' });
+        console.error(`Download failed:`, error);
+        toast({ title: `Falha no Download`, description: 'Não foi possível processar a imagem.', variant: 'destructive' });
     } finally {
       setIsCapturing(false);
       setExportingSchedule(null);
     }
-  }, [toast, shareMessage]);
+  }, [toast]);
 
   return (
     <>
@@ -277,7 +253,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                 <p className="text-sm sm:text-base">Vá para a página "Escala Mensal" para planejar.</p>
             </div>
          : 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl">
             {schedules.map((schedule) => {
                 const leader = getMemberById(members, schedule.leaderId);
                 const preacher = getMemberById(members, schedule.preacherId);
@@ -363,28 +339,21 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                         </div>
                     )}
                     </CardContent>
-                    <CardFooter className="p-2 flex flex-col gap-2">
-                      <div className='flex gap-2 w-full'>
+                    <CardFooter className="p-2 flex gap-2">
                         <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs flex-1">
                           <Eye className="w-4 h-4 mr-2" />
                           Visualizar
                         </Button>
-                        {!isMobile ? (
-                          <Button variant="outline" onClick={() => setExportingSchedule(schedule)} className="h-8 text-xs flex-1" disabled={playlistSongs.length === 0 || isCapturing}>
+                        <Button variant="outline" onClick={() => setExportingSchedule(schedule)} className="h-8 text-xs flex-1" disabled={playlistSongs.length === 0 || isCapturing}>
                             {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
                             Exportar PNG
                           </Button>
-                        ) : canShare ? (
-                          <Button variant="outline" onClick={() => setExportingSchedule(schedule)} className="h-8 text-xs flex-1" disabled={playlistSongs.length === 0 || isCapturing}>
-                            {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Share2 className="w-4 h-4 mr-2" />}
-                            Compartilhar
-                          </Button>
-                        ) : null}
-                      </div>
-                      <Button onClick={() => handleOpenPlaylist(schedule)} variant="destructive" className="h-8 text-xs w-full">
-                        <ListMusic className="w-4 h-4 mr-2" />
-                        Gerenciar Repertório
-                      </Button>
+                        {can('manage:playlists') && (
+                        <Button onClick={() => handleOpenPlaylist(schedule)} className="h-8 text-xs flex-1">
+                            <ListMusic className="w-4 h-4 mr-2" />
+                            Gerenciar
+                        </Button>
+                        )}
                     </CardFooter>
                 </Card>
                 );
@@ -401,10 +370,36 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                 schedule={exportingSchedule} 
                 members={members} 
                 songs={songs}
-                onReady={() => captureAndAct(isMobile ? 'share' : 'download', exportingSchedule)}
+                onReady={() => captureAndAct(exportingSchedule)}
             />
         </div>
     )}
+
+    {isPlaylistDialogOpen && selectedSchedule && (
+        <PlaylistDialog 
+            schedule={selectedSchedule}
+            allSongs={songs}
+            onSave={handlePlaylistSave}
+            onOpenChange={(open) => {
+                if (!open) {
+                    setIsPlaylistDialogOpen(false);
+                    setSelectedSchedule(null);
+                }
+            }}
+        />
+    )}
+     {isPlaylistViewerOpen && selectedSchedule && (
+        <PlaylistViewer 
+            schedule={selectedSchedule}
+            songs={songs}
+            onOpenChange={(open) => {
+                if (!open) {
+                    setIsPlaylistViewerOpen(false);
+                    setSelectedSchedule(null);
+                }
+            }}
+        />
+     )}
     </>
   );
 }
