@@ -41,7 +41,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
-    const [passwords, message] = await Promise.all([fetchPasswords(), fetchWhatsappMessage()]);
+    let [passwords, message] = await Promise.all([fetchPasswords(), fetchWhatsappMessage()]);
+    
+    // --- Data Migration for passwords ---
+    let passwordsModified = false;
+    const tempPasswords = { ...passwords } as any; // Use any to handle old keys
+
+    // Check for old 'dirigente' role and migrate to 'abertura'
+    if (tempPasswords.dirigente && !tempPasswords.abertura) {
+      tempPasswords.abertura = tempPasswords.dirigente;
+      delete tempPasswords.dirigente;
+      passwordsModified = true;
+    }
+    
+    if (passwordsModified) {
+      await savePasswords(tempPasswords);
+      passwords = tempPasswords;
+    }
+    // --- End of Migration ---
+
     setRolePasswords(passwords);
     setWhatsappMessage(message);
     setIsLoading(false);

@@ -68,6 +68,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         // Data migration for member roles
         let membersModified = false;
         const migratedMembers = loadedMembers.map(member => {
+            if (!member.roles) {
+              membersModified = true;
+              return { ...member, roles: [] };
+            }
+
             let newRoles = [...member.roles];
             let changed = false;
 
@@ -87,7 +92,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
             if(changed) {
                 membersModified = true;
-                return {...member, roles: newRoles as MemberRole[]};
+                return {...member, roles: [...new Set(newRoles)] as MemberRole[]};
             }
             return member;
         });
