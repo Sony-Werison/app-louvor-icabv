@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import type { MonthlySchedule, Member, Song, ScheduleColumn, SongCategory } from '@/types';
+import type { MonthlySchedule, Member, Song, ScheduleColumn, SongCategory, MemberRole } from '@/types';
 import { scheduleColumns as initialScheduleColumns } from '@/lib/data';
 import {
   fetchMembers,
@@ -64,8 +64,41 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         if (correctedSchedules.length !== loadedSchedules.length) {
             await saveMonthlySchedules(correctedSchedules);
         }
+
+        // Data migration for member roles
+        let membersModified = false;
+        const migratedMembers = loadedMembers.map(member => {
+            let newRoles = [...member.roles];
+            let changed = false;
+
+            const roleMap: Record<string, MemberRole> = {
+                'Dirigente': 'Abertura',
+                'Pregador': 'Pregação'
+            };
+            
+            newRoles = newRoles.map(role => {
+                const newRole = roleMap[role];
+                if (newRole) {
+                    changed = true;
+                    return newRole;
+                }
+                return role;
+            });
+
+            if(changed) {
+                membersModified = true;
+                return {...member, roles: newRoles as MemberRole[]};
+            }
+            return member;
+        });
+
+        if (membersModified) {
+            setMembers(migratedMembers);
+            await saveMembers(migratedMembers);
+        } else {
+            setMembers(loadedMembers);
+        }
         
-        setMembers(loadedMembers);
         setSongs(loadedSongs);
         setMonthlySchedules(correctedSchedules);
 
