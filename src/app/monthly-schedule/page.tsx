@@ -271,8 +271,8 @@ export default function MonthlySchedulePage() {
 
 
         {/* Hidden element for export */}
-        {(isExporting) && (
-             <div className="fixed top-0 left-0 -z-50 opacity-0 dark w-[1200px]">
+        {(isExporting || isViewDialogOpen) && (
+             <div className={cn("fixed top-0 left-0 -z-50 opacity-0 dark w-[1200px]", isViewDialogOpen && "hidden")}>
                 <div ref={exportRef} className="p-8 bg-background">
                     <ExportableView />
                 </div>
@@ -282,5 +282,7 @@ export default function MonthlySchedulePage() {
         </>
     );
 }
+
+    
 
     
