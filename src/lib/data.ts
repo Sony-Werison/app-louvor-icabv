@@ -1,6 +1,6 @@
 
 
-import type { Member, Song, MonthlySchedule, ScheduleColumn, SongCategory, Role } from '@/types';
+import type { Member, Song, MonthlySchedule, ScheduleColumn, SongCategory, Role, MemberRole } from '@/types';
 import { Tv, Sun, Moon, BookUser, Mic } from 'lucide-react';
 import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths } from 'date-fns';
 
