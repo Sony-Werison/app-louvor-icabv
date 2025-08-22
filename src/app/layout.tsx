@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: 'Gestão de escalas e repertório do ministério de louvor da ICABV.',
   icons: {
     icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
   },
   openGraph: {
     title: 'Louvor ICABV',
