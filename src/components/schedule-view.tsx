@@ -63,7 +63,6 @@ const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ 
 
     const imageToDataURL = useCallback(async (url: string) => {
       try {
-          // Use a proxy or server-side function if CORS is an issue. For now, try a direct fetch.
           const response = await fetch(url);
           if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
           const blob = await response.blob();
@@ -75,8 +74,6 @@ const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ 
           });
       } catch (error) {
           console.error('Failed to convert image to data URL for URL:', url, error);
-          // Fallback to the original URL if conversion fails.
-          // Note: This might still cause tainted canvas issues in some browsers.
           return url;
       }
     }, []);
@@ -90,8 +87,6 @@ const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ 
             await Promise.all(
                 allMembersInCard.map(async (member) => {
                     if (member.avatar) {
-                         // A simple proxy could be added here if CORS issues persist
-                         // e.g., `https://cors-anywhere.herokuapp.com/${member.avatar}`
                         imageMap[member.id] = await imageToDataURL(member.avatar);
                     }
                 })
@@ -103,7 +98,7 @@ const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ 
         };
 
         embedImages();
-    }, [schedule.id, members, onReady, imageToDataURL, leader, preacher, teamMembers]);
+    }, [schedule.id, members, leader, preacher, teamMembers, imageToDataURL, onReady]);
 
     if (isLoading) {
         return null;
@@ -221,8 +216,8 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     setIsPlaylistViewerOpen(true);
   }
 
-  const captureAndAct = useCallback(async (schedule: Schedule) => {
-    if (!exportCardRef.current) return;
+  const captureAndAct = useCallback(async () => {
+    if (!exportCardRef.current || !exportingSchedule) return;
     setIsCapturing(true);
 
     try {
@@ -232,7 +227,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       });
 
         const link = document.createElement('a');
-        const fileName = `repertorio_${schedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
+        const fileName = `repertorio_${exportingSchedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
         link.download = fileName;
         link.href = dataUrl;
         link.click();
@@ -245,7 +240,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       setIsCapturing(false);
       setExportingSchedule(null);
     }
-  }, [toast]);
+  }, [toast, exportingSchedule]);
 
   return (
     <>
@@ -345,17 +340,17 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                     )}
                     </CardContent>
                     <CardFooter className="p-2 flex flex-col gap-2">
-                      <div className="flex gap-2 w-full">
-                        <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/2">
-                          <Eye className="w-4 h-4 mr-2" />
-                          Visualizar
-                        </Button>
-                        <Button variant="outline" onClick={() => setExportingSchedule(schedule)} className="h-8 text-xs w-1/2" disabled={isCapturing}>
-                            {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                            Compartilhar
-                        </Button>
-                      </div>
-                      {can('manage:playlists') && (
+                        <div className="flex w-full gap-2">
+                            <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/2">
+                                <Eye className="w-4 h-4 mr-2" />
+                                Visualizar
+                            </Button>
+                            <Button variant="outline" onClick={() => setExportingSchedule(schedule)} className="h-8 text-xs w-1/2" disabled={isCapturing}>
+                                {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                                Compartilhar
+                            </Button>
+                        </div>
+                        {can('manage:playlists') && (
                         <Button onClick={() => handleOpenPlaylist(schedule)} className="h-8 text-xs w-full">
                             <ListMusic className="w-4 h-4 mr-2" />
                             Gerenciar Repertório
@@ -377,7 +372,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                 schedule={exportingSchedule} 
                 members={members} 
                 songs={songs}
-                onReady={() => captureAndAct(exportingSchedule)}
+                onReady={captureAndAct}
             />
         </div>
     )}
@@ -410,3 +405,5 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     </>
   );
 }
+
+    
