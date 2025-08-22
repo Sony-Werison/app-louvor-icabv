@@ -153,13 +153,13 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   return (
     <>
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
-      <DialogContent className="max-w-none w-full h-full p-0 gap-0 flex flex-col">
+      <DialogContent className="max-w-none w-full h-full p-0 gap-0 flex flex-col" style={{'--header-height': '6.5rem'} as React.CSSProperties}>
           <DialogHeader className="sr-only">
             <DialogTitle>Visualizador de Repertório</DialogTitle>
           </DialogHeader>
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <header className="flex-shrink-0 bg-background/95 backdrop-blur-sm z-20 border-b">
-                  <div className="h-24 sm:h-16 flex flex-col sm:flex-row items-center justify-between px-2 sm:px-4 gap-2 py-2">
+                  <div className="h-full flex flex-col sm:flex-row items-center justify-between px-2 sm:px-4 gap-2 py-2" style={{height: 'var(--header-height)'}}>
                       <div className="flex items-center gap-2 flex-1 min-w-0 w-full">
                           <SheetTrigger asChild>
                               <Button variant="destructive" size="sm">
@@ -215,7 +215,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                   </div>
               </header>
 
-              <main className="flex-grow min-h-0 relative group/main">
+              <main className="flex-grow min-h-0 relative group/main h-[calc(100vh-var(--header-height))]">
                   <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
                   {activeSong ? (
                       <div className="p-4 sm:p-8 pb-28" style={{ fontSize: `${fontSize}rem` }}>
@@ -238,7 +238,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                   {activeSong && (
                     <>
                         <div className="absolute bottom-4 left-4 z-10">
-                             <Button variant="ghost" size="icon" className="h-12 w-12 bg-background/60 backdrop-blur-sm rounded-full" onClick={() => navigateSong('prev')} disabled={activeSongIndex === 0}>
+                             <Button variant="destructive" size="icon" className="h-12 w-12 rounded-full" onClick={() => navigateSong('prev')} disabled={activeSongIndex === 0}>
                                 <SkipBack className="h-7 w-7 fill-current"/>
                             </Button>
                         </div>
@@ -272,7 +272,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                         )}
 
                         <div className="absolute bottom-4 right-4 z-10">
-                            <Button variant="ghost" size="icon" className="h-12 w-12 bg-background/60 backdrop-blur-sm rounded-full" onClick={() => navigateSong('next')} disabled={activeSongIndex === songsInPlaylist.length - 1}>
+                            <Button variant="destructive" size="icon" className="h-12 w-12 rounded-full" onClick={() => navigateSong('next')} disabled={activeSongIndex === songsInPlaylist.length - 1}>
                                 <SkipForward className="h-7 w-7 fill-current"/>
                             </Button>
                         </div>
