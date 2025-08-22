@@ -290,19 +290,19 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                         </div>
                     )}
                     </CardContent>
-                    <CardFooter className="p-2 flex flex-wrap gap-2">
-                      <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="w-full h-8 text-xs" disabled={schedule.playlist.length === 0}>
-                          <Eye className="mr-2 h-3 w-3" />
+                    <CardFooter className="p-2 flex flex-col gap-2">
+                      <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-full" disabled={schedule.playlist.length === 0}>
+                          <Eye />
                           Visualizar
                       </Button>
                       {can('manage:playlists') && (
                           <>
-                            <Button variant="outline" onClick={() => handleExport(schedule)} className="w-full h-8 text-xs" disabled={schedule.playlist.length === 0 || !!exportingScheduleId}>
-                                {exportingScheduleId === schedule.id ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <Download className="mr-2 h-3 w-3" />}
+                            <Button variant="outline" onClick={() => handleExport(schedule)} className="h-8 text-xs w-full" disabled={schedule.playlist.length === 0 || !!exportingScheduleId}>
+                                {exportingScheduleId === schedule.id ? <Loader2 className="animate-spin"/> : <Download/>}
                                 Exportar
                             </Button>
-                            <Button onClick={() => handleOpenPlaylist(schedule)} className="w-full h-8 text-xs">
-                                <ListMusic className="mr-2 h-3 w-3" />
+                            <Button onClick={() => handleOpenPlaylist(schedule)} variant="destructive" className="h-8 text-xs w-full">
+                                <ListMusic/>
                                 Gerenciar
                             </Button>
                           </>
