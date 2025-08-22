@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { Schedule, Member, Song } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -187,12 +187,11 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
   const { updateSchedulePlaylist } = useSchedule();
-  const { can, shareMessage } = useAuth();
+  const { can } = useAuth();
   const { toast } = useToast();
 
   const [exportingSchedule, setExportingSchedule] = useState<Schedule | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
-  const [isPreparingImage, setIsPreparingImage] = useState(false);
   const exportCardRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [canShare, setCanShare] = useState(false);
@@ -228,12 +227,19 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     setIsPlaylistViewerOpen(true);
   }
 
-  const captureAndAct = useCallback(async () => {
-    if (!exportCardRef.current || !exportingSchedule) {
+  const captureAndAct = useCallback(async (schedule: Schedule) => {
+    setExportingSchedule(schedule);
+    
+    // Give React time to render the ExportableCard
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    if (!exportCardRef.current) {
+      setExportingSchedule(null);
       setIsCapturing(false);
-      setIsPreparingImage(false);
       return;
     }
+    
+    setIsCapturing(true);
 
     try {
       const dataUrl = await htmlToImage.toPng(exportCardRef.current, {
@@ -241,18 +247,18 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
         pixelRatio: 2,
         skipFonts: true,
       });
-
+      
       if (isMobile && canShare) {
           const blob = await (await fetch(dataUrl)).blob();
           const file = new File([blob], `repertorio.png`, { type: blob.type });
 
           await navigator.share({
               files: [file],
-              title: `Repertório - ${exportingSchedule.name}`,
+              title: `Repertório - ${schedule.name}`,
           });
       } else {
         const link = document.createElement('a');
-        const fileName = `repertorio_${exportingSchedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
+        const fileName = `repertorio_${schedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
         link.download = fileName;
         link.href = dataUrl;
         link.click();
@@ -260,39 +266,21 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       }
       
     } catch (error: any) {
-        if (!error.message.includes('Share canceled')) {
+        if (error.name !== 'AbortError') { // Don't show error if user cancels share
             console.error(`Action failed:`, error);
             toast({ title: `Falha na Ação`, description: 'Não foi possível processar a imagem.', variant: 'destructive' });
         }
     } finally {
       setIsCapturing(false);
-      setIsPreparingImage(false);
       setExportingSchedule(null);
     }
-  }, [toast, exportingSchedule, isMobile, canShare, shareMessage]);
+  }, [toast, isMobile, canShare]);
   
-  useEffect(() => {
-      if (isPreparingImage) {
-          setIsCapturing(true);
-          // Give React time to render the ExportableCard before capturing
-          const timer = setTimeout(() => {
-              captureAndAct();
-          }, 100);
-          return () => clearTimeout(timer);
-      }
-  }, [isPreparingImage, captureAndAct]);
-
-
-  const handleShareClick = (schedule: Schedule) => {
-    if (isCapturing) return;
-    setExportingSchedule(schedule);
-    setIsPreparingImage(true);
-  };
   
   const weeklyRepeatedSongIds = useMemo(() => {
     const songCounts = new Map<string, number>();
     schedules.forEach(s => {
-      s.playlist.forEach(songId => {
+      (s.playlist || []).forEach(songId => {
         songCounts.set(songId, (songCounts.get(songId) || 0) + 1);
       });
     });
@@ -308,7 +296,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const getRepeatedIdsForSchedule = (currentScheduleId: string) => {
     const otherPlaylists = schedules
       .filter(s => s.id !== currentScheduleId)
-      .flatMap(s => s.playlist);
+      .flatMap(s => s.playlist || []);
     return new Set(otherPlaylists);
   };
 
@@ -323,12 +311,12 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                 <h2 className="text-xl sm:text-2xl font-bold mb-2">Nenhuma reunião esta semana</h2>
                 <p className="text-sm sm:text-base">Vá para a página "Escala Mensal" para planejar.</p>
             </div>
-         ) : (
+         ) :
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl">
             {schedules.map((schedule) => {
                 const leader = getMemberById(members, schedule.leaderId);
                 const preacher = getMemberById(members, schedule.preacherId);
-                const playlistSongs = schedule.playlist.map(id => getSongById(songs, id)).filter((s): s is Song => !!s);
+                const playlistSongs = (schedule.playlist || []).map(id => getSongById(songs, id)).filter((s): s is Song => !!s);
                 const teamMembers = (schedule.team?.multimedia || [])
                 .map(id => getMemberById(members, id))
                 .filter((m): m is Member => !!m);
@@ -412,39 +400,40 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                     )}
                     </CardContent>
                     <CardFooter className="p-2">
-                       <div className="w-full flex flex-col gap-2">
-                         <div className="flex w-full gap-2">
-                            <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs flex-1">
-                                <Eye className="w-4 h-4 mr-2" />
-                                Visualizar
-                            </Button>
-
-                             {can('manage:playlists') && (
-                                <Button variant="outline" onClick={() => handleShareClick(schedule)} className="h-8 text-xs flex-1" disabled={isCapturing || !hasPlaylist}>
-                                    {isCurrentlyExporting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                    {isMobile && canShare ? <Share2 className="w-4 h-4 mr-2" /> : <Download className="w-4 h-4 mr-2" />}
-                                    {isMobile && canShare ? 'Compartilhar' : 'Baixar PNG'}
+                        <div className="flex flex-col gap-2 w-full">
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="flex-1 h-8 text-xs w-1/2">
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    Visualizar
                                 </Button>
-                             )}
-                         </div>
-                       
-                       {can('manage:playlists') && (
-                         <Button onClick={() => handleOpenPlaylist(schedule)} className="h-8 text-xs w-full">
-                            <ListMusic className="w-4 h-4 mr-2" />
-                            Gerenciar
-                         </Button>
-                       )}
-                       </div>
+                                {can('manage:playlists') && (
+                                    <Button 
+                                        variant="outline"
+                                        onClick={() => captureAndAct(schedule)} 
+                                        className="flex-1 h-8 text-xs w-1/2" 
+                                        disabled={isCapturing || !hasPlaylist}>
+                                        {isCurrentlyExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : (isMobile && canShare ? <Share2 className="w-4 h-4 mr-2" /> : <Download className="w-4 h-4 mr-2" />)}
+                                        {isMobile && canShare ? 'Compartilhar' : 'Baixar PNG'}
+                                    </Button>
+                                )}
+                            </div>
+                            {can('manage:playlists') && (
+                                <Button onClick={() => handleOpenPlaylist(schedule)} className="w-full h-8 text-xs">
+                                    <ListMusic className="w-4 h-4 mr-2" />
+                                    Gerenciar
+                                </Button>
+                            )}
+                        </div>
                     </CardFooter>
                 </Card>
                 );
             })}
             </div>
-        )}
+        }
         </TooltipProvider>
     </div>
     
-    {isPreparingImage && exportingSchedule && (
+    {exportingSchedule && (
         <div className="fixed top-0 left-[-2000px] -z-50 opacity-100 dark">
             <ExportableCard 
                 ref={exportCardRef}
