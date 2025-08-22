@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
 import { PlaylistViewer } from '@/components/playlist-viewer';
-import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2 } from 'lucide-react';
+import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2, MessageSquare } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useSchedule } from '@/context/schedule-context';
 import { Separator } from './ui/separator';
@@ -48,7 +48,6 @@ type ExportableCardProps = {
     songs: Song[];
 };
 
-// Componente para o layout do PNG
 const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ schedule, members, songs }, ref) => {
     const leader = getMemberById(members, schedule.leaderId);
     const preacher = getMemberById(members, schedule.preacherId);
@@ -136,7 +135,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
-  const { updateSchedulePlaylist } = useSchedule();
+  const { updateSchedulePlaylist, shareMessage } = useSchedule();
   const { can } = useAuth();
   const { toast } = useToast();
 
@@ -169,7 +168,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     setIsPlaylistViewerOpen(true);
   }
 
-   const handleShareClick = (schedule: Schedule) => {
+  const handleDownloadClick = (schedule: Schedule) => {
     if (isCapturing) return;
     setExportingSchedule(schedule);
     setIsCapturing(true);
@@ -205,6 +204,25 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     }
   }, [exportingSchedule, toast]);
 
+  const handleWhatsAppShare = (schedule: Schedule) => {
+    const scheduleNameLower = schedule.name.toLowerCase();
+    let dayDescription = schedule.name;
+    if (scheduleNameLower.includes('manhã')) {
+        dayDescription = "manhã";
+    } else if (scheduleNameLower.includes('noite')) {
+        dayDescription = "noite";
+    }
+
+    const dateText = format(schedule.date, "dd/MM/yyyy", { locale: ptBR });
+    
+    const message = shareMessage
+      .replace(/\[PERIODO\]/g, dayDescription)
+      .replace(/\[DATA\]/g, dateText);
+    
+    const whatsappLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappLink, '_blank');
+  };
+
   useEffect(() => {
     if (isCapturing) {
       const timer = setTimeout(() => {
@@ -236,6 +254,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                 .filter((m): m is Member => !!m);
                 
                 const isCurrentlyExporting = exportingSchedule?.id === schedule.id && isCapturing;
+                const hasPlaylist = playlistSongs.length > 0;
 
                 return (
                 <Card key={schedule.id} className="flex flex-col relative">
@@ -313,22 +332,32 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                     )}
                     </CardContent>
                     <CardFooter className="p-2 flex flex-col gap-2">
-                        <div className="flex w-full gap-2">
-                          <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/2">
+                       <div className="flex w-full gap-2">
+                          <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-full">
                               <Eye className="w-4 h-4 mr-2" />
                               Visualizar
                           </Button>
-                          <Button variant="outline" onClick={() => handleShareClick(schedule)} className="h-8 text-xs w-1/2" disabled={isCapturing}>
-                              {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                              Compartilhar
-                          </Button>
-                        </div>
-                        {can('manage:playlists') && (
-                        <Button onClick={() => handleOpenPlaylist(schedule)} className="h-8 text-xs w-full">
-                            <ListMusic className="w-4 h-4 mr-2" />
-                            Gerenciar Repertório
-                        </Button>
-                        )}
+                           {can('manage:playlists') && (
+                            <Button variant="outline" onClick={() => handleWhatsAppShare(schedule)} className="h-8 text-xs w-full" disabled={!hasPlaylist}>
+                                <MessageSquare className="w-4 h-4 mr-2" />
+                                WhatsApp
+                            </Button>
+                           )}
+                       </div>
+
+                       {can('manage:playlists') && (
+                         <div className="flex w-full gap-2">
+                             <Button variant="outline" onClick={() => handleDownloadClick(schedule)} className="h-8 text-xs w-1/2" disabled={isCapturing || !hasPlaylist}>
+                                {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                                Baixar PNG
+                             </Button>
+                             <Button onClick={() => handleOpenPlaylist(schedule)} className="h-8 text-xs w-1/2">
+                                <ListMusic className="w-4 h-4 mr-2" />
+                                Gerenciar
+                             </Button>
+                         </div>
+                       )}
+
                     </CardFooter>
                 </Card>
                 );
