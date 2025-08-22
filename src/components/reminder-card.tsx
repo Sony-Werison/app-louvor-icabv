@@ -19,21 +19,17 @@ const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
     width="24"
     height="24"
     viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
+    fill="currentColor"
     {...props}
   >
-    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+    <path d="M16.75 13.96c.25.13.41.2.46.3.06.11.04.61-.21 1.18-.2.56-1.24 1.1-1.7 1.12-.46.02-.83.02-1.29-.15-.45-.17-1.02-.35-1.92-1.12s-1.46-1.52-1.8-2.03c-.34-.52-.73-1.12-.73-1.48 0-.36.22-.57.42-.77.2-.2.42-.28.56-.28.15,0,.28,0,.38.01.1.01.13.01.21.21.08.2.23.68.25.73.02.05.03.1.01.18-.02.08-.05.11-.1.16-.05.05-.1.07-.15.11-.05.05-.1.06-.12.1a.53.53,0,0,0-.08.18c-.01.07.02.13.06.19.23.35.92,1.38,1.81,2.05.25.19.44.28.58.32.14.04.28.01.38-.05.1-.06.45-.53.57-.72.12-.19.24-.16.42-.11.18.05.95.45,1.11.52.16.07.26.1.3.15.04.05.04.12-.02.24Z" />
+    <path d="M20.1 3.9C17.9 1.7 15.1 1 12 1 5.9 1 1 5.9 1 12c0 2.1.6 4.1 1.7 5.8L1 23l5.3-1.4c1.6.9 3.5 1.4 5.7 1.4h.1c6.1 0 11-4.9 11-11 0-3.1-1.3-5.9-3-8.1Zm-8.1 17.9c-1.9 0-3.8-.6-5.3-1.6l-.4-.2-4 1.1.9-3.8-.2-.4c-1-1.6-1.6-3.5-1.6-5.6 0-5 4-9 9-9s9 4 9 9-4 9-9 9Z" />
   </svg>
 );
 
 
 export function ReminderCard({ schedules, members }: ReminderCardProps) {
   const { can, whatsappMessage, aberturaPassword } = useAuth();
-  if (!can('manage:playlists')) return null;
   
   const getMemberById = (id: string) => members.find(m => m.id === id);
 
@@ -69,12 +65,9 @@ export function ReminderCard({ schedules, members }: ReminderCardProps) {
 
   return (
     <Card className="bg-amber-500/10 border-amber-500/20">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <BellRing className="w-6 h-6 text-amber-500" />
-          <CardTitle className="text-lg text-amber-200">Lembretes Pendentes</CardTitle>
-        </div>
-        <CardDescription className="text-amber-300/80 pl-9">
+      <CardHeader className="flex-row items-center gap-3">
+        <BellRing className="w-6 h-6 text-amber-500 shrink-0" />
+        <CardDescription className="text-amber-300/80">
           Os seguintes membros ainda não montaram o repertório da semana:
         </CardDescription>
       </CardHeader>
@@ -96,10 +89,12 @@ export function ReminderCard({ schedules, members }: ReminderCardProps) {
                         <p className="text-sm text-muted-foreground">{schedule.name}</p>
                     </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => handleRemindClick(leader, schedule)} disabled={!leader.phone}>
-                  <WhatsappIcon className="mr-2 h-4 w-4 text-green-500" />
-                  Lembrar
-                </Button>
+                {can('manage:settings') && (
+                    <Button size="sm" variant="outline" onClick={() => handleRemindClick(leader, schedule)} disabled={!leader.phone}>
+                      <WhatsappIcon className="mr-2 h-4 w-4 text-green-500" />
+                      Lembrar
+                    </Button>
+                )}
               </div>
             );
           })}
