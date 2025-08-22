@@ -18,12 +18,17 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ListMusic, Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus } from 'lucide-react';
+import { ListMusic, Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Share2, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { getTransposedKey } from '@/lib/transpose';
+import { useAuth } from '@/context/auth-context';
+import * as htmlToImage from 'html-to-image';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface PlaylistViewerProps {
   schedule: Schedule;
@@ -50,6 +55,12 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   const [scrollSpeed, setScrollSpeed] = useState(5); // 1 to 10
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [isSharing, setIsSharing] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const { can } = useAuth();
+
 
   const songsInPlaylist = schedule.playlist.map(id => songs.find(s => s.id === id)).filter((s): s is Song => !!s);
   const activeSong = songsInPlaylist.find(s => s.id === activeSongId);
@@ -147,10 +158,83 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
       }
   }
   
+    const handleShare = async () => {
+        if (!navigator.share) {
+            toast({
+                title: "Compartilhamento não suportado",
+                description: "Seu navegador não suporta o compartilhamento direto de arquivos. Tente baixar a imagem.",
+                variant: 'destructive'
+            });
+            return;
+        }
+
+        setIsSharing(true);
+        try {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            if (!exportRef.current) {
+                throw new Error("Elemento de exportação não encontrado.");
+            }
+
+            const dataUrl = await htmlToImage.toPng(exportRef.current, { 
+                quality: 1, 
+                pixelRatio: 2,
+                backgroundColor: '#121212',
+                skipFonts: true,
+            });
+
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File([blob], 'repertorio.png', { type: 'image/png' });
+
+            await navigator.share({
+                title: `Repertório - ${schedule.name}`,
+                text: `Repertório para ${schedule.name}`,
+                files: [file],
+            });
+
+        } catch (error) {
+            if ((error as Error).name !== 'AbortError') {
+                console.error("Erro ao compartilhar", error);
+                toast({
+                    title: "Erro ao compartilhar",
+                    description: "Não foi possível compartilhar a imagem.",
+                    variant: 'destructive'
+                });
+            }
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
+
   const transposedKey = activeSong ? getTransposedKey(activeSong.key, transpose) : null;
   const zoomPercentage = Math.round((fontSize / DEFAULT_FONT_SIZE) * 100);
 
+  const PlaylistExportContent = () => (
+    <div className="bg-background text-foreground p-8">
+        <h1 className="text-3xl font-bold mb-2 capitalize">{schedule.name}</h1>
+        <p className="text-lg text-muted-foreground mb-8 capitalize">
+            {format(schedule.date, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+        </p>
+        <div className="space-y-4">
+            {songsInPlaylist.map((song, index) => (
+                <div key={song.id} className="flex items-baseline gap-4">
+                    <span className="text-2xl font-bold text-muted-foreground">{index + 1}.</span>
+                    <div>
+                        <h2 className="text-2xl font-semibold flex items-center gap-3">
+                           {song.title}
+                           {song.key && <Badge variant="outline" className="text-xl px-3 py-1">{song.key}</Badge>}
+                        </h2>
+                        <p className="text-xl text-muted-foreground">{song.artist}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-none w-full h-full p-0 gap-0 flex flex-col">
           <DialogHeader className="sr-only">
@@ -174,6 +258,12 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                           </div>
                       </div>
                       <div className="w-full sm:w-auto flex justify-between sm:justify-end items-center gap-2">
+                        {can('manage:playlists') && navigator.share && (
+                            <Button size="sm" variant="outline" onClick={handleShare} disabled={isSharing}>
+                                {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Share2 className="mr-2 h-4 w-4"/>}
+                                {isSharing ? 'Gerando...' : 'PNG'}
+                            </Button>
+                        )}
                         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
                           <TabsList>
                               <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>
@@ -306,5 +396,12 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
         </Sheet>
       </DialogContent>
     </Dialog>
+     {/* Hidden element for export */}
+     <div className="fixed top-0 left-0 -z-50 opacity-0 dark w-[800px]" >
+        <div ref={exportRef}>
+            <PlaylistExportContent />
+        </div>
+     </div>
+    </>
   );
 }
