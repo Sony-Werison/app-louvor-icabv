@@ -188,10 +188,9 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
-  const { updateSchedulePlaylist, shareMessage: shareMessageTemplate } = useSchedule();
+  const { updateSchedulePlaylist } = useSchedule();
   const { can } = useAuth();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
 
   const [exportingSchedule, setExportingSchedule] = useState<Schedule | null>(null);
   const exportCardRef = useRef<HTMLDivElement>(null);
@@ -222,7 +221,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     setIsPlaylistViewerOpen(true);
   }
 
- const captureAndAct = useCallback(async (schedule: Schedule) => {
+  const captureAndAct = useCallback(async (schedule: Schedule) => {
     if (!exportCardRef.current) return;
     setIsCapturing(true);
 
@@ -230,8 +229,6 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       const dataUrl = await htmlToImage.toPng(exportCardRef.current, {
         quality: 1,
         pixelRatio: 2,
-        // The options below help with external images but might require a proxy for strict CORS policies.
-        // For now, the direct fetch in ExportableCard should handle it.
       });
 
         const link = document.createElement('a');
@@ -254,13 +251,13 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     <>
     <div className="space-y-6">
         <TooltipProvider>
-        {schedules.length === 0 ? 
+        {schedules.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground bg-card border rounded-lg p-8 sm:p-12 h-[calc(100vh-10rem)]">
                 <Users className="w-12 h-12 sm:w-16 sm:h-16 mb-4" />
                 <h2 className="text-xl sm:text-2xl font-bold mb-2">Nenhuma reunião esta semana</h2>
                 <p className="text-sm sm:text-base">Vá para a página "Escala Mensal" para planejar.</p>
             </div>
-         : 
+         ) :
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl">
             {schedules.map((schedule) => {
                 const leader = getMemberById(members, schedule.leaderId);
@@ -349,11 +346,11 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                     </CardContent>
                     <CardFooter className="p-2 flex flex-col gap-2">
                       <div className="flex gap-2 w-full">
-                        <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs flex-1">
+                        <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/2">
                           <Eye className="w-4 h-4 mr-2" />
                           Visualizar
                         </Button>
-                        <Button variant="outline" onClick={() => setExportingSchedule(schedule)} className="h-8 text-xs flex-1" disabled={playlistSongs.length === 0 || isCapturing}>
+                        <Button variant="outline" onClick={() => setExportingSchedule(schedule)} className="h-8 text-xs w-1/2" disabled={isCapturing}>
                             {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
                             Compartilhar
                         </Button>
