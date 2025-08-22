@@ -318,7 +318,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                               <Eye className="w-4 h-4 mr-2" />
                               Visualizar
                           </Button>
-                          <Button onClick={() => handleShareClick(schedule)} className="h-8 text-xs w-1/2" disabled={isCapturing}>
+                          <Button variant="outline" onClick={() => handleShareClick(schedule)} className="h-8 text-xs w-1/2" disabled={isCapturing}>
                               {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
                               Compartilhar
                           </Button>
