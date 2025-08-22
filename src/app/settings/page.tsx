@@ -4,7 +4,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useForm as useReminderForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -12,8 +12,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription as FormDesc } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
-const formSchema = z.object({
+const passwordFormSchema = z.object({
   currentAdminPassword: z.string().optional(),
   newAdminPassword: z.string().optional(),
   currentAberturaPassword: z.string().optional(),
@@ -34,13 +36,18 @@ const formSchema = z.object({
     path: ['newAberturaPassword']
 });
 
+const reminderFormSchema = z.object({
+    message: z.string().min(10, { message: 'A mensagem deve ter pelo menos 10 caracteres.' }),
+});
+
 
 export default function SettingsPage() {
-  const { role, can, updatePassword } = useAuth();
+  const { role, can, updatePassword, whatsappMessage, updateWhatsappMessage } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const passwordForm = useForm<z.infer<typeof passwordFormSchema>>({
+    resolver: zodResolver(passwordFormSchema),
     defaultValues: {
       currentAdminPassword: '',
       newAdminPassword: '',
@@ -48,35 +55,56 @@ export default function SettingsPage() {
       newAberturaPassword: '',
     },
   });
+  
+  const reminderForm = useReminderForm<z.infer<typeof reminderFormSchema>>({
+      resolver: zodResolver(reminderFormSchema),
+      defaultValues: {
+          message: whatsappMessage || '',
+      }
+  });
 
   useEffect(() => {
     if (!can('manage:settings')) {
       router.push('/');
     }
   }, [role, can, router]);
+  
+  useEffect(() => {
+    reminderForm.reset({ message: whatsappMessage });
+  }, [whatsappMessage, reminderForm]);
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+
+  const onPasswordSubmit = async (values: z.infer<typeof passwordFormSchema>) => {
     let changed = false;
     if (values.currentAdminPassword && values.newAdminPassword) {
         const adminSuccess = await updatePassword('admin', values.currentAdminPassword, values.newAdminPassword);
         if(adminSuccess) {
-            form.resetField('currentAdminPassword');
-            form.resetField('newAdminPassword');
+            passwordForm.resetField('currentAdminPassword');
+            passwordForm.resetField('newAdminPassword');
             changed = true;
         }
     }
     if (values.currentAberturaPassword && values.newAberturaPassword) {
         const aberturaSuccess = await updatePassword('abertura', values.currentAberturaPassword, values.newAberturaPassword);
         if(aberturaSuccess) {
-            form.resetField('currentAberturaPassword');
-            form.resetField('newAberturaPassword');
+            passwordForm.resetField('currentAberturaPassword');
+            passwordForm.resetField('newAberturaPassword');
             changed = true;
         }
     }
     if(!changed) {
-        form.setError('root', { message: 'Nenhuma alteração foi feita. Verifique as senhas atuais.'})
+        passwordForm.setError('root', { message: 'Nenhuma alteração foi feita. Verifique as senhas atuais.'})
     }
   };
+  
+  const onReminderSubmit = async (values: z.infer<typeof reminderFormSchema>) => {
+      const success = await updateWhatsappMessage(values.message);
+      if (success) {
+          toast({ title: 'Sucesso!', description: 'A mensagem de lembrete do WhatsApp foi atualizada.'});
+      } else {
+          toast({ title: 'Erro', description: 'Não foi possível salvar a mensagem.', variant: 'destructive'});
+      }
+  }
   
   if (!can('manage:settings')) {
     return null;
@@ -84,8 +112,8 @@ export default function SettingsPage() {
 
   return (
     <div className="p-4 md:p-6">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-headline font-bold mb-4">Configurações</h1>
+      <div className="max-w-2xl mx-auto space-y-8">
+        <h1 className="text-2xl font-headline font-bold">Configurações</h1>
         <Card>
           <CardHeader>
             <CardTitle>Gerenciamento de Senhas</CardTitle>
@@ -94,12 +122,12 @@ export default function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <Form {...passwordForm}>
+              <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-8">
                 <div className="space-y-4">
                     <h3 className="font-semibold">Perfil Administrador</h3>
                      <FormField
-                        control={form.control}
+                        control={passwordForm.control}
                         name="currentAdminPassword"
                         render={({ field }) => (
                             <FormItem>
@@ -112,7 +140,7 @@ export default function SettingsPage() {
                         )}
                         />
                     <FormField
-                    control={form.control}
+                    control={passwordForm.control}
                     name="newAdminPassword"
                     render={({ field }) => (
                         <FormItem>
@@ -131,7 +159,7 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                      <h3 className="font-semibold">Perfil Abertura</h3>
                     <FormField
-                    control={form.control}
+                    control={passwordForm.control}
                     name="currentAberturaPassword"
                     render={({ field }) => (
                         <FormItem>
@@ -144,7 +172,7 @@ export default function SettingsPage() {
                     )}
                     />
                     <FormField
-                    control={form.control}
+                    control={passwordForm.control}
                     name="newAberturaPassword"
                     render={({ field }) => (
                         <FormItem>
@@ -158,18 +186,54 @@ export default function SettingsPage() {
                     />
                 </div>
 
-                {form.formState.errors.root && (
-                    <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
+                {passwordForm.formState.errors.root && (
+                    <p className="text-sm font-medium text-destructive">{passwordForm.formState.errors.root.message}</p>
                 )}
 
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={form.formState.isSubmitting}>
-                        Salvar Alterações
+                    <Button type="submit" disabled={passwordForm.formState.isSubmitting}>
+                        Salvar Alterações de Senha
                     </Button>
                 </div>
               </form>
             </Form>
           </CardContent>
+        </Card>
+        
+        <Card>
+            <CardHeader>
+                <CardTitle>Mensagem de Lembrete</CardTitle>
+                <CardDescription>
+                    Personalize a mensagem automática enviada via WhatsApp para os membros de abertura.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Form {...reminderForm}>
+                    <form onSubmit={reminderForm.handleSubmit(onReminderSubmit)} className="space-y-4">
+                        <FormField
+                            control={reminderForm.control}
+                            name="message"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Template da Mensagem</FormLabel>
+                                <FormControl>
+                                    <Textarea rows={10} {...field} />
+                                </FormControl>
+                                <FormDesc>
+                                    Use as variáveis: `[NOME]`, `[PERIODO]`.
+                                </FormDesc>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <div className="flex justify-end">
+                            <Button type="submit" disabled={reminderForm.formState.isSubmitting}>
+                                Salvar Mensagem
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
+            </CardContent>
         </Card>
       </div>
     </div>

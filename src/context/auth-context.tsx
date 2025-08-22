@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Role } from '@/types';
-import { fetchPasswords, savePasswords } from '@/lib/blob-storage';
+import { fetchPasswords, savePasswords, fetchWhatsappMessage, saveWhatsappMessage } from '@/lib/blob-storage';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -14,6 +14,8 @@ interface AuthContextType {
   switchRole: (role: Role) => void;
   can: (permission: Permission) => boolean;
   updatePassword: (roleToUpdate: Role, currentPassword: string, newPassword: string) => Promise<boolean>;
+  whatsappMessage: string;
+  updateWhatsappMessage: (newMessage: string) => Promise<boolean>;
   isLoading: boolean;
 }
 
@@ -30,24 +32,26 @@ const rolePermissions: Record<Role, Permission[]> = {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<Role | null>(null);
   const [rolePasswords, setRolePasswords] = useState<Record<Role, string> | null>(null);
+  const [whatsappMessage, setWhatsappMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const isAuthenticated = !!role;
 
-  const loadPasswords = useCallback(async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
-    const passwords = await fetchPasswords();
+    const [passwords, message] = await Promise.all([fetchPasswords(), fetchWhatsappMessage()]);
     setRolePasswords(passwords);
+    setWhatsappMessage(message);
     setIsLoading(false);
   }, []);
 
   useEffect(() => {
-    loadPasswords();
-  }, [loadPasswords]);
+    loadData();
+  }, [loadData]);
 
   useEffect(() => {
-    if (isLoading) return; // Wait for passwords to be loaded
+    if (isLoading) return; // Wait for data to be loaded
 
     const savedRole = sessionStorage.getItem('userRole') as Role;
     if (savedRole && rolePermissions[savedRole]) {
@@ -114,6 +118,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const updateWhatsappMessage = async (newMessage: string) => {
+    if (role !== 'admin') {
+      toast({ title: 'Acesso Negado', description: 'Você não tem permissão para alterar a mensagem.', variant: 'destructive'});
+      return false;
+    }
+    try {
+      await saveWhatsappMessage(newMessage);
+      setWhatsappMessage(newMessage);
+      return true;
+    } catch (error) {
+      console.error('Failed to update WhatsApp message:', error);
+      return false;
+    }
+  };
+
   const value = {
       role, 
       isAuthenticated, 
@@ -122,6 +141,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       switchRole, 
       can,
       updatePassword,
+      whatsappMessage,
+      updateWhatsappMessage,
       isLoading: isLoading || !role, // Consider loading until role is also set
   };
 
