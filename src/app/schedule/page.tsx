@@ -89,6 +89,23 @@ export default function SchedulePage() {
   const schedulesWithEmptyPlaylists = useMemo(() => 
     weeklySchedules.filter(schedule => schedule.playlist.length === 0)
   , [weeklySchedules]);
+  
+  const weeklyRepeatedSongIds = useMemo(() => {
+    const songCounts = new Map<string, number>();
+    weeklySchedules.forEach(s => {
+        s.playlist.forEach(songId => {
+            songCounts.set(songId, (songCounts.get(songId) || 0) + 1);
+        });
+    });
+    
+    const repeated = new Set<string>();
+    for (const [songId, count] of songCounts.entries()) {
+        if (count > 1) {
+            repeated.add(songId);
+        }
+    }
+    return repeated;
+  }, [weeklySchedules]);
 
 
   return (
@@ -99,7 +116,12 @@ export default function SchedulePage() {
           <ReminderCard schedules={schedulesWithEmptyPlaylists} members={members} />
       )}
       
-      <ScheduleView initialSchedules={weeklySchedules} members={members} songs={songs} />
+      <ScheduleView 
+        initialSchedules={weeklySchedules} 
+        members={members} 
+        songs={songs} 
+        weeklyRepeatedSongIds={weeklyRepeatedSongIds}
+      />
     </div>
   );
 }
