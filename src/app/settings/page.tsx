@@ -4,7 +4,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { useForm, useForm as useReminderForm } from 'react-hook-form';
+import { useForm, useForm as useReminderForm, useForm as useShareForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -36,13 +36,13 @@ const passwordFormSchema = z.object({
     path: ['newAberturaPassword']
 });
 
-const reminderFormSchema = z.object({
+const textFormSchema = z.object({
     message: z.string().min(10, { message: 'A mensagem deve ter pelo menos 10 caracteres.' }),
 });
 
 
 export default function SettingsPage() {
-  const { role, can, updatePassword, whatsappMessage, updateWhatsappMessage } = useAuth();
+  const { role, can, updatePassword, whatsappMessage, updateWhatsappMessage, shareMessage, updateShareMessage } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -56,10 +56,17 @@ export default function SettingsPage() {
     },
   });
   
-  const reminderForm = useReminderForm<z.infer<typeof reminderFormSchema>>({
-      resolver: zodResolver(reminderFormSchema),
+  const reminderForm = useReminderForm<z.infer<typeof textFormSchema>>({
+      resolver: zodResolver(textFormSchema),
       defaultValues: {
           message: whatsappMessage || '',
+      }
+  });
+
+  const shareForm = useShareForm<z.infer<typeof textFormSchema>>({
+      resolver: zodResolver(textFormSchema),
+      defaultValues: {
+          message: shareMessage || '',
       }
   });
 
@@ -72,6 +79,10 @@ export default function SettingsPage() {
   useEffect(() => {
     reminderForm.reset({ message: whatsappMessage });
   }, [whatsappMessage, reminderForm]);
+
+  useEffect(() => {
+    shareForm.reset({ message: shareMessage });
+  }, [shareMessage, shareForm]);
 
 
   const onPasswordSubmit = async (values: z.infer<typeof passwordFormSchema>) => {
@@ -97,10 +108,19 @@ export default function SettingsPage() {
     }
   };
   
-  const onReminderSubmit = async (values: z.infer<typeof reminderFormSchema>) => {
+  const onReminderSubmit = async (values: z.infer<typeof textFormSchema>) => {
       const success = await updateWhatsappMessage(values.message);
       if (success) {
           toast({ title: 'Sucesso!', description: 'A mensagem de lembrete do WhatsApp foi atualizada.'});
+      } else {
+          toast({ title: 'Erro', description: 'Não foi possível salvar a mensagem.', variant: 'destructive'});
+      }
+  }
+
+  const onShareSubmit = async (values: z.infer<typeof textFormSchema>) => {
+      const success = await updateShareMessage(values.message);
+      if (success) {
+          toast({ title: 'Sucesso!', description: 'A mensagem de compartilhamento foi atualizada.'});
       } else {
           toast({ title: 'Erro', description: 'Não foi possível salvar a mensagem.', variant: 'destructive'});
       }
@@ -202,7 +222,7 @@ export default function SettingsPage() {
         
         <Card>
             <CardHeader>
-                <CardTitle>Mensagem de Lembrete</CardTitle>
+                <CardTitle>Mensagem de Lembrete (WhatsApp)</CardTitle>
                 <CardDescription>
                     Personalize a mensagem automática enviada via WhatsApp para os membros de abertura.
                 </CardDescription>
@@ -228,13 +248,50 @@ export default function SettingsPage() {
                         />
                          <div className="flex justify-end">
                             <Button type="submit" disabled={reminderForm.formState.isSubmitting}>
-                                Salvar Mensagem
+                                Salvar Mensagem de Lembrete
                             </Button>
                         </div>
                     </form>
                 </Form>
             </CardContent>
         </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Mensagem de Compartilhamento</CardTitle>
+                <CardDescription>
+                    Personalize a mensagem padrão que acompanha a imagem ao usar a função "Compartilhar".
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Form {...shareForm}>
+                    <form onSubmit={shareForm.handleSubmit(onShareSubmit)} className="space-y-4">
+                        <FormField
+                            control={shareForm.control}
+                            name="message"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Template da Mensagem</FormLabel>
+                                <FormControl>
+                                    <Textarea rows={5} {...field} />
+                                </FormControl>
+                                <FormDesc>
+                                    Use as variáveis: `[PERIODO]`, `[DATA]`.
+                                </FormDesc>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <div className="flex justify-end">
+                            <Button type="submit" disabled={shareForm.formState.isSubmitting}>
+                                Salvar Mensagem de Compartilhamento
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
+
       </div>
     </div>
   );

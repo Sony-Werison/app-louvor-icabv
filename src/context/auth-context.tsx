@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Role } from '@/types';
-import { fetchPasswords, savePasswords, fetchWhatsappMessage, saveWhatsappMessage } from '@/lib/blob-storage';
+import { fetchPasswords, savePasswords, fetchWhatsappMessage, saveWhatsappMessage, fetchShareMessage, saveShareMessage } from '@/lib/blob-storage';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -16,6 +16,8 @@ interface AuthContextType {
   updatePassword: (roleToUpdate: Role, currentPassword: string, newPassword: string) => Promise<boolean>;
   whatsappMessage: string;
   updateWhatsappMessage: (newMessage: string) => Promise<boolean>;
+  shareMessage: string;
+  updateShareMessage: (newMessage: string) => Promise<boolean>;
   aberturaPassword: string;
   isLoading: boolean;
 }
@@ -34,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<Role | null>(null);
   const [rolePasswords, setRolePasswords] = useState<Record<Role, string> | null>(null);
   const [whatsappMessage, setWhatsappMessage] = useState('');
+  const [shareMessage, setShareMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -41,7 +44,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
-    let [passwords, message] = await Promise.all([fetchPasswords(), fetchWhatsappMessage()]);
+    let [passwords, whatsAppMsg, shareMsg] = await Promise.all([
+        fetchPasswords(), 
+        fetchWhatsappMessage(),
+        fetchShareMessage()
+    ]);
     
     // --- Data Migration for passwords ---
     let passwordsModified = false;
@@ -61,7 +68,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // --- End of Migration ---
 
     setRolePasswords(passwords);
-    setWhatsappMessage(message);
+    setWhatsappMessage(whatsAppMsg);
+    setShareMessage(shareMsg);
     setIsLoading(false);
   }, []);
 
@@ -152,6 +160,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateShareMessage = async (newMessage: string) => {
+    if (role !== 'admin') {
+      toast({ title: 'Acesso Negado', description: 'Você não tem permissão para alterar a mensagem.', variant: 'destructive'});
+      return false;
+    }
+    try {
+      await saveShareMessage(newMessage);
+      setShareMessage(newMessage);
+      return true;
+    } catch (error) {
+      console.error('Failed to update share message:', error);
+      return false;
+    }
+  }
+
   const value = {
       role, 
       isAuthenticated, 
@@ -162,6 +185,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       updatePassword,
       whatsappMessage,
       updateWhatsappMessage,
+      shareMessage,
+      updateShareMessage,
       aberturaPassword: rolePasswords?.abertura || '',
       isLoading: isLoading || !role, // Consider loading until role is also set
   };

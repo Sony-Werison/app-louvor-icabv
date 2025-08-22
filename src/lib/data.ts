@@ -148,6 +148,9 @@ Para montar o repertório, siga estes passos:
 
 Não se esqueça de enviar o quanto antes ao grupo de louvor. Obrigado!`;
 
+export const shareMessage: string = `Segue o repertório para o culto de [PERIODO] - [DATA]. Bênçãos!`;
+
+
 const getSundays = (date: Date): Date[] => {
     const start = startOfMonth(date);
     const end = endOfMonth(date);

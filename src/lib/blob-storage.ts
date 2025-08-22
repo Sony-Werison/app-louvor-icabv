@@ -7,6 +7,7 @@ import {
   members as initialMembers,
   passwords as initialPasswords,
   whatsappMessage as initialWhatsappMessage,
+  shareMessage as initialShareMessage,
 } from './data';
 import type { Member, Song, MonthlySchedule, Role } from '@/types';
 
@@ -17,6 +18,7 @@ const KEYS = {
   SCHEDULES: 'monthlySchedules.json',
   PASSWORDS: 'passwords.json',
   WHATSAPP_MESSAGE: 'whatsappMessage.json',
+  SHARE_MESSAGE: 'shareMessage.json',
 };
 
 // --- Helper Functions ---
@@ -87,6 +89,10 @@ export async function fetchWhatsappMessage(): Promise<string> {
     return await fetchData<string>(KEYS.WHATSAPP_MESSAGE, initialWhatsappMessage);
 }
 
+export async function fetchShareMessage(): Promise<string> {
+    return await fetchData<string>(KEYS.SHARE_MESSAGE, initialShareMessage);
+}
+
 
 // --- Data Mutation Functions ---
 
@@ -113,4 +119,8 @@ export async function savePasswords(passwords: Record<Role, string>): Promise<vo
 
 export async function saveWhatsappMessage(message: string): Promise<void> {
     await saveData(KEYS.WHATSAPP_MESSAGE, message);
+}
+
+export async function saveShareMessage(message: string): Promise<void> {
+    await saveData(KEYS.SHARE_MESSAGE, message);
 }

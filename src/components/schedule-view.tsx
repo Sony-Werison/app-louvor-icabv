@@ -61,24 +61,33 @@ const imageToDataURL = async (url: string) => {
 
 
 // Componente para o layout do PNG
-const ExportableCard = React.forwardRef<HTMLDivElement, { schedule: Schedule, members: Member[], songs: Song[], shareMessage: string }>(({ schedule, members, songs, shareMessage }, ref) => {
+const ExportableCard = React.forwardRef<HTMLDivElement, { schedule: Schedule, members: Member[], songs: Song[], onReady: (isReady: boolean) => void }>(({ schedule, members, songs, onReady }, ref) => {
     const [membersWithDataImages, setMembersWithDataImages] = useState<Member[]>([]);
     
     useEffect(() => {
+        let isCancelled = false;
+        onReady(false);
         const convertImages = async () => {
             const updatedMembers = await Promise.all(
                 members.map(async member => {
-                    if (member.avatar) {
+                    if (member.avatar && !member.avatar.startsWith('data:')) {
                         const dataUrl = await imageToDataURL(member.avatar);
                         return { ...member, avatar: dataUrl };
                     }
                     return member;
                 })
             );
-            setMembersWithDataImages(updatedMembers);
+            if (!isCancelled) {
+              setMembersWithDataImages(updatedMembers);
+              onReady(true);
+            }
         };
         convertImages();
-    }, [members]);
+
+        return () => {
+            isCancelled = true;
+        }
+    }, [members, onReady]);
 
   const leader = getMemberById(membersWithDataImages, schedule.leaderId);
   const preacher = getMemberById(membersWithDataImages, schedule.preacherId);
@@ -173,6 +182,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const isMobile = useIsMobile();
 
   const [exportingScheduleId, setExportingScheduleId] = useState<string | null>(null);
+  const [isExportableCardReady, setIsExportableCardReady] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -221,10 +231,13 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   }
 
   const handleExport = useCallback(async (schedule: Schedule) => {
+    if (!isExportableCardReady) {
+      toast({ title: 'Aguarde...', description: 'Preparando as imagens para exportação.'});
+      return;
+    }
     setExportingScheduleId(schedule.id);
     toast({ title: 'Preparando exportação...', description: 'Aguarde enquanto a imagem é gerada.' });
-    await new Promise(resolve => setTimeout(resolve, 500)); 
-
+    
     try {
         const dataUrl = await generateImage();
         const link = document.createElement('a');
@@ -238,12 +251,15 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     } finally {
         setExportingScheduleId(null);
     }
-  }, [toast]);
+  }, [toast, isExportableCardReady]);
   
   const handleShare = useCallback(async (schedule: Schedule) => {
+    if (!isExportableCardReady) {
+      toast({ title: 'Aguarde...', description: 'Preparando as imagens para compartilhamento.'});
+      return;
+    }
     setExportingScheduleId(schedule.id);
     toast({ title: 'Preparando imagem...', description: 'Aguarde um instante.'});
-    await new Promise(resolve => setTimeout(resolve, 500));
 
     try {
         const dataUrl = await generateImage();
@@ -269,7 +285,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     } finally {
         setExportingScheduleId(null);
     }
-  }, [toast, shareMessage]);
+  }, [toast, shareMessage, isExportableCardReady]);
   
 
   return (
@@ -428,7 +444,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                 schedule={schedules.find(s => s.id === exportingScheduleId)!}
                 members={members}
                 songs={songs}
-                shareMessage={shareMessage}
+                onReady={setIsExportableCardReady}
             />
         </div>
     )}
