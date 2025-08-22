@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
 import { PlaylistViewer } from '@/components/playlist-viewer';
-import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2, MessageSquare } from 'lucide-react';
+import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useSchedule } from '@/context/schedule-context';
 import { Separator } from './ui/separator';
@@ -18,7 +18,6 @@ import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import * as htmlToImage from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 
 interface ScheduleViewProps {
@@ -188,20 +187,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       link.href = dataUrl;
       link.click();
       
-      const scheduleNameLower = schedule.name.toLowerCase();
-      let dayDescription = schedule.name;
-      if (scheduleNameLower.includes('manhã')) {
-          dayDescription = "manhã";
-      } else if (scheduleNameLower.includes('noite')) {
-          dayDescription = "noite";
-      }
-      const dateText = format(schedule.date, "dd/MM/yyyy", { locale: ptBR });
-      const message = shareMessage
-        .replace(/\[PERIODO\]/g, dayDescription)
-        .replace(/\[DATA\]/g, dateText);
-      
-      await navigator.clipboard.writeText(message);
-      toast({ title: 'Baixado!', description: 'A imagem foi baixada e a mensagem foi copiada.' });
+      toast({ title: 'Baixado!', description: 'A imagem foi baixada.' });
       
     } catch (error: any) {
         console.error(`Download failed:`, error);
@@ -210,7 +196,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       setIsCapturing(false);
       setExportingSchedule(null);
     }
-  }, [toast, shareMessage]);
+  }, [toast]);
 
   const handleDownloadClick = (schedule: Schedule) => {
     if (isCapturing) return;
