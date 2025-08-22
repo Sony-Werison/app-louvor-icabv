@@ -46,63 +46,16 @@ type ExportableCardProps = {
     schedule: Schedule;
     members: Member[];
     songs: Song[];
-    onReady: () => void;
 };
 
 // Componente para o layout do PNG
-const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ schedule, members, songs, onReady }, ref) => {
+const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ schedule, members, songs }, ref) => {
     const leader = getMemberById(members, schedule.leaderId);
     const preacher = getMemberById(members, schedule.preacherId);
     const playlistSongs = schedule.playlist.map(id => getSongById(songs, id)).filter((s): s is Song => !!s);
     const teamMembers = (schedule.team?.multimedia || [])
         .map(id => getMemberById(members, id))
         .filter((m): m is Member => !!m);
-
-    const [isLoading, setIsLoading] = useState(true);
-    const [embeddedImages, setEmbeddedImages] = useState<Record<string, string>>({});
-
-    const imageToDataURL = useCallback(async (url: string) => {
-      try {
-          const response = await fetch(url);
-          if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
-          const blob = await response.blob();
-          return new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(blob);
-          });
-      } catch (error) {
-          console.error('Failed to convert image to data URL for URL:', url, error);
-          return url;
-      }
-    }, []);
-
-    useEffect(() => {
-        const embedImages = async () => {
-            setIsLoading(true);
-            const allMembersInCard = [leader, preacher, ...teamMembers].filter(Boolean) as Member[];
-            const imageMap: Record<string, string> = {};
-            
-            await Promise.all(
-                allMembersInCard.map(async (member) => {
-                    if (member.avatar) {
-                        imageMap[member.id] = await imageToDataURL(member.avatar);
-                    }
-                })
-            );
-
-            setEmbeddedImages(imageMap);
-            setIsLoading(false);
-            onReady();
-        };
-
-        embedImages();
-    }, [schedule.id, members, leader, preacher, teamMembers, imageToDataURL, onReady]);
-
-    if (isLoading) {
-        return null;
-    }
 
   return (
     <div ref={ref} className="w-[380px] bg-card text-card-foreground p-4 flex flex-col gap-3 rounded-lg border">
@@ -120,7 +73,7 @@ const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ 
             {leader && (
             <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                <AvatarImage src={embeddedImages[leader.id] || leader.avatar} alt={leader.name} />
+                <AvatarImage src={leader.avatar} alt={leader.name} />
                 <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -132,7 +85,7 @@ const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ 
             {preacher && (
             <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                <AvatarImage src={embeddedImages[preacher.id] || preacher.avatar} alt={preacher.name} />
+                <AvatarImage src={preacher.avatar} alt={preacher.name} />
                 <AvatarFallback>{getMemberInitial(preacher.name)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -152,7 +105,7 @@ const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ 
                     {teamMembers.map(member => (
                         <div key={member.id} className="flex items-center gap-2 text-sm">
                             <Avatar className="h-6 w-6">
-                                <AvatarImage src={embeddedImages[member.id] || member.avatar} alt={member.name} />
+                                <AvatarImage src={member.avatar} alt={member.name} />
                                 <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
                             </Avatar>
                             <span className="text-muted-foreground">{member.name}</span>
@@ -216,9 +169,18 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     setIsPlaylistViewerOpen(true);
   }
 
-  const captureAndAct = useCallback(async () => {
-    if (!exportCardRef.current || !exportingSchedule) return;
+   const handleShareClick = (schedule: Schedule) => {
+    if (isCapturing) return;
+    setExportingSchedule(schedule);
     setIsCapturing(true);
+  };
+  
+  const captureAndAct = useCallback(async () => {
+    if (!exportingSchedule || !exportCardRef.current) {
+        setIsCapturing(false);
+        setExportingSchedule(null);
+        return;
+    };
 
     try {
       const dataUrl = await htmlToImage.toPng(exportCardRef.current, {
@@ -226,12 +188,12 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
         pixelRatio: 2,
       });
 
-        const link = document.createElement('a');
-        const fileName = `repertorio_${exportingSchedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
-        link.download = fileName;
-        link.href = dataUrl;
-        link.click();
-        toast({ title: 'Exportação Concluída!', description: 'A imagem do repertório foi baixada.' });
+      const link = document.createElement('a');
+      const fileName = `repertorio_${exportingSchedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
+      link.download = fileName;
+      link.href = dataUrl;
+      link.click();
+      toast({ title: 'Exportação Concluída!', description: 'A imagem do repertório foi baixada.' });
       
     } catch (error: any) {
         console.error(`Download failed:`, error);
@@ -240,7 +202,17 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       setIsCapturing(false);
       setExportingSchedule(null);
     }
-  }, [toast, exportingSchedule]);
+  }, [exportingSchedule, toast]);
+
+  useEffect(() => {
+    if (isCapturing) {
+      const timer = setTimeout(() => {
+          captureAndAct();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isCapturing, captureAndAct]);
+
 
   return (
     <>
@@ -340,12 +312,12 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                     )}
                     </CardContent>
                     <CardFooter className="p-2 flex flex-col gap-2">
-                        <div className="flex w-full gap-2">
+                       <div className="flex w-full gap-2">
                             <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/2">
                                 <Eye className="w-4 h-4 mr-2" />
                                 Visualizar
                             </Button>
-                            <Button variant="outline" onClick={() => setExportingSchedule(schedule)} className="h-8 text-xs w-1/2" disabled={isCapturing}>
+                            <Button onClick={() => handleShareClick(schedule)} className="h-8 text-xs w-1/2" disabled={isCapturing}>
                                 {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
                                 Compartilhar
                             </Button>
@@ -372,7 +344,6 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                 schedule={exportingSchedule} 
                 members={members} 
                 songs={songs}
-                onReady={captureAndAct}
             />
         </div>
     )}
@@ -405,5 +376,3 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     </>
   );
 }
-
-    
