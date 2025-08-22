@@ -42,15 +42,66 @@ const getMemberById = (members: Member[], id: string | null) => id ? members.fin
 const getSongById = (songs: Song[], id: string) => songs.find(s => s.id === id);
 const getMemberInitial = (name: string) => name.charAt(0).toUpperCase();
 
+const imageToDataURL = async (url: string) => {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.error('Failed to convert image to data URL', error);
+        return url; // Fallback to original url
+    }
+};
+
+type ExportableCardProps = {
+    schedule: Schedule;
+    members: Member[];
+    songs: Song[];
+    onReady?: () => void;
+};
 
 // Componente para o layout do PNG
-const ExportableCard = React.forwardRef<HTMLDivElement, { schedule: Schedule, members: Member[], songs: Song[] }>(({ schedule, members, songs }, ref) => {
+const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ schedule, members, songs, onReady }, ref) => {
     const leader = getMemberById(members, schedule.leaderId);
     const preacher = getMemberById(members, schedule.preacherId);
     const playlistSongs = schedule.playlist.map(id => getSongById(songs, id)).filter((s): s is Song => !!s);
     const teamMembers = (schedule.team?.multimedia || [])
         .map(id => getMemberById(members, id))
         .filter((m): m is Member => !!m);
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [embeddedImages, setEmbeddedImages] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        const embedImages = async () => {
+            setIsLoading(true);
+            const allMembersInCard = [leader, preacher, ...teamMembers].filter(Boolean) as Member[];
+            const imageMap: Record<string, string> = {};
+            
+            await Promise.all(
+                allMembersInCard.map(async (member) => {
+                    if (member.avatar) {
+                        imageMap[member.id] = await imageToDataURL(member.avatar);
+                    }
+                })
+            );
+
+            setEmbeddedImages(imageMap);
+            setIsLoading(false);
+            onReady?.();
+        };
+
+        embedImages();
+    }, [schedule.id, members, onReady]);
+
+    if (isLoading && onReady) { // Only show loading if we are in export mode that needs `onReady`
+        return null;
+    }
 
   return (
     <div ref={ref} className="w-[380px] bg-card text-card-foreground p-4 flex flex-col gap-3 rounded-lg border">
@@ -68,7 +119,7 @@ const ExportableCard = React.forwardRef<HTMLDivElement, { schedule: Schedule, me
             {leader && (
             <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                <AvatarImage src={leader.avatar} alt={leader.name} />
+                <AvatarImage src={embeddedImages[leader.id] || leader.avatar} alt={leader.name} />
                 <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -80,7 +131,7 @@ const ExportableCard = React.forwardRef<HTMLDivElement, { schedule: Schedule, me
             {preacher && (
             <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                <AvatarImage src={preacher.avatar} alt={preacher.name} />
+                <AvatarImage src={embeddedImages[preacher.id] || preacher.avatar} alt={preacher.name} />
                 <AvatarFallback>{getMemberInitial(preacher.name)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -100,7 +151,7 @@ const ExportableCard = React.forwardRef<HTMLDivElement, { schedule: Schedule, me
                     {teamMembers.map(member => (
                         <div key={member.id} className="flex items-center gap-2 text-sm">
                             <Avatar className="h-6 w-6">
-                                <AvatarImage src={member.avatar} alt={member.name} />
+                                <AvatarImage src={embeddedImages[member.id] || member.avatar} alt={member.name} />
                                 <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
                             </Avatar>
                             <span className="text-muted-foreground">{member.name}</span>
@@ -154,15 +205,14 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const captureAndAct = useCallback(async (action: 'share' | 'download') => {
     if (!exportCardRef.current || !exportingSchedule) return;
 
+    setIsCapturing(true);
+    
     try {
-      // The options object tells html-to-image to find all <img> tags,
-      // fetch their src, and embed the base64 version before taking the screenshot.
       const dataUrl = await htmlToImage.toPng(exportCardRef.current, {
         quality: 1,
         pixelRatio: 2,
         backgroundColor: 'hsl(var(--card))',
         skipFonts: true,
-        imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
       });
 
       if (action === 'download') {
@@ -171,18 +221,22 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
         link.href = dataUrl;
         link.click();
         toast({ title: 'Exportação Concluída!', description: 'A imagem do repertório foi baixada.' });
-      } else if (action === 'share') {
+      } else if (action === 'share' && canShare) {
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], 'repertorio.png', { type: 'image/png' });
         const text = shareMessage
           .replace(/\[PERIODO\]/g, exportingSchedule.name)
           .replace(/\[DATA\]/g, format(exportingSchedule.date, 'dd/MM/yyyy', { locale: ptBR }));
 
-        await navigator.share({
-          title: `Repertório - ${exportingSchedule.name}`,
-          text,
-          files: [file],
-        });
+        if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                title: `Repertório - ${exportingSchedule.name}`,
+                text,
+                files: [file],
+            });
+        } else {
+             throw new Error("Não é possível compartilhar este tipo de arquivo.");
+        }
       }
     } catch (error: any) {
       if (error.name !== 'AbortError') {
@@ -193,37 +247,27 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
         setIsCapturing(false);
         setExportingSchedule(null);
     }
-  }, [exportingSchedule, shareMessage, toast]);
+  }, [exportingSchedule, shareMessage, toast, canShare]);
 
 
   const handleExport = (schedule: Schedule) => {
     if (isCapturing) return;
     toast({ title: 'Preparando exportação...', description: 'Aguarde enquanto a imagem é gerada.' });
-    setIsCapturing(true);
     setExportingSchedule(schedule);
   };
   
   const handleShare = (schedule: Schedule) => {
     if (isCapturing) return;
     toast({ title: 'Preparando imagem...', description: 'Aguarde um instante.'});
-    setIsCapturing(true);
     setExportingSchedule(schedule);
   };
   
   useEffect(() => {
-    if (!exportingSchedule || !isCapturing) return;
-    
-    // Give React a moment to render the hidden card before we capture it
-    const timer = setTimeout(() => {
-      if (isMobile) {
-        captureAndAct('share');
-      } else {
-        captureAndAct('download');
-      }
-    }, 100);
+    if (!exportingSchedule) return;
 
-    return () => clearTimeout(timer);
-  }, [exportingSchedule, isCapturing, isMobile, captureAndAct]);
+    // The ExportableCard is now rendered, but we need to wait for its `onReady` callback
+    // which is triggered from its own `useEffect` after images are processed.
+  }, [exportingSchedule]);
 
 
   const handlePlaylistSave = (scheduleId: string, newPlaylist: string[]) => {
@@ -349,14 +393,13 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                                 <Eye />
                                 Visualizar
                             </Button>
-
-                            {canShare && isMobile && (
+                            
+                            {isMobile ? (
                                 <Button variant="outline" onClick={() => handleShare(schedule)} className="h-8 text-xs flex-1" disabled={playlistSongs.length === 0 || isCapturing}>
                                     {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Share2 />}
                                     Compartilhar
                                 </Button>
-                            )}
-                            {!isMobile && (
+                            ) : (
                                 <Button variant="outline" onClick={() => handleExport(schedule)} className="h-8 text-xs flex-1" disabled={playlistSongs.length === 0 || isCapturing}>
                                     {isCurrentlyExporting ? <Loader2 className="animate-spin" /> : <Download />}
                                     Exportar PNG
@@ -401,12 +444,11 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                 ref={exportCardRef}
                 schedule={exportingSchedule} 
                 members={members} 
-                songs={songs} 
+                songs={songs}
+                onReady={() => captureAndAct(isMobile ? 'share' : 'download')}
             />
         </div>
     )}
     </>
   );
 }
-
-    
