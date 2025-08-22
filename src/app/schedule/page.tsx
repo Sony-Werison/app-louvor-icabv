@@ -34,12 +34,12 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
         const dateManha = new Date(sunday);
         dateManha.setHours(10, 0, 0, 0);
 
-        if (assignments.dirigente_manha && assignments.dirigente_manha[0]) {
+        if (assignments.abertura_manha && assignments.abertura_manha[0]) {
             schedules.push({
                 id: `s-manha-${sunday.getTime()}`,
                 name: `${getShortDay(dateManha)}. Manhã`,
                 date: dateManha,
-                leaderId: assignments.dirigente_manha[0],
+                leaderId: assignments.abertura_manha[0],
                 preacherId: assignments.pregacao_manha?.[0] || null,
                 team: team,
                 playlist: ms.playlist_manha || []
@@ -50,12 +50,12 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
         const dateNoite = new Date(sunday);
         dateNoite.setHours(19, 0, 0, 0);
 
-        if (assignments.dirigente_noite && assignments.dirigente_noite[0]) {
+        if (assignments.abertura_noite && assignments.abertura_noite[0]) {
             schedules.push({
                 id: `s-noite-${sunday.getTime()}`,
                 name: `${getShortDay(dateNoite)}. Noite`,
                 date: dateNoite,
-                leaderId: assignments.dirigente_noite[0],
+                leaderId: assignments.abertura_noite[0],
                 preacherId: assignments.pregacao_noite?.[0] || null,
                 team: team,
                 playlist: ms.playlist_noite || []

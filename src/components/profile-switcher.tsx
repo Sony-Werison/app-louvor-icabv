@@ -19,13 +19,13 @@ import { LoginDialog } from './login-dialog';
 
 const roleIcons: Record<Role, React.ElementType> = {
     admin: Shield,
-    dirigente: UserCheck,
+    abertura: UserCheck,
     viewer: Eye,
 };
 
 const roleLabels: Record<Role, string> = {
     admin: 'Admin',
-    dirigente: 'Abertura',
+    abertura: 'Abertura',
     viewer: 'Visualização',
 };
 

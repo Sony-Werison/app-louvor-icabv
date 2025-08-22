@@ -126,16 +126,16 @@ For [G]I am [A]Yours and [Bm]You are mine`
 ];
 
 export const scheduleColumns: ScheduleColumn[] = [
-    { id: 'dirigente_manha', label: 'Abertura Manhã', icon: Sun, role: 'Abertura' },
+    { id: 'abertura_manha', label: 'Abertura Manhã', icon: Sun, role: 'Abertura' },
     { id: 'pregacao_manha', label: 'Pregação Manhã', icon: BookUser, role: 'Pregador' },
-    { id: 'dirigente_noite', label: 'Abertura Noite', icon: Moon, role: 'Abertura' },
+    { id: 'abertura_noite', label: 'Abertura Noite', icon: Moon, role: 'Abertura' },
     { id: 'pregacao_noite', label: 'Pregação Noite', icon: BookUser, role: 'Pregador' },
     { id: 'multimedia', label: 'Multimídia', icon: Tv, isMulti: true, role: 'Multimídia' },
 ];
 
 export const passwords: Record<Role, string> = {
     admin: 'admin',
-    dirigente: 'dirigente',
+    abertura: 'abertura',
     viewer: ''
 };
 
@@ -183,9 +183,9 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
         const multimedia2 = multimedia[(index + 2) % multimedia.length];
         
         const assignments = (isSunday && members.length > 0) ? {
-                'dirigente_manha': [leaderMorning.id],
+                'abertura_manha': [leaderMorning.id],
                 'pregacao_manha': [preacherMorning.id],
-                'dirigente_noite': [leaderNight.id],
+                'abertura_noite': [leaderNight.id],
                 'pregacao_noite': [preacherNight.id],
                 'multimedia': [multimedia1.id, multimedia2.id],
             } : {};

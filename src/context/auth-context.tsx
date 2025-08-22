@@ -23,7 +23,7 @@ type Permission = 'edit:schedule' | 'edit:members' | 'edit:songs' | 'manage:play
 
 const rolePermissions: Record<Role, Permission[]> = {
   admin: ['edit:schedule', 'edit:members', 'edit:songs', 'manage:playlists', 'manage:settings'],
-  dirigente: ['manage:playlists'],
+  abertura: ['manage:playlists'],
   viewer: [],
 };
 

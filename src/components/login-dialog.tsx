@@ -22,6 +22,12 @@ interface LoginDialogProps {
     roleToLogin: Role;
 }
 
+const roleDisplayNames: Record<Role, string> = {
+    admin: 'Admin',
+    abertura: 'Abertura',
+    viewer: 'Visualização'
+}
+
 
 export function LoginDialog({ isOpen, onOpenChange, roleToLogin }: LoginDialogProps) {
   const { login } = useAuth();
@@ -58,7 +64,7 @@ export function LoginDialog({ isOpen, onOpenChange, roleToLogin }: LoginDialogPr
         <DialogHeader>
           <DialogTitle>Acesso Restrito</DialogTitle>
           <DialogDescription>
-            Para acessar o perfil de {roleToLogin}, por favor, insira a senha.
+            Para acessar o perfil de {roleDisplayNames[roleToLogin]}, por favor, insira a senha.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">

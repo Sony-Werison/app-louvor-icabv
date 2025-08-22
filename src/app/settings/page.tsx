@@ -16,8 +16,8 @@ import { Separator } from '@/components/ui/separator';
 const formSchema = z.object({
   currentAdminPassword: z.string().optional(),
   newAdminPassword: z.string().optional(),
-  currentDirigentePassword: z.string().optional(),
-  newDirigentePassword: z.string().optional(),
+  currentAberturaPassword: z.string().optional(),
+  newAberturaPassword: z.string().optional(),
 }).refine(data => {
     if (data.currentAdminPassword && !data.newAdminPassword) return false;
     if (!data.currentAdminPassword && data.newAdminPassword) return false;
@@ -26,12 +26,12 @@ const formSchema = z.object({
     message: "Preencha a senha atual e a nova senha para alterar.",
     path: ['newAdminPassword']
 }).refine(data => {
-    if (data.currentDirigentePassword && !data.newDirigentePassword) return false;
-    if (!data.currentDirigentePassword && data.newDirigentePassword) return false;
+    if (data.currentAberturaPassword && !data.newAberturaPassword) return false;
+    if (!data.currentAberturaPassword && data.newAberturaPassword) return false;
     return true;
 }, {
     message: "Preencha a senha atual e a nova senha para alterar.",
-    path: ['newDirigentePassword']
+    path: ['newAberturaPassword']
 });
 
 
@@ -44,8 +44,8 @@ export default function SettingsPage() {
     defaultValues: {
       currentAdminPassword: '',
       newAdminPassword: '',
-      currentDirigentePassword: '',
-      newDirigentePassword: '',
+      currentAberturaPassword: '',
+      newAberturaPassword: '',
     },
   });
 
@@ -65,11 +65,11 @@ export default function SettingsPage() {
             changed = true;
         }
     }
-    if (values.currentDirigentePassword && values.newDirigentePassword) {
-        const dirigenteSuccess = await updatePassword('dirigente', values.currentDirigentePassword, values.newDirigentePassword);
-        if(dirigenteSuccess) {
-            form.resetField('currentDirigentePassword');
-            form.resetField('newDirigentePassword');
+    if (values.currentAberturaPassword && values.newAberturaPassword) {
+        const aberturaSuccess = await updatePassword('abertura', values.currentAberturaPassword, values.newAberturaPassword);
+        if(aberturaSuccess) {
+            form.resetField('currentAberturaPassword');
+            form.resetField('newAberturaPassword');
             changed = true;
         }
     }
@@ -90,7 +90,7 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle>Gerenciamento de Senhas</CardTitle>
             <CardDescription>
-              Altere as senhas para os perfis de Admin e Dirigente. Preencha os campos apenas do perfil que deseja alterar.
+              Altere as senhas para os perfis de Admin e Abertura. Preencha os campos apenas do perfil que deseja alterar.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -129,15 +129,15 @@ export default function SettingsPage() {
                 <Separator />
                 
                 <div className="space-y-4">
-                     <h3 className="font-semibold">Perfil Dirigente</h3>
+                     <h3 className="font-semibold">Perfil Abertura</h3>
                     <FormField
                     control={form.control}
-                    name="currentDirigentePassword"
+                    name="currentAberturaPassword"
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Senha Atual</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="Digite a senha atual de dirigente" {...field} />
+                            <Input type="password" placeholder="Digite a senha atual de abertura" {...field} />
                         </FormControl>
                          <FormMessage />
                         </FormItem>
@@ -145,12 +145,12 @@ export default function SettingsPage() {
                     />
                     <FormField
                     control={form.control}
-                    name="newDirigentePassword"
+                    name="newAberturaPassword"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Nova Senha de Dirigente</FormLabel>
+                        <FormLabel>Nova Senha de Abertura</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="Digite a nova senha de dirigente" {...field} />
+                            <Input type="password" placeholder="Digite a nova senha de abertura" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
