@@ -1,5 +1,4 @@
 
-
 export type Role = 'admin' | 'dirigente' | 'viewer';
 
 export type MemberRole = 'Abertura' | 'Pregador' | 'Multimídia' | 'Convidado';
@@ -10,6 +9,7 @@ export type Member = {
   name: string;
   avatar: string;
   roles: MemberRole[];
+  email?: string;
 };
 
 export type Song = {

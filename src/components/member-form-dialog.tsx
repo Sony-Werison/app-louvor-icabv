@@ -44,6 +44,7 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/web
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
+  email: z.string().email({ message: 'Por favor, insira um e-mail válido.' }).optional().or(z.literal('')),
   roles: z.array(z.string()).refine(value => value.some(item => item), {
     message: "Você deve selecionar pelo menos uma função.",
   }),
@@ -74,6 +75,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: member?.name || '',
+      email: member?.email || '',
       roles: member?.roles || [],
       avatar: member?.avatar || '',
     },
@@ -143,6 +145,19 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
                   <FormLabel>Nome</FormLabel>
                   <FormControl>
                     <Input placeholder="Nome completo" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="email@example.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

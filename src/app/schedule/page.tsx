@@ -2,10 +2,11 @@
 'use client';
 import { useSchedule } from '@/context/schedule-context';
 import { ScheduleView } from '@/components/schedule-view';
+import { ReminderCard } from '@/components/reminder-card';
 import { startOfWeek, endOfWeek, isWithinInterval, format, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Schedule, MonthlySchedule } from '@/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: any[]): Schedule[] => {
     let schedules: Schedule[] = [];
@@ -85,9 +86,19 @@ export default function SchedulePage() {
 
   }, [monthlySchedules, songs]);
 
+  const schedulesWithEmptyPlaylists = useMemo(() => 
+    weeklySchedules.filter(schedule => schedule.playlist.length === 0)
+  , [weeklySchedules]);
+
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-4 md:p-6 space-y-6">
+      <h1 className="text-xl font-headline font-bold">Reuniões da semana</h1>
+      
+      {schedulesWithEmptyPlaylists.length > 0 && (
+          <ReminderCard schedules={schedulesWithEmptyPlaylists} members={members} />
+      )}
+      
       <ScheduleView initialSchedules={weeklySchedules} members={members} songs={songs} />
     </div>
   );
