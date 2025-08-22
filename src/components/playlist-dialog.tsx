@@ -2,7 +2,7 @@
 'use client';
 
 import type { Schedule, Song, SongCategory } from '@/types';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -63,6 +63,22 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<'all' | SongCategory>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'title', direction: 'asc' });
+  const [duplicatedInCurrent, setDuplicatedInCurrent] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const counts = new Map<string, number>();
+    currentPlaylist.forEach(id => {
+      counts.set(id, (counts.get(id) || 0) + 1);
+    });
+    const duplicates = new Set<string>();
+    for (const [id, count] of counts.entries()) {
+      if (count > 1) {
+        duplicates.add(id);
+      }
+    }
+    setDuplicatedInCurrent(duplicates);
+  }, [currentPlaylist]);
+
 
   const handleSave = () => {
     onSave(schedule.id, currentPlaylist);
@@ -137,6 +153,8 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
   [availableSongs]);
   
   const hasChords = (song: Song) => song.chords && song.chords.includes('[');
+  
+  const isRepeated = (songId: string) => repeatedSongIds.has(songId) || duplicatedInCurrent.has(songId);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
@@ -212,7 +230,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                                   <div className="font-medium flex items-center gap-2">
                                                     {hasChords(song) && <Music className="h-3 w-3 text-muted-foreground" />}
                                                     <span>{song.title}</span>
-                                                    {repeatedSongIds.has(song.id) && (
+                                                    {isRepeated(song.id) && (
                                                       <Tooltip>
                                                         <TooltipTrigger>
                                                           <AlertTriangle className="h-4 w-4 text-amber-500" />
@@ -248,7 +266,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                       <AnimatePresence>
                       {songsInPlaylist.map((song, index) => (
                         <motion.div 
-                          key={song.id}
+                          key={`${song.id}-${index}`}
                           layout
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -256,7 +274,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                           className="relative flex items-center gap-2 p-2 pr-10 rounded-md hover:bg-muted bg-card"
                         >
-                           <div className="flex items-center gap-3">
+                           <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <div className="flex flex-col shrink-0">
                                     <Button 
                                         variant="ghost" 
@@ -280,16 +298,34 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
 
                                 <span className="text-sm font-bold text-muted-foreground w-5 text-center shrink-0">{index + 1}</span>
                                 
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-medium truncate">{song.title}</p>
-                                    <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
+                                <div className="flex-1 min-w-0 flex items-center gap-2">
+                                     {isRepeated(song.id) && (
+                                      <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Música repetida.</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                      </TooltipProvider>
+                                    )}
+                                    <div>
+                                      <p className="font-medium truncate">{song.title}</p>
+                                      <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
+                                    </div>
                                 </div>
                           </div>
 
                           <Button 
                               variant="ghost" 
                               size="icon" 
-                              onClick={() => handleCheckedChange(song.id, false)} 
+                              onClick={() => {
+                                  const newPlaylist = [...currentPlaylist];
+                                  newPlaylist.splice(index, 1);
+                                  setCurrentPlaylist(newPlaylist);
+                              }}
                               className="absolute top-1/2 right-1 -translate-y-1/2 h-8 w-8 rounded-full text-muted-foreground hover:text-destructive bg-background/30 hover:bg-background/70 backdrop-blur-sm"
                           >
                               <X className="h-4 w-4"/>

@@ -2,14 +2,14 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { Schedule, Member, Song } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
 import { PlaylistViewer } from '@/components/playlist-viewer';
-import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2, Share2 } from 'lucide-react';
+import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2, Share2, MessageCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useSchedule } from '@/context/schedule-context';
 import { Separator } from './ui/separator';
@@ -188,7 +188,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
   const { updateSchedulePlaylist } = useSchedule();
-  const { can } = useAuth();
+  const { can, shareMessage } = useAuth();
   const { toast } = useToast();
 
   const [exportingSchedule, setExportingSchedule] = useState<Schedule | null>(null);
@@ -208,7 +208,6 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     }
   }, []);
 
-
   const handlePlaylistSave = (scheduleId: string, newPlaylist: string[]) => {
     const updatedSchedules = schedules.map(s =>
       s.id === scheduleId ? { ...s, playlist: newPlaylist } : s
@@ -220,7 +219,6 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
   };
   
   const handleOpenPlaylist = (scheduleToOpen: Schedule) => {
-    // Get all song IDs from other playlists in the current view
     const otherPlaylists = schedules
       .filter(s => s.id !== scheduleToOpen.id)
       .flatMap(s => s.playlist || []);
@@ -235,19 +233,18 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     setIsPlaylistViewerOpen(true);
   }
 
-  const captureAndAct = useCallback(async (schedule: Schedule) => {
+  const captureAndAct = useCallback(async (schedule: Schedule, action: 'download' | 'share') => {
     setExportingSchedule(schedule);
+    setIsCapturing(true);
     
-    // Give React time to render the ExportableCard
     await new Promise(resolve => setTimeout(resolve, 100));
 
     if (!exportCardRef.current) {
+      toast({ title: "Erro", description: "Não foi possível encontrar o elemento para exportar.", variant: "destructive" });
       setExportingSchedule(null);
       setIsCapturing(false);
       return;
     }
-    
-    setIsCapturing(true);
 
     try {
       const dataUrl = await htmlToImage.toPng(exportCardRef.current, {
@@ -256,15 +253,32 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
         skipFonts: true,
       });
       
-      if (isMobile && canShare) {
+      if (action === 'share' && isMobile && canShare) {
           const blob = await (await fetch(dataUrl)).blob();
           const file = new File([blob], `repertorio.png`, { type: blob.type });
+          
+          const scheduleNameLower = schedule.name.toLowerCase();
+          let dayDescription = "o culto";
+          if (scheduleNameLower.includes('dom')) {
+              if (scheduleNameLower.includes('manhã')) {
+                  dayDescription = "o culto de Domingo de Manhã";
+              } else if (scheduleNameLower.includes('noite')) {
+                  dayDescription = "o culto de Domingo à Noite";
+              }
+          }
+          const dateString = format(schedule.date, "dd/MM/yyyy", { locale: ptBR });
+
+          const message = shareMessage
+              .replace(/\[PERIODO\]/g, dayDescription)
+              .replace(/\[DATA\]/g, dateString);
 
           await navigator.share({
               files: [file],
               title: `Repertório - ${schedule.name}`,
+              text: message
           });
-      } else {
+
+      } else { // download action
         const link = document.createElement('a');
         const fileName = `repertorio_${schedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
         link.download = fileName;
@@ -274,7 +288,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       }
       
     } catch (error: any) {
-        if (error.name !== 'AbortError') { // Don't show error if user cancels share
+        if (error.name !== 'AbortError') { 
             console.error(`Action failed:`, error);
             toast({ title: `Falha na Ação`, description: 'Não foi possível processar a imagem.', variant: 'destructive' });
         }
@@ -282,7 +296,7 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
       setIsCapturing(false);
       setExportingSchedule(null);
     }
-  }, [toast, isMobile, canShare]);
+  }, [toast, isMobile, canShare, shareMessage]);
 
 
   return (
@@ -390,14 +404,23 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                                     <Eye className="w-4 h-4 mr-2" />
                                     Visualizar
                                 </Button>
-                                {can('manage:playlists') && (
+                                {isMobile && canShare ? (
                                     <Button 
                                         variant="outline"
-                                        onClick={() => captureAndAct(schedule)} 
+                                        onClick={() => captureAndAct(schedule, 'share')} 
                                         className="h-8 text-xs w-1/2" 
-                                        disabled={isCapturing || !hasPlaylist}>
-                                        {isCurrentlyExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : (isMobile && canShare ? <Share2 className="w-4 h-4 mr-2" /> : <Download className="w-4 h-4 mr-2" />)}
-                                        {isMobile && canShare ? 'Compartilhar' : 'Baixar PNG'}
+                                        disabled={isCurrentlyExporting || !hasPlaylist}>
+                                        {isCurrentlyExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Share2 className="w-4 h-4 mr-2" />}
+                                        Compartilhar
+                                    </Button>
+                                ) : (
+                                    <Button 
+                                        variant="outline"
+                                        onClick={() => captureAndAct(schedule, 'download')} 
+                                        className="h-8 text-xs w-1/2" 
+                                        disabled={isCurrentlyExporting || !hasPlaylist}>
+                                        {isCurrentlyExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                                        Baixar PNG
                                     </Button>
                                 )}
                             </div>
@@ -457,4 +480,5 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     </>
   );
 }
+
 
