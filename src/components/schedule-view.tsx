@@ -178,7 +178,8 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
         const dataUrl = await htmlToImage.toPng(exportRef.current, {
             quality: 1,
             pixelRatio: 2,
-            backgroundColor: 'hsl(var(--card))'
+            backgroundColor: 'hsl(var(--card))',
+            skipFonts: true,
         });
 
         const link = document.createElement('a');
@@ -290,18 +291,18 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
                         </div>
                     )}
                     </CardContent>
-                    <CardFooter className="p-2 flex flex-col gap-2">
-                      <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-full" disabled={schedule.playlist.length === 0}>
+                    <CardFooter className="p-2 flex flex-wrap flex-row gap-2">
+                      <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs flex-1" disabled={schedule.playlist.length === 0}>
                           <Eye />
                           Visualizar
                       </Button>
                       {can('manage:playlists') && (
                           <>
-                            <Button variant="outline" onClick={() => handleExport(schedule)} className="h-8 text-xs w-full" disabled={schedule.playlist.length === 0 || !!exportingScheduleId}>
+                            <Button variant="outline" onClick={() => handleExport(schedule)} className="h-8 text-xs flex-1" disabled={schedule.playlist.length === 0 || !!exportingScheduleId}>
                                 {exportingScheduleId === schedule.id ? <Loader2 className="animate-spin"/> : <Download/>}
                                 Exportar
                             </Button>
-                            <Button onClick={() => handleOpenPlaylist(schedule)} variant="destructive" className="h-8 text-xs w-full">
+                            <Button onClick={() => handleOpenPlaylist(schedule)} variant="destructive" className="h-8 text-xs flex-1">
                                 <ListMusic/>
                                 Gerenciar
                             </Button>
@@ -347,3 +348,5 @@ export function ScheduleView({ initialSchedules, members, songs }: ScheduleViewP
     </>
   );
 }
+
+    
