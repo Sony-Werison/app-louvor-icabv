@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ListMusic, Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Share2, Loader2 } from 'lucide-react';
+import { ListMusic, Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Download, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Badge } from './ui/badge';
@@ -56,7 +56,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [isSharing, setIsSharing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { can } = useAuth();
@@ -158,17 +158,10 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
       }
   }
   
-    const handleShare = async () => {
-        if (!navigator.share) {
-            toast({
-                title: "Compartilhamento não suportado",
-                description: "Seu navegador não suporta o compartilhamento direto de arquivos. Tente baixar a imagem.",
-                variant: 'destructive'
-            });
-            return;
-        }
+    const handleDownload = async () => {
+        setIsDownloading(true);
+        toast({ title: 'Preparando download...', description: 'Aguarde enquanto a imagem do repertório é gerada.' });
 
-        setIsSharing(true);
         try {
             await new Promise(resolve => setTimeout(resolve, 500));
             if (!exportRef.current) {
@@ -182,26 +175,20 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                 skipFonts: true,
             });
 
-            const blob = await (await fetch(dataUrl)).blob();
-            const file = new File([blob], 'repertorio.png', { type: 'image/png' });
-
-            await navigator.share({
-                title: `Repertório - ${schedule.name}`,
-                text: `Repertório para ${schedule.name}`,
-                files: [file],
-            });
-
+            const link = document.createElement('a');
+            link.download = `repertorio_${schedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
+            link.href = dataUrl;
+            link.click();
+            toast({ title: 'Download Concluído!', description: 'A imagem do repertório foi baixada.' });
         } catch (error) {
-            if ((error as Error).name !== 'AbortError') {
-                console.error("Erro ao compartilhar", error);
-                toast({
-                    title: "Erro ao compartilhar",
-                    description: "Não foi possível compartilhar a imagem.",
-                    variant: 'destructive'
-                });
-            }
+            console.error("Erro ao baixar", error);
+            toast({
+                title: "Erro ao baixar",
+                description: "Não foi possível gerar a imagem para download.",
+                variant: 'destructive'
+            });
         } finally {
-            setIsSharing(false);
+            setIsDownloading(false);
         }
     };
 
@@ -258,10 +245,10 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                           </div>
                       </div>
                       <div className="w-full sm:w-auto flex justify-between sm:justify-end items-center gap-2">
-                        {can('manage:playlists') && navigator.share && (
-                            <Button size="sm" variant="outline" onClick={handleShare} disabled={isSharing}>
-                                {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Share2 className="mr-2 h-4 w-4"/>}
-                                {isSharing ? 'Gerando...' : 'PNG'}
+                        {can('manage:playlists') && (
+                            <Button size="sm" variant="outline" onClick={handleDownload} disabled={isDownloading}>
+                                {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4"/>}
+                                {isDownloading ? 'Gerando...' : 'PNG'}
                             </Button>
                         )}
                         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
