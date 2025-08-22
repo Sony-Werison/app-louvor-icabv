@@ -47,16 +47,23 @@ export function ReminderCard({ schedules, members }: ReminderCardProps) {
     let dayDescription = "o culto";
     if (scheduleNameLower.includes('dom')) {
         if (scheduleNameLower.includes('manhã')) {
-            dayDescription = "domingo, no período da manhã";
+            dayDescription = "*domingo, no período da manhã*";
         } else if (scheduleNameLower.includes('noite')) {
-            dayDescription = "domingo, no período da noite";
+            dayDescription = "*domingo, no período da noite*";
         }
     }
 
 
     const phone = member.phone.replace(/\D/g, ''); // Remove non-numeric characters
     const firstName = member.name.split(' ')[0];
-    const message = `Olá, ${firstName}! Essa é uma mensagem automática para lembrar que você está escalado para a abertura de ${dayDescription}. Para montar o repertório, acesse o app em Reuniões > Gerenciar. Não se esqueça de enviar o quanto antes ao grupo de louvor. Obrigado!`;
+    const message = `Olá, ${firstName}! Essa é uma mensagem automática para lembrar que você está escalado para a abertura de ${dayDescription}.
+
+Para montar o repertório, siga estes passos:
+1. Acesse o app: https://app-louvor-icabv.vercel.app/schedule
+2. No canto superior direito, clique em "Visualização" e troque para o perfil "Abertura" (senha: abertura).
+3. Na sua escala da semana, clique em "Gerenciar".
+
+Não se esqueça de enviar o quanto antes ao grupo de louvor. Obrigado!`;
     const whatsappLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
     window.open(whatsappLink, '_blank');
