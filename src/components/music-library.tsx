@@ -114,34 +114,60 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
 
   const filteredSongs = useMemo(() => {
     const lowercasedSearchTerm = searchTerm.toLowerCase();
-    const filtered = songs.filter(
-      (song) =>
-        (activeCategory === 'all' || song.category === activeCategory) &&
-        (song.title.toLowerCase().includes(lowercasedSearchTerm) ||
-          song.artist.toLowerCase().includes(lowercasedSearchTerm) ||
-          (song.lyrics || '').toLowerCase().includes(lowercasedSearchTerm)) &&
-        (chordFilter === 'all' ||
-          (chordFilter === 'with' && hasChords(song)) ||
-          (chordFilter === 'without' && !hasChords(song))) &&
-        (statusFilter === 'all' ||
-            (statusFilter === 'new' && song.isNew) ||
-            (statusFilter === 'learned' && !song.isNew))
-    );
 
-    return [...filtered].sort((a, b) => {
+    if (!lowercasedSearchTerm) {
+        const filtered = songs.filter(song => 
+            (activeCategory === 'all' || song.category === activeCategory) &&
+            (chordFilter === 'all' || (chordFilter === 'with' && hasChords(song)) || (chordFilter === 'without' && !hasChords(song))) &&
+            (statusFilter === 'all' || (statusFilter === 'new' && song.isNew) || (statusFilter === 'learned' && !song.isNew))
+        );
+
+        return [...filtered].sort((a, b) => {
+            const { key, direction } = sortConfig;
+            const dir = direction === 'asc' ? 1 : -1;
+            const aVal = a[key] ?? (typeof a[key] === 'number' ? 0 : '');
+            const bVal = b[key] ?? (typeof b[key] === 'number' ? 0 : '');
+            if (key === 'timesPlayedQuarterly' || key === 'timesPlayedTotal') {
+                return ((aVal as number) - (bVal as number)) * dir;
+            }
+            return (aVal as string).localeCompare(bVal as string) * dir;
+        });
+    }
+
+    const searchResults = songs
+        .map(song => {
+            const titleMatch = song.title.toLowerCase().includes(lowercasedSearchTerm);
+            const artistMatch = song.artist.toLowerCase().includes(lowercasedSearchTerm);
+            const lyricsMatch = (song.lyrics || '').toLowerCase().includes(lowercasedSearchTerm);
+            
+            const relevance = titleMatch || artistMatch ? 1 : (lyricsMatch ? 2 : 0);
+            
+            return { song, relevance };
+        })
+        .filter(({ song, relevance }) => 
+            relevance > 0 &&
+            (activeCategory === 'all' || song.category === activeCategory) &&
+            (chordFilter === 'all' || (chordFilter === 'with' && hasChords(song)) || (chordFilter === 'without' && !hasChords(song))) &&
+            (statusFilter === 'all' || (statusFilter === 'new' && song.isNew) || (statusFilter === 'learned' && !song.isNew))
+        );
+
+    searchResults.sort((a, b) => {
+        if (a.relevance !== b.relevance) {
+            return a.relevance - b.relevance;
+        }
+
         const { key, direction } = sortConfig;
         const dir = direction === 'asc' ? 1 : -1;
+        const aVal = a.song[key] ?? (typeof a.song[key] === 'number' ? 0 : '');
+        const bVal = b.song[key] ?? (typeof b.song[key] === 'number' ? 0 : '');
 
-        const aVal = a[key] ?? (typeof a[key] === 'number' ? 0 : '');
-        const bVal = b[key] ?? (typeof b[key] === 'number' ? 0 : '');
-        
         if (key === 'timesPlayedQuarterly' || key === 'timesPlayedTotal') {
             return ((aVal as number) - (bVal as number)) * dir;
         }
-        
         return (aVal as string).localeCompare(bVal as string) * dir;
     });
 
+    return searchResults.map(item => item.song);
   }, [songs, activeCategory, searchTerm, sortConfig, chordFilter, statusFilter]);
 
   useEffect(() => {
@@ -360,3 +386,5 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     </div>
   );
 }
+
+    

@@ -128,29 +128,56 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
 
   const availableSongs = useMemo(() => {
     const lowercasedSearchTerm = searchTerm.toLowerCase();
-    const sortedSongs = [...allSongs].sort((a, b) => {
+
+    const songsToFilter = allSongs.filter(song => !currentPlaylist.includes(song.id));
+
+    if (!lowercasedSearchTerm) {
+        const filtered = songsToFilter.filter(song => 
+            (activeCategory === 'all' || song.category === activeCategory) &&
+            (statusFilter === 'all' || (statusFilter === 'new' && song.isNew) || (statusFilter === 'learned' && !song.isNew))
+        );
+        return [...filtered].sort((a, b) => {
+            const { key, direction } = sortConfig;
+            const dir = direction === 'asc' ? 1 : -1;
+            switch (key) {
+                case 'quarterly': return ((a.timesPlayedQuarterly ?? 0) - (b.timesPlayedQuarterly ?? 0)) * dir;
+                case 'total': return ((a.timesPlayedTotal ?? 0) - (b.timesPlayedTotal ?? 0)) * dir;
+                case 'title': default: return a.title.localeCompare(b.title) * dir;
+            }
+        });
+    }
+
+    const searchResults = songsToFilter
+        .map(song => {
+            const titleMatch = song.title.toLowerCase().includes(lowercasedSearchTerm);
+            const artistMatch = song.artist.toLowerCase().includes(lowercasedSearchTerm);
+            const lyricsMatch = (song.lyrics || '').toLowerCase().includes(lowercasedSearchTerm);
+            
+            const relevance = titleMatch || artistMatch ? 1 : (lyricsMatch ? 2 : 0);
+            
+            return { song, relevance };
+        })
+        .filter(({ song, relevance }) => 
+            relevance > 0 &&
+            (activeCategory === 'all' || song.category === activeCategory) &&
+            (statusFilter === 'all' || (statusFilter === 'new' && song.isNew) || (statusFilter === 'learned' && !song.isNew))
+        );
+        
+    searchResults.sort((a, b) => {
+        if (a.relevance !== b.relevance) {
+            return a.relevance - b.relevance;
+        }
+
         const { key, direction } = sortConfig;
         const dir = direction === 'asc' ? 1 : -1;
-
         switch (key) {
-            case 'quarterly':
-                return ((a.timesPlayedQuarterly ?? 0) - (b.timesPlayedQuarterly ?? 0)) * dir;
-            case 'total':
-                return ((a.timesPlayedTotal ?? 0) - (b.timesPlayedTotal ?? 0)) * dir;
-            case 'title':
-            default:
-                return a.title.localeCompare(b.title) * dir;
+            case 'quarterly': return ((a.song.timesPlayedQuarterly ?? 0) - (b.song.timesPlayedQuarterly ?? 0)) * dir;
+            case 'total': return ((a.song.timesPlayedTotal ?? 0) - (b.song.timesPlayedTotal ?? 0)) * dir;
+            case 'title': default: return a.song.title.localeCompare(b.song.title) * dir;
         }
     });
 
-    return sortedSongs.filter(song => 
-      !currentPlaylist.includes(song.id) &&
-      (activeCategory === 'all' || song.category === activeCategory) &&
-      (statusFilter === 'all' || (statusFilter === 'new' && song.isNew) || (statusFilter === 'learned' && !song.isNew)) &&
-      (song.title.toLowerCase().includes(lowercasedSearchTerm) || 
-       song.artist.toLowerCase().includes(lowercasedSearchTerm) ||
-       (song.lyrics || '').toLowerCase().includes(lowercasedSearchTerm))
-    )
+    return searchResults.map(item => item.song);
   },[allSongs, currentPlaylist, searchTerm, activeCategory, sortConfig, statusFilter]);
   
   const groupedAvailableSongs = useMemo(() => 
@@ -378,3 +405,5 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
     </Dialog>
   );
 }
+
+    
