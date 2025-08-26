@@ -41,21 +41,14 @@ const categoryLabels: Record<SongCategory | 'all', string> = {
   Infantil: 'Infantis'
 }
 
-type ChordFilter = 'all' | 'with' | 'without';
-const chordFilters: ChordFilter[] = ['all', 'with', 'without'];
-const chordFilterLabels: Record<ChordFilter, string> = {
+type QuickFilter = 'all' | 'new' | 'with_chords';
+const quickFilters: QuickFilter[] = ['all', 'new', 'with_chords'];
+const quickFilterLabels: Record<QuickFilter, string> = {
   all: 'Todas',
-  with: 'Com Cifras',
-  without: 'Sem Cifras'
-}
+  new: 'Novas',
+  with_chords: 'Com Cifras'
+};
 
-type StatusFilter = 'all' | 'new' | 'learned';
-const statusFilters: StatusFilter[] = ['all', 'new', 'learned'];
-const statusFilterLabels: Record<StatusFilter, string> = {
-    all: 'Todas',
-    new: 'Novas',
-    learned: 'Aprendidas'
-}
 
 type SortKey = 'title' | 'artist' | 'category' | 'key' | 'timesPlayedQuarterly' | 'timesPlayedTotal';
 type SortDirection = 'asc' | 'desc';
@@ -77,8 +70,7 @@ const getTotalColorClass = (count: number = 0) => {
 export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEdit, isReadOnly = false }: MusicLibraryProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<SongCategory | 'all'>('all');
-  const [chordFilter, setChordFilter] = useState<ChordFilter>('all');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
   const [selectedSongs, setSelectedSongs] = useState<string[]>([]);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'title', direction: 'asc' });
@@ -117,12 +109,18 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
   const filteredSongs = useMemo(() => {
     const lowercasedSearchTerm = searchTerm.toLowerCase();
 
+    const applyFilters = (song: Song) => {
+        if (activeCategory !== 'all' && song.category !== activeCategory) return false;
+
+        if (quickFilter === 'new' && !song.isNew) return false;
+        if (quickFilter === 'with_chords' && !hasChords(song)) return false;
+        
+        return true;
+    };
+
+
     if (!lowercasedSearchTerm) {
-        const filtered = songs.filter(song => 
-            (activeCategory === 'all' || song.category === activeCategory) &&
-            (chordFilter === 'all' || (chordFilter === 'with' && hasChords(song)) || (chordFilter === 'without' && !hasChords(song))) &&
-            (statusFilter === 'all' || (statusFilter === 'new' && song.isNew) || (statusFilter === 'learned' && !song.isNew))
-        );
+        const filtered = songs.filter(applyFilters);
 
         return [...filtered].sort((a, b) => {
             const { key, direction } = sortConfig;
@@ -147,10 +145,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
             return { song, relevance };
         })
         .filter(({ song, relevance }) => 
-            relevance > 0 &&
-            (activeCategory === 'all' || song.category === activeCategory) &&
-            (chordFilter === 'all' || (chordFilter === 'with' && hasChords(song)) || (chordFilter === 'without' && !hasChords(song))) &&
-            (statusFilter === 'all' || (statusFilter === 'new' && song.isNew) || (statusFilter === 'learned' && !song.isNew))
+            relevance > 0 && applyFilters(song)
         );
 
     searchResults.sort((a, b) => {
@@ -170,7 +165,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     });
 
     return searchResults.map(item => item.song);
-  }, [songs, activeCategory, searchTerm, sortConfig, chordFilter, statusFilter]);
+  }, [songs, activeCategory, searchTerm, sortConfig, quickFilter]);
 
   useEffect(() => {
     onSelectionChange(selectedSongs);
@@ -251,17 +246,10 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                 ))}
                 </TabsList>
             </Tabs>
-            <Tabs value={chordFilter} onValueChange={(value) => setChordFilter(value as any)}>
+            <Tabs value={quickFilter} onValueChange={(value) => setQuickFilter(value as any)}>
                 <TabsList className="grid w-full h-10 grid-cols-3 sm:w-auto">
-                    {chordFilters.map(cat => (
-                        <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{chordFilterLabels[cat]}</TabsTrigger>
-                    ))}
-                </TabsList>
-            </Tabs>
-            <Tabs value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
-                <TabsList className="grid w-full h-10 grid-cols-3 sm:w-auto">
-                    {statusFilters.map(cat => (
-                        <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{statusFilterLabels[cat]}</TabsTrigger>
+                    {quickFilters.map(filter => (
+                        <TabsTrigger key={filter} value={filter} className="text-xs sm:text-sm">{quickFilterLabels[filter]}</TabsTrigger>
                     ))}
                 </TabsList>
             </Tabs>

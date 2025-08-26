@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Badge } from './ui/badge';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 
 
 interface PlaylistDialogProps {
@@ -45,13 +45,14 @@ const categoryLabels: Record<'all' | SongCategory, string> = {
   Infantil: 'Infantil'
 }
 
-type StatusFilter = 'all' | 'new' | 'learned';
-const statusFilters: StatusFilter[] = ['all', 'new', 'learned'];
-const statusFilterLabels: Record<StatusFilter, string> = {
-    all: 'Todas',
-    new: 'Novas',
-    learned: 'Aprendidas'
-}
+type QuickFilter = 'all' | 'new' | 'with_chords';
+const quickFilters: QuickFilter[] = ['all', 'new', 'with_chords'];
+const quickFilterLabels: Record<QuickFilter, string> = {
+  all: 'Todas',
+  new: 'Novas',
+  with_chords: 'Com Cifras'
+};
+
 
 const getQuarterlyColorClass = (count: number = 0) => {
     if (count > 4) return 'bg-destructive/40';
@@ -72,7 +73,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
   const [currentPlaylist, setCurrentPlaylist] = useState<string[]>(schedule.playlist);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<'all' | SongCategory>('all');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'title', direction: 'asc' });
   const [duplicatedInCurrent, setDuplicatedInCurrent] = useState<Set<string>>(new Set());
   const isMobile = useIsMobile();
@@ -127,17 +128,23 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
     currentPlaylist.map(id => allSongs.find(song => song.id === id)).filter((s): s is Song => !!s),
     [currentPlaylist, allSongs]
   );
+  
+  const hasChords = (song: Song) => song.chords && song.chords.includes('[');
 
   const availableSongs = useMemo(() => {
     const lowercasedSearchTerm = searchTerm.toLowerCase();
 
     const songsToFilter = allSongs.filter(song => !currentPlaylist.includes(song.id));
+    
+    const applyFilters = (song: Song) => {
+        if (activeCategory !== 'all' && song.category !== activeCategory) return false;
+        if (quickFilter === 'new' && !song.isNew) return false;
+        if (quickFilter === 'with_chords' && !hasChords(song)) return false;
+        return true;
+    };
 
     if (!lowercasedSearchTerm) {
-        const filtered = songsToFilter.filter(song => 
-            (activeCategory === 'all' || song.category === activeCategory) &&
-            (statusFilter === 'all' || (statusFilter === 'new' && song.isNew) || (statusFilter === 'learned' && !song.isNew))
-        );
+        const filtered = songsToFilter.filter(applyFilters);
         return [...filtered].sort((a, b) => {
             const { key, direction } = sortConfig;
             const dir = direction === 'asc' ? 1 : -1;
@@ -159,11 +166,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
             
             return { song, relevance };
         })
-        .filter(({ song, relevance }) => 
-            relevance > 0 &&
-            (activeCategory === 'all' || song.category === activeCategory) &&
-            (statusFilter === 'all' || (statusFilter === 'new' && song.isNew) || (statusFilter === 'learned' && !song.isNew))
-        );
+        .filter(({ song, relevance }) => relevance > 0 && applyFilters(song));
         
     searchResults.sort((a, b) => {
         if (a.relevance !== b.relevance) {
@@ -180,7 +183,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
     });
 
     return searchResults.map(item => item.song);
-  },[allSongs, currentPlaylist, searchTerm, activeCategory, sortConfig, statusFilter]);
+  },[allSongs, currentPlaylist, searchTerm, activeCategory, sortConfig, quickFilter]);
   
   const groupedAvailableSongs = useMemo(() => 
     songCategories.reduce((acc, category) => {
@@ -191,8 +194,6 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
       return acc;
     }, {} as Record<SongCategory, Song[]>),
   [availableSongs]);
-  
-  const hasChords = (song: Song) => song.chords && song.chords.includes('[');
   
   const isRepeated = (songId: string) => repeatedSongIds.has(songId) || duplicatedInCurrent.has(songId);
   const showFilters = !(isMobile && searchTerm);
@@ -233,10 +234,10 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                     ))}
                                 </TabsList>
                             </Tabs>
-                            <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                            <Tabs value={quickFilter} onValueChange={(v) => setQuickFilter(v as any)}>
                                 <TabsList className="grid w-full grid-cols-3 sm:w-auto">
-                                {statusFilters.map(cat => (
-                                        <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{statusFilterLabels[cat]}</TabsTrigger>
+                                {quickFilters.map(filter => (
+                                        <TabsTrigger key={filter} value={filter} className="text-xs sm:text-sm">{quickFilterLabels[filter]}</TabsTrigger>
                                     ))}
                                 </TabsList>
                             </Tabs>
