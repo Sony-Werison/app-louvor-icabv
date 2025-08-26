@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 
 const routeTitles: { [key: string]: string } = {
+    '/': 'Início',
     '/schedule': 'Reuniões da Semana',
     '/monthly-schedule': 'Escala Mensal',
     '/music': 'Biblioteca de Músicas',
@@ -27,6 +28,7 @@ export function PageTitle() {
   return (
     <div className="flex items-center gap-2">
         <SidebarTrigger/>
+        <h1 className="font-headline font-bold text-lg hidden md:block">{title}</h1>
     </div>
   );
 }

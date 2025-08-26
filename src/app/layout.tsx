@@ -12,6 +12,7 @@ import { ProfileSwitcher } from '@/components/profile-switcher';
 import { BottomNav } from '@/components/bottom-nav';
 import { PageTitle } from '@/components/page-title';
 import { AppLogo } from '@/components/app-logo';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Louvor ICABV',
@@ -55,7 +56,9 @@ export default function RootLayout({
                   <Header>
                     <div className="flex items-center gap-2">
                         <PageTitle />
-                        <AppLogo />
+                        <Link href="/">
+                          <AppLogo />
+                        </Link>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
                       <ProfileSwitcher />

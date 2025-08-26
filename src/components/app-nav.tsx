@@ -10,10 +10,11 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { CalendarDays, Library, Users, CalendarRange, Settings } from 'lucide-react';
+import { CalendarDays, Library, Users, CalendarRange, Settings, Home } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 
 const navItems = [
+  { href: '/', label: 'Início', icon: Home },
   { href: '/schedule', label: 'Reuniões', icon: CalendarDays },
   { href: '/monthly-schedule', label: 'Escala Mensal', icon: CalendarRange },
   { href: '/music', label: 'Músicas', icon: Library },
@@ -40,7 +41,7 @@ export function AppNav() {
               <Link href={item.href} passHref>
                 <SidebarMenuButton
                   as="a"
-                  isActive={pathname.startsWith(item.href)}
+                  isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
                   tooltip={item.label}
                   onClick={() => setOpenMobile(false)}
                 >

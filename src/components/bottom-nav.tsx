@@ -3,17 +3,21 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarDays, Library, Users, CalendarRange, Settings } from 'lucide-react';
+import { CalendarDays, Library, Users, CalendarRange, Settings, Home } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 
 const navItems = [
+  { href: '/', label: 'Início', icon: Home },
   { href: '/schedule', label: 'Reuniões', icon: CalendarDays },
   { href: '/monthly-schedule', label: 'Escala', icon: CalendarRange },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },
-  { href: '/settings', label: 'Ajustes', icon: Settings, permission: 'manage:settings'},
+];
+
+const adminNavItems = [
+    { href: '/settings', label: 'Ajustes', icon: Settings, permission: 'manage:settings'},
 ];
 
 export function BottomNav() {
@@ -25,22 +29,24 @@ export function BottomNav() {
     return null;
   }
 
-  const visibleItems = navItems.filter(item => !item.permission || can(item.permission as any));
-  const gridColsClass = `grid-cols-${visibleItems.length}`;
+  const visibleAdminItems = adminNavItems.filter(item => can(item.permission as any));
+  const allNavItems = [...navItems, ...visibleAdminItems];
+  
+  const gridColsClass = `grid-cols-${allNavItems.length}`;
 
   return (
     <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border md:hidden">
       <div className={cn("grid h-full max-w-lg mx-auto font-medium",
         gridColsClass
       )}>
-        {visibleItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+        {allNavItems.map((item) => {
+          const isActive = pathname === item.href;
           return (
             <Link key={item.href} href={item.href} passHref>
               <button
                 type="button"
                 className={cn(
-                  'inline-flex flex-col items-center justify-center px-5 h-full hover:bg-muted/50 group w-full',
+                  'inline-flex flex-col items-center justify-center px-2 h-full hover:bg-muted/50 group w-full',
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 )}
               >
