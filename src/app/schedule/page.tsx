@@ -110,7 +110,7 @@ export default function SchedulePage() {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <h1 className="text-xl font-headline font-bold">Reuniões da semana</h1>
+      <h1 className="text-xl font-headline font-bold">Aberturas da Semana</h1>
       
       {schedulesWithEmptyPlaylists.length > 0 && (
           <ReminderCard schedules={schedulesWithEmptyPlaylists} members={members} />

@@ -3,14 +3,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarDays, Library, Users, CalendarRange, Settings, Home } from 'lucide-react';
+import { ListMusic, Library, Users, CalendarRange, Settings, Home } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 
 const navItems = [
   { href: '/', label: 'Início', icon: Home },
-  { href: '/schedule', label: 'Reuniões', icon: CalendarDays },
+  { href: '/schedule', label: 'Aberturas', icon: ListMusic },
   { href: '/monthly-schedule', label: 'Escala', icon: CalendarRange },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },
