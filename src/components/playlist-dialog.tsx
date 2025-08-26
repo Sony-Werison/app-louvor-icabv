@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Badge } from './ui/badge';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 interface PlaylistDialogProps {
@@ -74,6 +75,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'title', direction: 'asc' });
   const [duplicatedInCurrent, setDuplicatedInCurrent] = useState<Set<string>>(new Set());
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const counts = new Map<string, number>();
@@ -193,6 +195,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
   const hasChords = (song: Song) => song.chords && song.chords.includes('[');
   
   const isRepeated = (songId: string) => repeatedSongIds.has(songId) || duplicatedInCurrent.has(songId);
+  const showFilters = !(isMobile && searchTerm);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
@@ -221,22 +224,24 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as any)}>
-                            <TabsList className="grid w-full grid-cols-4 sm:w-auto">
-                            {filterCategories.map(cat => (
-                                    <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{categoryLabels[cat]}</TabsTrigger>
-                                ))}
-                            </TabsList>
-                        </Tabs>
-                        <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-                            <TabsList className="grid w-full grid-cols-3 sm:w-auto">
-                            {statusFilters.map(cat => (
-                                    <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{statusFilterLabels[cat]}</TabsTrigger>
-                                ))}
-                            </TabsList>
-                        </Tabs>
-                    </div>
+                    {showFilters && (
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as any)}>
+                                <TabsList className="grid w-full grid-cols-4 sm:w-auto">
+                                {filterCategories.map(cat => (
+                                        <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{categoryLabels[cat]}</TabsTrigger>
+                                    ))}
+                                </TabsList>
+                            </Tabs>
+                            <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                                <TabsList className="grid w-full grid-cols-3 sm:w-auto">
+                                {statusFilters.map(cat => (
+                                        <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{statusFilterLabels[cat]}</TabsTrigger>
+                                    ))}
+                                </TabsList>
+                            </Tabs>
+                        </div>
+                    )}
                 </div>
                  <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground shrink-0">
                     <button onClick={() => handleSort('title')} className="flex items-center gap-1 text-left">
@@ -405,5 +410,3 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
     </Dialog>
   );
 }
-
-    

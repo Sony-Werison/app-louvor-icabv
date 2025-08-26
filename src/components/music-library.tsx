@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 interface MusicLibraryProps {
@@ -82,6 +83,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'title', direction: 'asc' });
   const router = useRouter();
+  const isMobile = useIsMobile();
 
   const handleSort = (key: SortKey) => {
     const isNumeric = key === 'timesPlayedQuarterly' || key === 'timesPlayedTotal';
@@ -213,6 +215,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
   const isAllFilteredSelected = selectedSongs.length > 0 && selectedSongs.length === filteredSongs.length && filteredSongs.length > 0;
   const isAnyFilteredSelected = selectedSongs.length > 0;
   const isIndeterminate = isAnyFilteredSelected && !isAllFilteredSelected;
+  const showFilters = !(isMobile && searchTerm);
 
   return (
     <div className="space-y-4">
@@ -227,41 +230,43 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as any)}>
-            <TabsList className="grid w-full grid-cols-4 sm:w-auto h-auto">
-              {categories.map((cat) => (
-                <TabsTrigger
-                  key={cat}
-                  value={cat}
-                  className="text-xs sm:text-sm flex flex-col sm:flex-row sm:gap-1.5 py-1.5 h-auto"
-                >
-                  <span className="sm:hidden text-xs text-muted-foreground/80 font-mono pb-1">
-                    {categoryCounts[cat]}
-                  </span>
-                  <span>{categoryLabels[cat]}</span>
-                  <span className="hidden sm:inline text-xs text-muted-foreground/80 font-mono">
-                    ({categoryCounts[cat]})
-                  </span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-           <Tabs value={chordFilter} onValueChange={(value) => setChordFilter(value as any)}>
-              <TabsList className="grid w-full h-10 grid-cols-3 sm:w-auto">
-                  {chordFilters.map(cat => (
-                     <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{chordFilterLabels[cat]}</TabsTrigger>
-                  ))}
-              </TabsList>
-          </Tabs>
-           <Tabs value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
-              <TabsList className="grid w-full h-10 grid-cols-3 sm:w-auto">
-                  {statusFilters.map(cat => (
-                     <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{statusFilterLabels[cat]}</TabsTrigger>
-                  ))}
-              </TabsList>
-          </Tabs>
-        </div>
+        {showFilters && (
+            <div className="flex flex-col sm:flex-row gap-2">
+            <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as any)}>
+                <TabsList className="grid w-full grid-cols-4 sm:w-auto h-auto">
+                {categories.map((cat) => (
+                    <TabsTrigger
+                    key={cat}
+                    value={cat}
+                    className="text-xs sm:text-sm flex flex-col sm:flex-row sm:gap-1.5 py-1.5 h-auto"
+                    >
+                    <span className="sm:hidden text-xs text-muted-foreground/80 font-mono pb-1">
+                        {categoryCounts[cat]}
+                    </span>
+                    <span>{categoryLabels[cat]}</span>
+                    <span className="hidden sm:inline text-xs text-muted-foreground/80 font-mono">
+                        ({categoryCounts[cat]})
+                    </span>
+                    </TabsTrigger>
+                ))}
+                </TabsList>
+            </Tabs>
+            <Tabs value={chordFilter} onValueChange={(value) => setChordFilter(value as any)}>
+                <TabsList className="grid w-full h-10 grid-cols-3 sm:w-auto">
+                    {chordFilters.map(cat => (
+                        <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{chordFilterLabels[cat]}</TabsTrigger>
+                    ))}
+                </TabsList>
+            </Tabs>
+            <Tabs value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
+                <TabsList className="grid w-full h-10 grid-cols-3 sm:w-auto">
+                    {statusFilters.map(cat => (
+                        <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{statusFilterLabels[cat]}</TabsTrigger>
+                    ))}
+                </TabsList>
+            </Tabs>
+            </div>
+        )}
       </div>
 
       <div className="h-10">
@@ -386,5 +391,3 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     </div>
   );
 }
-
-    
