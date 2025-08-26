@@ -32,7 +32,7 @@ interface ScheduleContextType {
   removeSongs: (songIds: string[]) => void;
   addOrUpdateSongs: (songs: Song[]) => void;
   importSongsFromTxt: (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => void;
-  updateSongs: (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords'>>) => void;
+  updateSongs: (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => void;
   isLoading: boolean;
 }
 
@@ -262,7 +262,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     saveSongs(newSongs);
   }
 
-  const updateSongs = (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords'>>) => {
+  const updateSongs = (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => {
     const songIdSet = new Set(songIds);
     const newSongs = songs.map(s =>
       songIdSet.has(s.id) ? { ...s, ...updates } : s

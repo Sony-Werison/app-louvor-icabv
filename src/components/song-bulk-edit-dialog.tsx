@@ -38,13 +38,14 @@ const formSchema = z.object({
   category: z.enum(songCategories).optional(),
   artist: z.string().optional(),
   key: z.string().optional(),
+  isNew: z.enum(['true', 'false']).optional(),
   deleteChords: z.boolean().optional(),
-}).refine(data => !!data.category || !!data.artist || !!data.key || data.deleteChords, {
-  message: 'Pelo menos um campo deve ser preenchido ou a exclusão de cifras marcada para salvar.',
+}).refine(data => !!data.category || !!data.artist || !!data.key || !!data.isNew || data.deleteChords, {
+  message: 'Pelo menos um campo deve ser preenchido ou marcado para salvar.',
   path: ['category'], 
 });
 
-export type BulkEditData = Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords'>>;
+export type BulkEditData = Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>;
 
 interface SongBulkEditDialogProps {
   isOpen: boolean;
@@ -74,6 +75,7 @@ export function SongBulkEditDialog({
     if (values.artist) dataToSave.artist = values.artist;
     if (values.key) dataToSave.key = values.key;
     if (values.deleteChords) dataToSave.chords = '';
+    if (values.isNew) dataToSave.isNew = values.isNew === 'true';
     onSave(dataToSave);
   };
 
@@ -135,6 +137,26 @@ export function SongBulkEditDialog({
                   <FormControl>
                     <Input placeholder="Manter tom atual" {...field} />
                   </FormControl>
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="isNew"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Música Nova</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Manter valor atual" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        <SelectItem value="true">Sim</SelectItem>
+                        <SelectItem value="false">Não</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </FormItem>
               )}
             />

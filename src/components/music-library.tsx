@@ -48,6 +48,14 @@ const chordFilterLabels: Record<ChordFilter, string> = {
   without: 'Sem Cifras'
 }
 
+type StatusFilter = 'all' | 'new' | 'learned';
+const statusFilters: StatusFilter[] = ['all', 'new', 'learned'];
+const statusFilterLabels: Record<StatusFilter, string> = {
+    all: 'Todas',
+    new: 'Novas',
+    learned: 'Aprendidas'
+}
+
 type SortKey = 'title' | 'artist' | 'category' | 'key' | 'timesPlayedQuarterly' | 'timesPlayedTotal';
 type SortDirection = 'asc' | 'desc';
 
@@ -69,6 +77,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<SongCategory | 'all'>('all');
   const [chordFilter, setChordFilter] = useState<ChordFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selectedSongs, setSelectedSongs] = useState<string[]>([]);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'title', direction: 'asc' });
@@ -113,7 +122,10 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
           (song.lyrics || '').toLowerCase().includes(lowercasedSearchTerm)) &&
         (chordFilter === 'all' ||
           (chordFilter === 'with' && hasChords(song)) ||
-          (chordFilter === 'without' && !hasChords(song)))
+          (chordFilter === 'without' && !hasChords(song))) &&
+        (statusFilter === 'all' ||
+            (statusFilter === 'new' && song.isNew) ||
+            (statusFilter === 'learned' && !song.isNew))
     );
 
     return [...filtered].sort((a, b) => {
@@ -130,7 +142,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
         return (aVal as string).localeCompare(bVal as string) * dir;
     });
 
-  }, [songs, activeCategory, searchTerm, sortConfig, chordFilter]);
+  }, [songs, activeCategory, searchTerm, sortConfig, chordFilter, statusFilter]);
 
   useEffect(() => {
     onSelectionChange(selectedSongs);
@@ -216,6 +228,13 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                   ))}
               </TabsList>
           </Tabs>
+           <Tabs value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
+              <TabsList className="grid w-full h-10 grid-cols-3 sm:w-auto">
+                  {statusFilters.map(cat => (
+                     <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{statusFilterLabels[cat]}</TabsTrigger>
+                  ))}
+              </TabsList>
+          </Tabs>
         </div>
       </div>
 
@@ -294,6 +313,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                     <div className="flex items-center gap-2">
                       {hasChords(song) && <Music className="h-3 w-3 text-muted-foreground" />}
                       <span>{song.title}</span>
+                      {song.isNew && <Badge variant="outline" className="border-green-500 text-green-500">Nova</Badge>}
                     </div>
                     <div className="text-muted-foreground text-xs sm:hidden ml-5">{song.artist}</div>
                   </TableCell>
@@ -340,15 +360,3 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     </div>
   );
 }
-
-    
-
-    
-
-
-
-
-
-
-
-

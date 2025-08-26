@@ -14,13 +14,14 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { X, Music, Search, ArrowDownUp, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
+import { X, Music, Search, ArrowDownUp, ArrowUp, ArrowDown, AlertTriangle, Sparkles } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { Badge } from './ui/badge';
 
 
 interface PlaylistDialogProps {
@@ -43,6 +44,14 @@ const categoryLabels: Record<'all' | SongCategory, string> = {
   Infantil: 'Infantil'
 }
 
+type StatusFilter = 'all' | 'new' | 'learned';
+const statusFilters: StatusFilter[] = ['all', 'new', 'learned'];
+const statusFilterLabels: Record<StatusFilter, string> = {
+    all: 'Todas',
+    new: 'Novas',
+    learned: 'Aprendidas'
+}
+
 const getQuarterlyColorClass = (count: number = 0) => {
     if (count > 4) return 'bg-destructive/40';
     if (count > 2) return 'bg-destructive/20';
@@ -62,6 +71,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
   const [currentPlaylist, setCurrentPlaylist] = useState<string[]>(schedule.playlist);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<'all' | SongCategory>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'title', direction: 'asc' });
   const [duplicatedInCurrent, setDuplicatedInCurrent] = useState<Set<string>>(new Set());
 
@@ -136,11 +146,12 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
     return sortedSongs.filter(song => 
       !currentPlaylist.includes(song.id) &&
       (activeCategory === 'all' || song.category === activeCategory) &&
+      (statusFilter === 'all' || (statusFilter === 'new' && song.isNew) || (statusFilter === 'learned' && !song.isNew)) &&
       (song.title.toLowerCase().includes(lowercasedSearchTerm) || 
        song.artist.toLowerCase().includes(lowercasedSearchTerm) ||
        (song.lyrics || '').toLowerCase().includes(lowercasedSearchTerm))
     )
-  },[allSongs, currentPlaylist, searchTerm, activeCategory, sortConfig]);
+  },[allSongs, currentPlaylist, searchTerm, activeCategory, sortConfig, statusFilter]);
   
   const groupedAvailableSongs = useMemo(() => 
     songCategories.reduce((acc, category) => {
@@ -183,13 +194,22 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
-                     <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as any)}>
-                        <TabsList className="grid w-full grid-cols-4 sm:w-auto">
-                           {filterCategories.map(cat => (
-                                <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{categoryLabels[cat]}</TabsTrigger>
-                            ))}
-                        </TabsList>
-                    </Tabs>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as any)}>
+                            <TabsList className="grid w-full grid-cols-4 sm:w-auto">
+                            {filterCategories.map(cat => (
+                                    <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{categoryLabels[cat]}</TabsTrigger>
+                                ))}
+                            </TabsList>
+                        </Tabs>
+                        <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                            <TabsList className="grid w-full grid-cols-3 sm:w-auto">
+                            {statusFilters.map(cat => (
+                                    <TabsTrigger key={cat} value={cat} className="text-xs sm:text-sm">{statusFilterLabels[cat]}</TabsTrigger>
+                                ))}
+                            </TabsList>
+                        </Tabs>
+                    </div>
                 </div>
                  <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground shrink-0">
                     <button onClick={() => handleSort('title')} className="flex items-center gap-1 text-left">
@@ -230,6 +250,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                                   <div className="font-medium flex items-center gap-2">
                                                     {hasChords(song) && <Music className="h-3 w-3 text-muted-foreground" />}
                                                     <span>{song.title}</span>
+                                                    {song.isNew && <Badge variant="outline" className="border-green-500 text-green-500">Nova</Badge>}
                                                     {isRepeated(song.id) && (
                                                       <Tooltip>
                                                         <TooltipTrigger>
@@ -312,7 +333,10 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                       </TooltipProvider>
                                     )}
                                     <div>
-                                      <p className="font-medium truncate">{song.title}</p>
+                                      <div className="flex items-center gap-2">
+                                        <p className="font-medium truncate">{song.title}</p>
+                                        {song.isNew && <Badge variant="outline" className="border-green-500 text-green-500">Nova</Badge>}
+                                      </div>
                                       <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
                                     </div>
                                 </div>

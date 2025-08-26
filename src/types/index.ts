@@ -19,6 +19,7 @@ export type Song = {
   artist: string;
   key: string;
   category: SongCategory;
+  isNew?: boolean;
   youtubeUrl?: string;
   lyrics?: string;
   chords?: string;

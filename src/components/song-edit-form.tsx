@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useAutoPairing } from '@/hooks/use-auto-pairing';
 import { useRef } from 'react';
+import { Checkbox } from './ui/checkbox';
 
 const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
 
@@ -23,6 +24,7 @@ const formSchema = z.object({
   category: z.enum(songCategories, { required_error: 'Selecione uma categoria.' }),
   lyrics: z.string().optional(),
   chords: z.string().optional(),
+  isNew: z.boolean().optional(),
 });
 
 interface SongEditFormProps {
@@ -41,6 +43,7 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
       category: song.category || 'Louvor',
       lyrics: song.lyrics || '',
       chords: song.chords || '',
+      isNew: song.isNew || false,
     },
   });
 
@@ -124,19 +127,38 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
               )}
             />
             
-            <FormField
-                control={form.control}
-                name="key"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tom</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="grid md:grid-cols-2 gap-6">
+                <FormField
+                    control={form.control}
+                    name="key"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Tom</FormLabel>
+                        <FormControl>
+                        <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="isNew"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-start gap-4 rounded-lg border p-3 mt-4 h-14">
+                            <FormControl>
+                                <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                />
+                            </FormControl>
+                             <div className="space-y-0.5">
+                                <FormLabel>Música Nova</FormLabel>
+                            </div>
+                        </FormItem>
+                    )}
+                />
+            </div>
 
             <FormField
               control={form.control}
