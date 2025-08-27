@@ -79,23 +79,6 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
   };
   
   const handleOpenPlaylist = (scheduleToOpen: Schedule) => {
-    const otherPlaylists = schedules
-      .filter(s => s.id !== scheduleToOpen.id)
-      .flatMap(s => s.playlist || []);
-      
-    const repeatedSongIds = new Set<string>();
-    const songCounts = new Map<string, number>();
-    
-    otherPlaylists.forEach(songId => {
-        songCounts.set(songId, (songCounts.get(songId) || 0) + 1);
-    });
-
-    for(const [songId, count] of songCounts.entries()) {
-        if (count >= 1) {
-            repeatedSongIds.add(songId);
-        }
-    }
-      
     setSelectedSchedule(scheduleToOpen);
     setIsPlaylistDialogOpen(true);
   }
@@ -120,11 +103,17 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
       const dataUrl = await htmlToImage.toPng(scheduleCard, {
         quality: 1,
         pixelRatio: 2,
-        backgroundColor: '#121212', // Match dark theme background
+        backgroundColor: '#121212', 
         filter: (node) => {
-            // Exclude the footer with buttons from the image
-            return node.tagName?.toLowerCase() !== 'footer';
-        }
+            if (node instanceof HTMLElement) {
+                return !node.classList.contains('schedule-card-footer');
+            }
+            return true;
+        },
+        fetchRequestInit: {
+            mode: 'cors',
+            cache: 'no-cache',
+        },
       });
       
       const schedule = schedules.find(s => s.id === scheduleId);
@@ -143,7 +132,6 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
               title: `Repertório - ${schedule.name}`,
               text: messageText,
           }).catch((error) => {
-              // AbortError is expected if the user cancels the share dialog.
               if (error.name !== 'AbortError') {
                   throw error;
               }
@@ -283,7 +271,7 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                         </div>
                     )}
                     </CardContent>
-                    <CardFooter className="p-2">
+                    <CardFooter className="p-2 schedule-card-footer">
                         <div className="flex flex-col gap-2 w-full">
                             <div className="flex gap-2">
                                 <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/2">
