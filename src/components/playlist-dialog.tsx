@@ -326,9 +326,9 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, x: -20, transition: { duration: 0.15 } }}
                           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                          className="relative flex items-center gap-2 p-2 rounded-md hover:bg-muted bg-card pr-10"
+                          className="grid grid-cols-[auto_1fr_auto] items-center gap-2 p-2 rounded-md hover:bg-muted bg-card"
                         >
-                           <div className="flex items-center gap-3 flex-1 min-w-0">
+                           <div className="flex items-center gap-3">
                                 <div className="flex flex-col shrink-0">
                                     <Button 
                                         variant="ghost" 
@@ -349,10 +349,11 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                         <ArrowDown className="h-4 w-4"/>
                                     </Button>
                                 </div>
-
                                 <span className="text-sm font-bold text-muted-foreground w-5 text-center shrink-0">{index + 1}</span>
-                                
-                                <div className="flex-1 min-w-0 flex items-center gap-2">
+                           </div>
+                            
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
                                      {isRepeated(song.id) && (
                                       <TooltipProvider>
                                       <Tooltip>
@@ -365,15 +366,11 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                       </Tooltip>
                                       </TooltipProvider>
                                     )}
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2">
-                                        <p className="font-medium truncate">{song.title}</p>
-                                        {song.isNew && <Badge variant="outline" className="border-green-500 text-green-500">Nova</Badge>}
-                                      </div>
-                                      <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
-                                    </div>
+                                    <p className="font-medium truncate">{song.title}</p>
+                                    {song.isNew && <Badge variant="outline" className="border-green-500 text-green-500">Nova</Badge>}
                                 </div>
-                          </div>
+                                <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
+                            </div>
 
                           <Button 
                               variant="ghost" 
@@ -383,7 +380,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                   newPlaylist.splice(index, 1);
                                   setCurrentPlaylist(newPlaylist);
                               }}
-                              className="absolute top-1/2 right-1 -translate-y-1/2 shrink-0 h-8 w-8 rounded-full text-muted-foreground hover:text-destructive bg-background/30 hover:bg-background/70 backdrop-blur-sm"
+                              className="shrink-0 h-8 w-8 rounded-full text-muted-foreground hover:text-destructive"
                           >
                               <X className="h-4 w-4"/>
                           </Button>
