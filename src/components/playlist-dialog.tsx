@@ -326,7 +326,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, x: -20, transition: { duration: 0.15 } }}
                           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                          className="flex items-center gap-2 p-2 rounded-md hover:bg-muted bg-card"
+                          className="relative flex items-center gap-2 p-2 rounded-md hover:bg-muted bg-card pr-10"
                         >
                            <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <div className="flex flex-col shrink-0">
@@ -365,7 +365,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                       </Tooltip>
                                       </TooltipProvider>
                                     )}
-                                    <div>
+                                    <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2">
                                         <p className="font-medium truncate">{song.title}</p>
                                         {song.isNew && <Badge variant="outline" className="border-green-500 text-green-500">Nova</Badge>}
@@ -383,7 +383,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                   newPlaylist.splice(index, 1);
                                   setCurrentPlaylist(newPlaylist);
                               }}
-                              className="shrink-0 h-8 w-8 rounded-full text-muted-foreground hover:text-destructive bg-background/30 hover:bg-background/70 backdrop-blur-sm"
+                              className="absolute top-1/2 right-1 -translate-y-1/2 shrink-0 h-8 w-8 rounded-full text-muted-foreground hover:text-destructive bg-background/30 hover:bg-background/70 backdrop-blur-sm"
                           >
                               <X className="h-4 w-4"/>
                           </Button>
