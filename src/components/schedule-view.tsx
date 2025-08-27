@@ -2,14 +2,14 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { Schedule, Member, Song } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
 import { PlaylistViewer } from '@/components/playlist-viewer';
-import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2, AlertTriangle } from 'lucide-react';
+import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2, AlertTriangle, Share2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useSchedule } from '@/context/schedule-context';
 import { Separator } from './ui/separator';
@@ -44,144 +44,6 @@ const getMemberById = (members: Member[], id: string | null) => id ? members.fin
 const getSongById = (songs: Song[], id: string) => songs.find(s => s.id === id);
 const getMemberInitial = (name: string) => name.charAt(0).toUpperCase();
 
-type ExportableCardProps = {
-    schedule: Schedule;
-    members: Member[];
-    songs: Song[];
-};
-
-const ExportableCard = React.forwardRef<HTMLDivElement, ExportableCardProps>(({ schedule, members, songs }, ref) => {
-    const [imageMap, setImageMap] = useState<Record<string, string>>({});
-    const [isLoading, setIsLoading] = useState(true);
-
-    const leader = getMemberById(members, schedule.leaderId);
-    const preacher = getMemberById(members, schedule.preacherId);
-    const playlistSongs = schedule.playlist.map(id => getSongById(songs, id)).filter((s): s is Song => !!s);
-    const teamMembers = (schedule.team?.multimedia || [])
-        .map(id => getMemberById(members, id))
-        .filter((m): m is Member => !!m);
-    
-    const imageToDataURL = useCallback(async (url: string) => {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const blob = await response.blob();
-            return new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
-        } catch (error) {
-            console.error('Failed to convert image to data URL', error);
-            return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-        }
-    }, []);
-
-    useEffect(() => {
-        const embedImages = async () => {
-            setIsLoading(true);
-            const allMembersInCard = [leader, preacher, ...teamMembers].filter(Boolean) as Member[];
-            const newImageMap: Record<string, string> = {};
-            
-            await Promise.all(
-                allMembersInCard.map(async (member) => {
-                    if (member.avatar && !member.avatar.startsWith('data:')) {
-                        const dataUrl = await imageToDataURL(member.avatar);
-                        newImageMap[member.avatar] = dataUrl;
-                    }
-                })
-            );
-            
-            setImageMap(newImageMap);
-            setIsLoading(false);
-        };
-
-        embedImages();
-    }, [schedule.id, leader, preacher, teamMembers, imageToDataURL]);
-
-  if (isLoading) {
-      return (
-           <div ref={ref} className="w-[380px] bg-card text-card-foreground p-4 flex flex-col gap-3 rounded-lg border items-center justify-center h-[500px]">
-               <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
-               <p className="text-sm text-muted-foreground">Preparando imagem...</p>
-           </div>
-      )
-  }
-
-  return (
-    <div ref={ref} className="w-[380px] bg-card text-card-foreground p-4 flex flex-col gap-3 rounded-lg border">
-        <header>
-            <div className="flex items-center gap-2">
-                {getScheduleIcon(schedule.name)}
-                <h1 className="font-headline font-bold text-lg capitalize">{schedule.name}</h1>
-            </div>
-            <p className="text-sm text-muted-foreground capitalize ml-7">
-                {format(schedule.date, 'dd MMMM yyyy', { locale: ptBR })}
-            </p>
-        </header>
-
-        <div className="space-y-2">
-            {leader && (
-            <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                <AvatarImage src={imageMap[leader.avatar] || leader.avatar} alt={leader.name} />
-                <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
-                </Avatar>
-                <div>
-                <p className="font-semibold text-sm leading-none">{leader.name}</p>
-                <span className="text-xs text-muted-foreground flex items-center gap-1"><Mic className="w-3 h-3"/>Abertura</span>
-                </div>
-            </div>
-            )}
-            {preacher && (
-            <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                <AvatarImage src={imageMap[preacher.avatar] || preacher.avatar} alt={preacher.name} />
-                <AvatarFallback>{getMemberInitial(preacher.name)}</AvatarFallback>
-                </Avatar>
-                <div>
-                <p className="font-semibold text-sm leading-none">{preacher.name}</p>
-                <span className="text-xs text-muted-foreground flex items-center gap-1"><BookUser className="w-3 h-3"/>Pregador</span>
-                </div>
-            </div>
-            )}
-        </div>
-
-        {(teamMembers.length > 0 || playlistSongs.length > 0) && <Separator />}
-
-        {teamMembers.length > 0 && (
-            <div>
-                <h3 className="font-semibold mb-2 flex items-center gap-1.5 text-sm"><Tv className="w-4 h-4"/>Multimídia</h3>
-                <div className="space-y-1.5 pl-1">
-                    {teamMembers.map(member => (
-                        <div key={member.id} className="flex items-center gap-2 text-sm">
-                            <Avatar className="h-6 w-6">
-                                <AvatarImage src={imageMap[member.avatar] || member.avatar} alt={member.name} />
-                                <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-muted-foreground">{member.name}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )}
-
-        {playlistSongs.length > 0 && (
-            <div>
-                <h3 className="font-semibold mb-2 flex items-center gap-1.5 text-sm"><ListMusic className="w-4 h-4"/>Repertório</h3>
-                <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 ml-1">
-                    {playlistSongs.map(song => (
-                        <li key={song.id} className="truncate">{song.title}</li>
-                    ))}
-                </ul>
-            </div>
-        )}
-    </div>
-  );
-});
-ExportableCard.displayName = 'ExportableCard';
-
 
 export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedSongIds }: ScheduleViewProps) {
   const [schedules, setSchedules] = useState(initialSchedules);
@@ -192,9 +54,7 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
   const { can, shareMessage } = useAuth();
   const { toast } = useToast();
 
-  const [exportingSchedule, setExportingSchedule] = useState<Schedule | null>(null);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const exportCardRef = useRef<HTMLDivElement>(null);
+  const [isCapturing, setIsCapturing] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const [canShare, setCanShare] = useState(false);
   
@@ -223,6 +83,19 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
       .filter(s => s.id !== scheduleToOpen.id)
       .flatMap(s => s.playlist || []);
       
+    const repeatedSongIds = new Set<string>();
+    const songCounts = new Map<string, number>();
+    
+    otherPlaylists.forEach(songId => {
+        songCounts.set(songId, (songCounts.get(songId) || 0) + 1);
+    });
+
+    for(const [songId, count] of songCounts.entries()) {
+        if (count >= 1) {
+            repeatedSongIds.add(songId);
+        }
+    }
+      
     setSelectedSchedule(scheduleToOpen);
     setIsPlaylistDialogOpen(true);
   }
@@ -232,35 +105,45 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
     setIsPlaylistViewerOpen(true);
   }
 
-  const captureAndAct = useCallback(async (schedule: Schedule, action: 'download' | 'share') => {
-    setExportingSchedule(schedule);
-    setIsCapturing(true);
+  const captureAndAct = useCallback(async (scheduleId: string, action: 'download' | 'share') => {
+    setIsCapturing(scheduleId);
     
-    await new Promise(resolve => setTimeout(resolve, 100));
+    const scheduleCard = document.getElementById(`schedule-card-${scheduleId}`);
 
-    if (!exportCardRef.current) {
+    if (!scheduleCard) {
       toast({ title: "Erro", description: "Não foi possível encontrar o elemento para exportar.", variant: "destructive" });
-      setExportingSchedule(null);
-      setIsCapturing(false);
+      setIsCapturing(null);
       return;
     }
 
     try {
-      const dataUrl = await htmlToImage.toPng(exportCardRef.current, {
+      const dataUrl = await htmlToImage.toPng(scheduleCard, {
         quality: 1,
         pixelRatio: 2,
-        skipFonts: true,
+        backgroundColor: '#121212', // Match dark theme background
+        filter: (node) => {
+            // Exclude the footer with buttons from the image
+            return node.tagName?.toLowerCase() !== 'footer';
+        }
       });
       
-      if (action === 'share' && isMobile && canShare) {
+      const schedule = schedules.find(s => s.id === scheduleId);
+      if (!schedule) return;
+
+      const messageText = shareMessage
+        .replace(/\[PERIODO\]/g, schedule.name)
+        .replace(/\[DATA\]/g, format(schedule.date, "dd/MM/yyyy"));
+
+      if (action === 'share' && canShare) {
           const blob = await (await fetch(dataUrl)).blob();
           const file = new File([blob], `repertorio.png`, { type: blob.type });
           
           await navigator.share({
               files: [file],
               title: `Repertório - ${schedule.name}`,
-              text: `Confira o repertório!`,
+              text: messageText,
           }).catch((error) => {
+              // AbortError is expected if the user cancels the share dialog.
               if (error.name !== 'AbortError') {
                   throw error;
               }
@@ -281,10 +164,9 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
             toast({ title: `Falha na Ação`, description: 'Não foi possível processar a imagem.', variant: 'destructive' });
         }
     } finally {
-      setIsCapturing(false);
-      setExportingSchedule(null);
+      setIsCapturing(null);
     }
-  }, [toast, isMobile, canShare, shareMessage]);
+  }, [toast, canShare, shareMessage, schedules]);
 
 
   return (
@@ -307,12 +189,15 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                 .map(id => getMemberById(members, id))
                 .filter((m): m is Member => !!m);
                 
-                const isCurrentlyExporting = exportingSchedule?.id === schedule.id && isCapturing;
+                const isCurrentlyExporting = isCapturing === schedule.id;
                 const hasPlaylist = playlistSongs.length > 0;
                 const canManage = can('manage:playlists');
+                const actionIcon = isMobile && canShare ? <Share2 className="w-4 h-4 mr-2" /> : <Download className="w-4 h-4 mr-2" />;
+                const actionLabel = isMobile && canShare ? 'Compartilhar' : 'Baixar PNG';
+                const actionType = isMobile && canShare ? 'share' : 'download';
 
                 return (
-                <Card key={schedule.id} className="flex flex-col relative">
+                <Card key={schedule.id} id={`schedule-card-${schedule.id}`} className="flex flex-col relative bg-card text-card-foreground">
                     <CardHeader className="p-3">
                     <div className="flex justify-between items-start">
                         <div>
@@ -406,25 +291,14 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                                     Visualizar
                                 </Button>
                                 {canManage && (
-                                     isMobile && canShare ? (
-                                        <Button 
-                                            variant="outline"
-                                            onClick={() => captureAndAct(schedule, 'share')} 
-                                            className="h-8 text-xs w-1/2" 
-                                            disabled={isCurrentlyExporting || !hasPlaylist}>
-                                            {isCurrentlyExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ListMusic className="w-4 h-4 mr-2" />}
-                                            Compartilhar
-                                        </Button>
-                                    ) : (
-                                        <Button 
-                                            variant="outline"
-                                            onClick={() => captureAndAct(schedule, 'download')} 
-                                            className="h-8 text-xs w-1/2" 
-                                            disabled={isCurrentlyExporting || !hasPlaylist}>
-                                            {isCurrentlyExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                                            Baixar PNG
-                                        </Button>
-                                    )
+                                     <Button 
+                                        variant="outline"
+                                        onClick={() => captureAndAct(schedule.id, actionType)} 
+                                        className="h-8 text-xs w-1/2" 
+                                        disabled={isCurrentlyExporting || !hasPlaylist}>
+                                        {isCurrentlyExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : actionIcon}
+                                        {actionLabel}
+                                    </Button>
                                 )}
                             </div>
                             {canManage && (
@@ -442,17 +316,6 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
         }
         </TooltipProvider>
     </div>
-    
-    {exportingSchedule && (
-        <div className="fixed top-0 left-[-2000px] -z-50 opacity-100 dark">
-            <ExportableCard 
-                ref={exportCardRef}
-                schedule={exportingSchedule} 
-                members={members} 
-                songs={songs}
-            />
-        </div>
-    )}
 
     {isPlaylistDialogOpen && selectedSchedule && (
         <PlaylistDialog 
@@ -483,6 +346,3 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
     </>
   );
 }
-
-
-
