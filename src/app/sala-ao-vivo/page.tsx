@@ -34,7 +34,7 @@ const LiveRoomPageComponent = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { can, userId, isLoading: isAuthLoading } = useAuth();
-    const { songs, weeklySchedules } = useSchedule();
+    const { songs, monthlySchedules } = useSchedule();
     const { data: liveState, mutate, error } = useSWR<LiveState | null>('liveState', fetchLiveState, { refreshInterval: 1000 });
 
     const [isHost, setIsHost] = useState(false);
@@ -50,10 +50,18 @@ const LiveRoomPageComponent = () => {
     const metronomeIntervalRef = useRef<NodeJS.Timeout | null>(null);
     
     const scheduleId = searchParams.get('scheduleId');
-    const schedule = weeklySchedules.find(s => s.id === scheduleId);
+    const scheduleTimestamp = scheduleId ? parseInt(scheduleId.split('-')[1], 10) : 0;
+    const scheduleType = scheduleId?.includes('manha') ? 'manha' : 'noite';
+
+    const schedule = monthlySchedules.find(s => s.date.getTime() === scheduleTimestamp);
     
     const activeSong = songs.find(s => s.id === liveState?.activeSongId);
-    const playlistSongs = schedule?.playlist.map(id => songs.find(s => s.id === id)).filter((s): s is Song => !!s) || [];
+    
+    const playlistSongIds = schedule 
+        ? (scheduleType === 'manha' ? schedule.playlist_manha : schedule.playlist_noite) || []
+        : [];
+    const playlistSongs = playlistSongIds.map(id => songs.find(s => s.id === id)).filter((s): s is Song => !!s);
+    
     const activeSongIndex = playlistSongs.findIndex(s => s.id === liveState?.activeSongId);
     
     // Determine if current user is the host
@@ -72,16 +80,16 @@ const LiveRoomPageComponent = () => {
 
     // Initialize or join a session
     useEffect(() => {
-        if (!schedule || isAuthLoading || !userId) return;
+        if (!scheduleId || isAuthLoading || !userId) return;
 
-        const isSessionActive = liveState && liveState.scheduleId === schedule.id && (Date.now() - liveState.lastUpdate < 300000); // 5 min timeout
+        const isSessionActive = liveState && liveState.scheduleId === scheduleId && (Date.now() - liveState.lastUpdate < 300000); // 5 min timeout
         
         if (!isSessionActive && userId) {
             // No active session for this schedule, start one if this user is the first.
             const newState: LiveState = {
-                scheduleId: schedule.id,
+                scheduleId: scheduleId,
                 hostId: userId,
-                activeSongId: schedule.playlist[0] || null,
+                activeSongId: playlistSongs[0]?.id || null,
                 transpose: 0,
                 scroll: { isScrolling: false, speed: 5 },
                 metronome: { isPlaying: false, bpm: 120 },
@@ -90,7 +98,7 @@ const LiveRoomPageComponent = () => {
             saveLiveState(newState).then(() => mutate(newState));
             setIsHost(true);
         }
-    }, [schedule, liveState, isAuthLoading, userId, mutate]);
+    }, [scheduleId, liveState, isAuthLoading, userId, mutate, playlistSongs]);
 
     // Function to update state and push to server
     const updateState = async (updates: Partial<LiveState>) => {
@@ -159,6 +167,7 @@ const LiveRoomPageComponent = () => {
         let beatCount = 0;
 
         const playTick = () => {
+            if (!context) return;
             const osc = context.createOscillator();
             const gain = context.createGain();
             osc.connect(gain);
@@ -215,7 +224,7 @@ const LiveRoomPageComponent = () => {
     const resetBpm = () => updateState({ metronome: { ...liveState!.metronome, bpm: activeSong?.bpm || 120 }});
 
 
-    if (!schedule || !liveState) {
+    if (!scheduleId || !liveState) {
         return <div className="flex h-screen items-center justify-center">Carregando sala...</div>;
     }
 
@@ -236,7 +245,7 @@ const LiveRoomPageComponent = () => {
                            </SheetTrigger>
                            <SheetContent side="left">
                                <SheetHeader>
-                                   <SheetTitle>Repertório - {schedule.name}</SheetTitle>
+                                   <SheetTitle>Repertório</SheetTitle>
                                </SheetHeader>
                                <ScrollArea className="h-[calc(100%-4rem)]">
                                    <div className="p-2 space-y-1">
@@ -354,3 +363,4 @@ export default function LiveRoomPage() {
     );
 }
 
+    
