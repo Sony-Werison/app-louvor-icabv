@@ -53,7 +53,6 @@ export type MonthlySchedule = {
   playlist_manha?: string[];
   playlist_noite?: string[];
   isFeatured?: boolean;
-  exporting?: boolean; // Used for PNG export styling
   name_manha?: string;
   name_noite?: string;
 };
@@ -73,5 +72,6 @@ export type LiveState = {
   };
   lastUpdate: number;
 };
+
 
 

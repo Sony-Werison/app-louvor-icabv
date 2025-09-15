@@ -70,7 +70,13 @@ export function MonthlyScheduleView({
   columns,
   isExporting = false,
   isForDialog = false,
-}: MonthlyScheduleViewProps) {
+}: {
+    schedules: MonthlySchedule[];
+    members: Member[];
+    columns: ScheduleColumn[];
+    isExporting?: boolean;
+    isForDialog?: boolean;
+}) {
   const { updateSchedule, removeSchedule } = useSchedule();
   const { can } = useAuth();
   const isReadOnly = !can('edit:schedule') || isExporting;
