@@ -12,16 +12,19 @@ import { useEffect, useState, useMemo } from 'react';
 const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: any[]): Schedule[] => {
     let schedules: Schedule[] = [];
     monthlySchedules.forEach(ms => {
-        // We only care about Sundays for the actual service schedules
-        if (getDay(ms.date) !== 0) {
+        const assignments = ms.assignments || {};
+
+        // A schedule exists if it has at least one leader assigned for morning or night.
+        const hasManha = assignments.abertura_manha && assignments.abertura_manha.some(id => !!id);
+        const hasNoite = assignments.abertura_noite && assignments.abertura_noite.some(id => !!id);
+
+        if (!hasManha && !hasNoite) {
             return;
         }
 
-        const sunday = new Date(ms.date);
-        sunday.setHours(0,0,0,0);
+        const scheduleDate = new Date(ms.date);
+        scheduleDate.setHours(0,0,0,0);
         
-        const assignments = ms.assignments || {};
-
         const team = {
             multimedia: assignments.multimedia || [],
         };
@@ -31,32 +34,32 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
             return dayName.charAt(0).toUpperCase() + dayName.slice(1, 3);
         }
         
-        // Culto de Domingo - Manhã
-        const dateManha = new Date(sunday);
-        dateManha.setHours(10, 0, 0, 0);
+        // Culto de Manhã
+        if (hasManha) {
+            const dateManha = new Date(scheduleDate);
+            dateManha.setHours(10, 0, 0, 0);
 
-        if (assignments.abertura_manha && assignments.abertura_manha[0]) {
             schedules.push({
-                id: `s-manha-${sunday.getTime()}`,
+                id: `s-manha-${scheduleDate.getTime()}`,
                 name: ms.name_manha || `${getShortDay(dateManha)}. Manhã`,
                 date: dateManha,
-                leaderId: assignments.abertura_manha[0],
+                leaderId: assignments.abertura_manha![0]!,
                 preacherId: assignments.pregacao_manha?.[0] || null,
                 team: team,
                 playlist: ms.playlist_manha || []
             });
         }
 
-        // Culto de Domingo - Noite
-        const dateNoite = new Date(sunday);
-        dateNoite.setHours(19, 0, 0, 0);
-
-        if (assignments.abertura_noite && assignments.abertura_noite[0]) {
+        // Culto de Noite
+        if (hasNoite) {
+            const dateNoite = new Date(scheduleDate);
+            dateNoite.setHours(19, 0, 0, 0);
+            
             schedules.push({
-                id: `s-noite-${sunday.getTime()}`,
+                id: `s-noite-${scheduleDate.getTime()}`,
                 name: ms.name_noite || `${getShortDay(dateNoite)}. Noite`,
                 date: dateNoite,
-                leaderId: assignments.abertura_noite[0],
+                leaderId: assignments.abertura_noite![0]!,
                 preacherId: assignments.pregacao_noite?.[0] || null,
                 team: team,
                 playlist: ms.playlist_noite || []
