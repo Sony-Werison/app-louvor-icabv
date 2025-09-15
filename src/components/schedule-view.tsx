@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -189,7 +187,7 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
 
                 return (
                 <Card key={schedule.id} id={`schedule-card-${schedule.id}`} className="flex flex-col relative bg-card text-card-foreground">
-                    <style>{`.capturing .schedule-card-footer { display: none !important; }`}</style>
+                    <style>{'.capturing .schedule-card-footer { display: none !important; }'}</style>
                     <CardHeader className="p-3">
                     <div className="flex justify-between items-start">
                         <div>
@@ -279,11 +277,9 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                         <div className="flex flex-col gap-2 w-full">
                             {canManage && (
                                 <Link href={`/sala-ao-vivo?scheduleId=${schedule.id}`} passHref>
-                                    <Button asChild variant="destructive" className="w-full h-8 text-xs">
-                                        <a>
-                                            <Presentation className="w-4 h-4 mr-2" />
-                                            Iniciar Sala ao Vivo
-                                        </a>
+                                    <Button variant="destructive" className="w-full h-8 text-xs">
+                                        <Presentation className="w-4 h-4 mr-2" />
+                                        Iniciar Sala ao Vivo
                                     </Button>
                                 </Link>
                             )}
