@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { MonthlySchedule, Member, ScheduleColumn, MemberRole } from '@/types';
@@ -11,17 +12,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Trash2, Pin } from 'lucide-react';
+import { Trash2, Pin, Sun, Moon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 
 const MemberSelector: React.FC<{
@@ -105,6 +108,7 @@ export function ScheduleListItem({
   handleMemberChange,
   handleClearAssignment,
   handleDateChange,
+  handleNameChange,
   handleRemoveDate,
   handleFeatureToggle,
   isDesktop = false,
@@ -118,12 +122,25 @@ export function ScheduleListItem({
     handleMemberChange: (date: Date, columnId: string, memberId: string, index: number) => void;
     handleClearAssignment: (date: Date, columnId: string, index: number) => void;
     handleDateChange: (oldDate: Date, newDate: Date | undefined) => void;
+    handleNameChange: (date: Date, service: 'manha' | 'noite', newName: string) => void;
     handleRemoveDate: (date: Date) => void;
     handleFeatureToggle: (date: Date) => void;
     isDesktop?: boolean;
     isReadOnly?: boolean;
     isExporting?: boolean;
 }) {
+
+  const [nameManha, setNameManha] = useState(schedule.name_manha || '');
+  const [nameNoite, setNameNoite] = useState(schedule.name_noite || '');
+  
+  const handleBlur = (service: 'manha' | 'noite') => {
+    const newName = service === 'manha' ? nameManha : nameNoite;
+    const oldName = service === 'manha' ? schedule.name_manha : schedule.name_noite;
+    if (newName !== (oldName || '')) {
+      handleNameChange(schedule.date, service, newName);
+    }
+  }
+
 
   const getFilteredMembersForColumn = (column: ScheduleColumn): Member[] => {
     let filtered: Member[] = [];
@@ -194,11 +211,20 @@ export function ScheduleListItem({
                 )}
              </div>
             </TableCell>
-            {columns.map((col) => (
+            {columns.map((col) => {
+               if (col.id.includes('manha')) {
+                  return (
+                     <TableCell key={col.id} className="p-2 min-w-44 border-r">
+                        {renderDesktopAssignment(col)}
+                    </TableCell>
+                  )
+               }
+               return (
                 <TableCell key={col.id} className="p-2 min-w-44">
                     {renderDesktopAssignment(col)}
                 </TableCell>
-            ))}
+               )
+            })}
             {!isReadOnly && (
                 <TableCell className={cn("p-2 sticky right-0 z-10", isExporting ? 'bg-card' : 'bg-background group-hover:bg-muted/50', schedule.isFeatured && 'bg-amber-500/10')}>
                     <AlertDialog>
@@ -298,34 +324,119 @@ export function ScheduleListItem({
                             <span className="text-sm font-medium">Atribuições</span>
                         </AccordionTrigger>
                         <AccordionContent>
-                            <div className="p-3 pt-0 space-y-4">
-                            {columns.map(col => {
-                                const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
-                                const slots = col.isMulti ? [0, 1] : [0];
-                                const filteredMembersForColumn = getFilteredMembersForColumn(col);
-                                return (
-                                    <div key={col.id}>
-                                        <label className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-1.5">
-                                            {col.icon && <col.icon className="h-4 w-4" />}
-                                            {col.label}
-                                        </label>
-                                        <div className={`flex gap-1 ${col.isMulti ? 'flex-col' : ''}`}>
-                                            {slots.map(index => (
-                                                <MemberSelector
-                                                    key={`${col.id}-${index}`}
-                                                    assignedMemberId={assignedMemberIds[index]}
-                                                    allMembers={members}
-                                                    filteredMembers={filteredMembersForColumn}
-                                                    onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
-                                                    onClear={() => handleClearAssignment(schedule.date, col.id, index)}
-                                                    isReadOnly={isReadOnly}
-                                                    isExporting={isExporting}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                )
-                            })}
+                            <div className="space-y-6 p-4 pt-0">
+                                <div className="space-y-4 rounded-lg border p-3">
+                                  <div className="flex items-center gap-2 font-medium">
+                                    <Sun className="h-5 w-5 text-amber-500"/>
+                                    Manhã
+                                  </div>
+                                  {!isReadOnly && <div className="space-y-2">
+                                        <Label htmlFor="name_manha">Nome da Reunião</Label>
+                                        <Input 
+                                            id="name_manha"
+                                            placeholder="Ex: Culto de Manhã"
+                                            value={nameManha}
+                                            onChange={(e) => setNameManha(e.target.value)}
+                                            onBlur={() => handleBlur('manha')}
+                                        />
+                                    </div>}
+                                    {columns.filter(c => c.id.includes('manha')).map(col => {
+                                        const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
+                                        const slots = col.isMulti ? [0, 1] : [0];
+                                        const filteredMembersForColumn = getFilteredMembersForColumn(col);
+                                        return (
+                                            <div key={col.id}>
+                                                <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-1.5">
+                                                    {col.icon && <col.icon className="h-4 w-4" />}
+                                                    {col.label}
+                                                </Label>
+                                                <div className={`flex gap-1 ${col.isMulti ? 'flex-col' : ''}`}>
+                                                    {slots.map(index => (
+                                                        <MemberSelector
+                                                            key={`${col.id}-${index}`}
+                                                            assignedMemberId={assignedMemberIds[index]}
+                                                            allMembers={members}
+                                                            filteredMembers={filteredMembersForColumn}
+                                                            onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
+                                                            onClear={() => handleClearAssignment(schedule.date, col.id, index)}
+                                                            isReadOnly={isReadOnly}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                                <div className="space-y-4 rounded-lg border p-3">
+                                   <div className="flex items-center gap-2 font-medium">
+                                    <Moon className="h-5 w-5 text-blue-400"/>
+                                    Noite
+                                  </div>
+                                   {!isReadOnly && <div className="space-y-2">
+                                        <Label htmlFor="name_noite">Nome da Reunião</Label>
+                                        <Input 
+                                            id="name_noite"
+                                            placeholder="Ex: Culto da Noite"
+                                            value={nameNoite}
+                                            onChange={(e) => setNameNoite(e.target.value)}
+                                            onBlur={() => handleBlur('noite')}
+                                        />
+                                    </div>}
+                                    {columns.filter(c => c.id.includes('noite')).map(col => {
+                                        const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
+                                        const slots = col.isMulti ? [0, 1] : [0];
+                                        const filteredMembersForColumn = getFilteredMembersForColumn(col);
+                                        return (
+                                            <div key={col.id}>
+                                                <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-1.5">
+                                                    {col.icon && <col.icon className="h-4 w-4" />}
+                                                    {col.label}
+                                                </Label>
+                                                <div className={`flex gap-1 ${col.isMulti ? 'flex-col' : ''}`}>
+                                                    {slots.map(index => (
+                                                        <MemberSelector
+                                                            key={`${col.id}-${index}`}
+                                                            assignedMemberId={assignedMemberIds[index]}
+                                                            allMembers={members}
+                                                            filteredMembers={filteredMembersForColumn}
+                                                            onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
+                                                            onClear={() => handleClearAssignment(schedule.date, col.id, index)}
+                                                            isReadOnly={isReadOnly}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                                <div className="space-y-4 rounded-lg border p-3">
+                                    {columns.filter(c => !c.id.includes('manha') && !c.id.includes('noite')).map(col => {
+                                        const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
+                                        const slots = col.isMulti ? [0, 1] : [0];
+                                        const filteredMembersForColumn = getFilteredMembersForColumn(col);
+                                        return (
+                                            <div key={col.id}>
+                                                <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-1.5">
+                                                    {col.icon && <col.icon className="h-4 w-4" />}
+                                                    {col.label}
+                                                </Label>
+                                                <div className={`flex gap-1 ${col.isMulti ? 'flex-col' : ''}`}>
+                                                    {slots.map(index => (
+                                                        <MemberSelector
+                                                            key={`${col.id}-${index}`}
+                                                            assignedMemberId={assignedMemberIds[index]}
+                                                            allMembers={members}
+                                                            filteredMembers={filteredMembersForColumn}
+                                                            onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
+                                                            onClear={() => handleClearAssignment(schedule.date, col.id, index)}
+                                                            isReadOnly={isReadOnly}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
                             </div>
                         </AccordionContent>
                     </AccordionItem>

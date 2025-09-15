@@ -1,4 +1,5 @@
 
+
 export type Role = 'admin' | 'abertura' | 'viewer';
 
 export type MemberRole = 'Abertura' | 'Pregação' | 'Multimídia' | 'Convidado';
@@ -53,6 +54,8 @@ export type MonthlySchedule = {
   playlist_noite?: string[];
   isFeatured?: boolean;
   exporting?: boolean; // Used for PNG export styling
+  name_manha?: string;
+  name_noite?: string;
 };
 
 export type LiveState = {
@@ -70,3 +73,4 @@ export type LiveState = {
   };
   lastUpdate: number;
 };
+

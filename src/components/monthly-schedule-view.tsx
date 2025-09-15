@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { MonthlySchedule, Member, ScheduleColumn, MemberRole } from '@/types';
@@ -49,6 +50,7 @@ const renderTableForExport = (
                     handleMemberChange={() => {}}
                     handleClearAssignment={() => {}}
                     handleDateChange={() => {}}
+                    handleNameChange={() => {}}
                     handleRemoveDate={() => {}}
                     handleFeatureToggle={() => {}}
                     isReadOnly={true}
@@ -110,6 +112,11 @@ export function MonthlyScheduleView({
      }
   }
 
+  const handleNameChange = (date: Date, service: 'manha' | 'noite', newName: string) => {
+    if (isReadOnly) return;
+    updateSchedule(date, { [`name_${service}`]: newName });
+  };
+
   const handleFeatureToggle = (date: Date) => {
     if (isReadOnly) return;
     const schedule = schedules.find((s) => s.date.getTime() === date.getTime());
@@ -169,6 +176,7 @@ export function MonthlyScheduleView({
             handleMemberChange={handleMemberChange}
             handleClearAssignment={handleClearAssignment}
             handleDateChange={handleDateChange}
+            handleNameChange={handleNameChange}
             handleRemoveDate={handleRemoveDate}
             handleFeatureToggle={handleFeatureToggle}
             isReadOnly={isReadOnly}
@@ -208,6 +216,7 @@ export function MonthlyScheduleView({
                  handleMemberChange={handleMemberChange}
                  handleClearAssignment={handleClearAssignment}
                  handleDateChange={handleDateChange}
+                 handleNameChange={handleNameChange}
                  handleRemoveDate={handleRemoveDate}
                  handleFeatureToggle={handleFeatureToggle}
                  isReadOnly={isReadOnly}

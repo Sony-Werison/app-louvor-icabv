@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useSchedule } from '@/context/schedule-context';
 import { ScheduleView } from '@/components/schedule-view';
@@ -37,7 +38,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
         if (assignments.abertura_manha && assignments.abertura_manha[0]) {
             schedules.push({
                 id: `s-manha-${sunday.getTime()}`,
-                name: `${getShortDay(dateManha)}. Manhã`,
+                name: ms.name_manha || `${getShortDay(dateManha)}. Manhã`,
                 date: dateManha,
                 leaderId: assignments.abertura_manha[0],
                 preacherId: assignments.pregacao_manha?.[0] || null,
@@ -53,7 +54,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
         if (assignments.abertura_noite && assignments.abertura_noite[0]) {
             schedules.push({
                 id: `s-noite-${sunday.getTime()}`,
-                name: `${getShortDay(dateNoite)}. Noite`,
+                name: ms.name_noite || `${getShortDay(dateNoite)}. Noite`,
                 date: dateNoite,
                 leaderId: assignments.abertura_noite[0],
                 preacherId: assignments.pregacao_noite?.[0] || null,
@@ -138,3 +139,4 @@ export default function SchedulePage() {
     </div>
   );
 }
+
