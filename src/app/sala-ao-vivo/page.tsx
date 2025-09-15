@@ -73,7 +73,7 @@ const LiveRoomPageComponent = () => {
 
     // Permissions check
     useEffect(() => {
-        if (!isAuthLoading && !can('manage:playlists')) {
+        if (!isAuthLoading && !can('start:live_room')) {
             router.replace('/');
         }
     }, [isAuthLoading, can, router]);
@@ -362,5 +362,3 @@ export default function LiveRoomPage() {
         </Suspense>
     );
 }
-
-    

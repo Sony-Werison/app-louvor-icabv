@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -254,7 +255,8 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                 
                 const isCurrentlyExporting = isCapturing === schedule.id;
                 const hasPlaylist = playlistSongs.length > 0;
-                const canManage = can('manage:playlists');
+                const canManagePlaylists = can('manage:playlists');
+                const canStartLiveRoom = can('start:live_room');
                 const canEditSchedule = can('edit:schedule');
                 const actionIcon = isMobile && canShare ? <Share2 className="w-4 h-4 mr-2" /> : <Download className="w-4 h-4 mr-2" />;
                 const actionLabel = isMobile && canShare ? 'Compartilhar' : 'Baixar PNG';
@@ -345,7 +347,7 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                     </CardContent>
                     <CardFooter className="p-2 schedule-card-footer">
                         <div className="flex flex-col gap-2 w-full">
-                            {canManage && (
+                            {canStartLiveRoom && (
                                 <Link href={`/sala-ao-vivo?scheduleId=${schedule.id}`} passHref>
                                     <Button variant="destructive" className="w-full h-8 text-xs">
                                         <Presentation className="w-4 h-4 mr-2" />
@@ -358,7 +360,7 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                                     <Eye className="w-4 h-4 mr-2" />
                                     Visualizar
                                 </Button>
-                                {canManage && (
+                                {canManagePlaylists && (
                                      <Button 
                                         variant="outline"
                                         onClick={() => captureAndAct(schedule.id, actionType)} 
@@ -369,7 +371,7 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                                     </Button>
                                 )}
                             </div>
-                            {canManage && (
+                            {canManagePlaylists && (
                                 <Button onClick={() => handleOpenPlaylist(schedule)} className="w-full h-8 text-xs">
                                     <ListMusic className="w-4 h-4 mr-2" />
                                     Gerenciar

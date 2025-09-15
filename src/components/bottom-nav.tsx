@@ -12,7 +12,7 @@ const navItems = [
   { href: '/', label: 'Início', icon: Home },
   { href: '/schedule', label: 'Aberturas', icon: ListMusic },
   { href: '/monthly-schedule', label: 'Escala', icon: CalendarRange },
-  { href: '/sala-ao-vivo', label: 'Ao Vivo', icon: Guitar, permission: 'manage:playlists' },
+  { href: '/sala-ao-vivo', label: 'Ao Vivo', icon: Guitar, permission: 'start:live_room' },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },
 ];
