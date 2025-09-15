@@ -69,7 +69,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
 
 export default function SchedulePage() {
   const { monthlySchedules, members, songs } = useSchedule();
-  const [weeklySchedules, setWeeklySchedules] = useState<Schedule[]>([]);
+  const [relevantSchedules, setRelevantSchedules] = useState<Schedule[]>([]);
   
   useEffect(() => {
     const allSchedules = transformMonthlyToSchedule(monthlySchedules, songs);
@@ -77,22 +77,35 @@ export default function SchedulePage() {
     const today = new Date();
     const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 }); // Monday
     const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 }); // Sunday
+    
+    const featuredSchedules = monthlySchedules
+        .filter(ms => ms.isFeatured)
+        .flatMap(ms => transformMonthlyToSchedule([ms], songs));
 
-    const filteredSchedules = allSchedules.filter(schedule => 
+    const weeklySchedules = allSchedules.filter(schedule => 
       isWithinInterval(schedule.date, { start: startOfThisWeek, end: endOfThisWeek })
     );
+    
+    const combinedSchedules = [...weeklySchedules];
+    featuredSchedules.forEach(fs => {
+        if (!combinedSchedules.some(cs => cs.id === fs.id)) {
+            combinedSchedules.push(fs);
+        }
+    });
+    
+    combinedSchedules.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    setWeeklySchedules(filteredSchedules);
+    setRelevantSchedules(combinedSchedules);
 
   }, [monthlySchedules, songs]);
 
   const schedulesWithEmptyPlaylists = useMemo(() => 
-    weeklySchedules.filter(schedule => schedule.playlist.length === 0)
-  , [weeklySchedules]);
+    relevantSchedules.filter(schedule => schedule.playlist.length === 0)
+  , [relevantSchedules]);
   
   const weeklyRepeatedSongIds = useMemo(() => {
     const songCounts = new Map<string, number>();
-    weeklySchedules.forEach(s => {
+    relevantSchedules.forEach(s => {
         s.playlist.forEach(songId => {
             songCounts.set(songId, (songCounts.get(songId) || 0) + 1);
         });
@@ -105,19 +118,19 @@ export default function SchedulePage() {
         }
     }
     return repeated;
-  }, [weeklySchedules]);
+  }, [relevantSchedules]);
 
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <h1 className="text-xl font-headline font-bold">Aberturas da Semana</h1>
+      <h1 className="text-xl font-headline font-bold">Aberturas em Destaque</h1>
       
       {schedulesWithEmptyPlaylists.length > 0 && (
           <ReminderCard schedules={schedulesWithEmptyPlaylists} members={members} />
       )}
       
       <ScheduleView 
-        initialSchedules={weeklySchedules} 
+        initialSchedules={relevantSchedules} 
         members={members} 
         songs={songs} 
         weeklyRepeatedSongIds={weeklyRepeatedSongIds}

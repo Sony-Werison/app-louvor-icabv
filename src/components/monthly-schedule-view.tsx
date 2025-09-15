@@ -50,6 +50,7 @@ const renderTableForExport = (
                     handleClearAssignment={() => {}}
                     handleDateChange={() => {}}
                     handleRemoveDate={() => {}}
+                    handleFeatureToggle={() => {}}
                     isReadOnly={true}
                     isExporting={true}
                 />
@@ -109,6 +110,14 @@ export function MonthlyScheduleView({
      }
   }
 
+  const handleFeatureToggle = (date: Date) => {
+    if (isReadOnly) return;
+    const schedule = schedules.find((s) => s.date.getTime() === date.getTime());
+    if (schedule) {
+        updateSchedule(date, { isFeatured: !schedule.isFeatured });
+    }
+  }
+
   const getAssignedMemberIds = (date: Date, columnId: string): (string | null)[] => {
     const schedule = schedules.find(s => s.date.getTime() === date.getTime());
     return schedule?.assignments[columnId] || [];
@@ -161,6 +170,7 @@ export function MonthlyScheduleView({
             handleClearAssignment={handleClearAssignment}
             handleDateChange={handleDateChange}
             handleRemoveDate={handleRemoveDate}
+            handleFeatureToggle={handleFeatureToggle}
             isReadOnly={isReadOnly}
             isExporting={isExporting}
           />
@@ -199,6 +209,7 @@ export function MonthlyScheduleView({
                  handleClearAssignment={handleClearAssignment}
                  handleDateChange={handleDateChange}
                  handleRemoveDate={handleRemoveDate}
+                 handleFeatureToggle={handleFeatureToggle}
                  isReadOnly={isReadOnly}
                  isExporting={isExporting}
                />

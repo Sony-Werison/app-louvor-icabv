@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Pin } from 'lucide-react';
 import { format } from 'date-fns';
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import { Calendar } from './ui/calendar';
@@ -106,6 +106,7 @@ export function ScheduleListItem({
   handleClearAssignment,
   handleDateChange,
   handleRemoveDate,
+  handleFeatureToggle,
   isDesktop = false,
   isReadOnly = false,
   isExporting = false,
@@ -118,6 +119,7 @@ export function ScheduleListItem({
     handleClearAssignment: (date: Date, columnId: string, index: number) => void;
     handleDateChange: (oldDate: Date, newDate: Date | undefined) => void;
     handleRemoveDate: (date: Date) => void;
+    handleFeatureToggle: (date: Date) => void;
     isDesktop?: boolean;
     isReadOnly?: boolean;
     isExporting?: boolean;
@@ -160,30 +162,37 @@ export function ScheduleListItem({
   
   if (isDesktop) {
     return (
-        <TableRow key={schedule.date.toISOString()} className={isExporting ? 'bg-card' : ''}>
-            <TableCell className={cn("font-medium p-2 sticky left-0 z-10", isExporting ? 'bg-card text-card-foreground' : 'bg-background group-hover:bg-muted/50')}>
-             {isReadOnly ? (
-                <div className="text-left font-normal capitalize h-9 px-3 py-2 text-xs sm:text-sm">
-                     {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
-                </div>
-            ) : (
-                <Popover>
-                    <PopoverTrigger asChild disabled={isReadOnly}>
-                        <Button variant="outline" size="sm" className="w-full justify-start font-normal capitalize h-9 text-xs sm:text-sm">
-                            {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            selected={schedule.date}
-                            onSelect={(newDate) => handleDateChange(schedule.date, newDate)}
-                            locale={ptBR}
-                            initialFocus
-                        />
-                    </PopoverContent>
-                </Popover>
-            )}
+        <TableRow key={schedule.date.toISOString()} className={cn(isExporting ? 'bg-card' : '', schedule.isFeatured && 'bg-amber-500/10')}>
+            <TableCell className={cn("font-medium p-2 sticky left-0 z-10", isExporting ? 'bg-card text-card-foreground' : 'bg-background group-hover:bg-muted/50', schedule.isFeatured && 'bg-amber-500/10')}>
+             <div className="flex items-center gap-1">
+                {!isReadOnly && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleFeatureToggle(schedule.date)}>
+                        <Pin className={cn("h-4 w-4", schedule.isFeatured ? "text-amber-500 fill-amber-500" : "text-muted-foreground")}/>
+                    </Button>
+                )}
+                 {isReadOnly ? (
+                    <div className="text-left font-normal capitalize h-9 px-3 py-2 text-xs sm:text-sm">
+                         {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
+                    </div>
+                ) : (
+                    <Popover>
+                        <PopoverTrigger asChild disabled={isReadOnly}>
+                            <Button variant="outline" size="sm" className="w-full justify-start font-normal capitalize h-9 text-xs sm:text-sm">
+                                {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={schedule.date}
+                                onSelect={(newDate) => handleDateChange(schedule.date, newDate)}
+                                locale={ptBR}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                )}
+             </div>
             </TableCell>
             {columns.map((col) => (
                 <TableCell key={col.id} className="p-2 min-w-44">
@@ -191,7 +200,7 @@ export function ScheduleListItem({
                 </TableCell>
             ))}
             {!isReadOnly && (
-                <TableCell className={cn("p-2 sticky right-0 z-10", isExporting ? 'bg-card' : 'bg-background group-hover:bg-muted/50')}>
+                <TableCell className={cn("p-2 sticky right-0 z-10", isExporting ? 'bg-card' : 'bg-background group-hover:bg-muted/50', schedule.isFeatured && 'bg-amber-500/10')}>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -219,9 +228,14 @@ export function ScheduleListItem({
 
   // Mobile View
   return (
-    <Card className={isExporting ? 'bg-card border-border shadow-lg' : ''}>
+    <Card className={cn(isExporting ? 'bg-card border-border shadow-lg' : '', schedule.isFeatured && 'bg-amber-500/10 border-amber-500/20')}>
         <CardHeader className="flex flex-row items-center justify-between p-3 border-b">
-             <div className={cn("font-semibold capitalize text-base flex-grow justify-start", isExporting ? 'text-card-foreground' : '')}>
+             <div className={cn("font-semibold capitalize text-base flex items-center gap-2 flex-grow justify-start", isExporting ? 'text-card-foreground' : '')}>
+                 {!isReadOnly && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2" onClick={() => handleFeatureToggle(schedule.date)}>
+                        <Pin className={cn("h-4 w-4", schedule.isFeatured ? "text-amber-500 fill-amber-500" : "text-muted-foreground")}/>
+                    </Button>
+                )}
                 {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
              </div>
             {!isReadOnly && (
