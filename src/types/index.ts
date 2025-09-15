@@ -37,7 +37,7 @@ export type Schedule = {
   preacherId: string | null;
   playlist: string[]; // array of song ids
   team?: Record<string, (string | null)[]>; // roleId -> memberId[]
-  icon?: 'sun' | 'moon';
+  icon: 'sun' | 'moon';
 };
 
 export type ScheduleColumn = {
@@ -56,6 +56,8 @@ export type MonthlySchedule = {
   isFeatured?: boolean;
   name_manha?: string;
   name_noite?: string;
+  icon_manha?: 'sun' | 'moon';
+  icon_noite?: 'sun' | 'moon';
 };
 
 export type LiveState = {
@@ -73,6 +75,7 @@ export type LiveState = {
   };
   lastUpdate: number;
 };
+
 
 
 

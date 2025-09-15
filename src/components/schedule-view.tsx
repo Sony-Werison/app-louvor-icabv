@@ -53,6 +53,10 @@ const EditableTitle = ({ schedule, canEdit, onUpdate }: { schedule: Schedule, ca
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
+        setName(schedule.name);
+    }, [schedule.name]);
+
+    useEffect(() => {
         if (isEditing && inputRef.current) {
             inputRef.current.focus();
             inputRef.current.select();
@@ -148,6 +152,14 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
   };
   
   const handleOpenPlaylist = (scheduleToOpen: Schedule) => {
+    if (!scheduleToOpen.leaderId) {
+        toast({
+            title: "Líder não atribuído",
+            description: "Atribua um líder na Escala Mensal para gerenciar o repertório.",
+            variant: "destructive"
+        });
+        return;
+    }
     setSelectedSchedule(scheduleToOpen);
     setIsPlaylistDialogOpen(true);
   }

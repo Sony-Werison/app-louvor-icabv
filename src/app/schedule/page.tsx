@@ -13,15 +13,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
     let schedules: Schedule[] = [];
     monthlySchedules.forEach(ms => {
         const assignments = ms.assignments || {};
-
-        // A schedule exists if it has at least one leader assigned for morning or night.
-        const hasManha = assignments.abertura_manha && assignments.abertura_manha.some(id => !!id);
-        const hasNoite = assignments.abertura_noite && assignments.abertura_noite.some(id => !!id);
-
-        if (!hasManha && !hasNoite) {
-            return;
-        }
-
+        
         const scheduleDate = new Date(ms.date);
         scheduleDate.setHours(0,0,0,0);
         
@@ -34,7 +26,10 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
             return dayName.charAt(0).toUpperCase() + dayName.slice(1, 3);
         }
         
-        // Culto de Manhã
+        const hasManha = assignments.abertura_manha && assignments.abertura_manha.some(id => !!id);
+        const hasNoite = assignments.abertura_noite && assignments.abertura_noite.some(id => !!id);
+
+        // Treat as two separate potential events: morning and night
         if (hasManha) {
             const dateManha = new Date(scheduleDate);
             dateManha.setHours(10, 0, 0, 0);
@@ -47,11 +42,10 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 preacherId: assignments.pregacao_manha?.[0] || null,
                 team: team,
                 playlist: ms.playlist_manha || [],
-                icon: 'sun',
+                icon: ms.icon_manha || 'sun',
             });
         }
-
-        // Culto de Noite
+        
         if (hasNoite) {
             const dateNoite = new Date(scheduleDate);
             dateNoite.setHours(19, 0, 0, 0);
@@ -64,7 +58,23 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 preacherId: assignments.pregacao_noite?.[0] || null,
                 team: team,
                 playlist: ms.playlist_noite || [],
-                icon: 'moon',
+                icon: ms.icon_noite || 'moon',
+            });
+        }
+
+        // If no assignments, create a shell for it to appear on the schedule page
+        if (!hasManha && !hasNoite) {
+             const dateShell = new Date(scheduleDate);
+             dateShell.setHours(10,0,0,0); // Default to morning
+             schedules.push({
+                id: `s-manha-${scheduleDate.getTime()}`, // Default to manha for ID generation
+                name: ms.name_manha || `${getShortDay(dateShell)}. Manhã`,
+                date: dateShell,
+                leaderId: '', // No leader
+                preacherId: null,
+                team: team,
+                playlist: ms.playlist_manha || [],
+                icon: ms.icon_manha || 'sun',
             });
         }
     });
@@ -106,7 +116,7 @@ export default function SchedulePage() {
   }, [monthlySchedules, songs]);
 
   const schedulesWithEmptyPlaylists = useMemo(() => 
-    relevantSchedules.filter(schedule => schedule.playlist.length === 0)
+    relevantSchedules.filter(schedule => schedule.playlist.length === 0 && schedule.leaderId)
   , [relevantSchedules]);
   
   const weeklyRepeatedSongIds = useMemo(() => {
@@ -129,19 +139,31 @@ export default function SchedulePage() {
   const handleScheduleUpdate = (scheduleId: string, updates: Partial<Schedule>) => {
     const [type, timestampStr] = scheduleId.replace('s-', '').split('-');
     const timestamp = parseInt(timestampStr, 10);
-    const date = new Date(timestamp);
+    
+    // Create a new Date object ensuring it's treated as UTC then converted to local timezone correctly.
+    const dateObj = new Date(timestamp);
+    const date = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
 
     const scheduleToUpdate = monthlySchedules.find(s => s.date.getTime() === date.getTime());
-    if (!scheduleToUpdate) return;
+
+    if (!scheduleToUpdate) {
+        console.warn(`Schedule with date ${date} not found for update.`);
+        return;
+    };
     
-    let monthlyUpdate: Partial<MonthlySchedule> = {};
-    if (updates.name) {
+    let monthlyUpdate: Partial<Omit<MonthlySchedule, 'date'>> = {};
+
+    if (updates.name !== undefined) {
         monthlyUpdate = type === 'manha' ? { name_manha: updates.name } : { name_noite: updates.name };
     }
+    if (updates.icon !== undefined) {
+        const iconKey = type === 'manha' ? 'icon_manha' : 'icon_noite';
+        monthlyUpdate[iconKey] = updates.icon;
+    }
     
-    // In a real scenario, you might want to update the icon preference as well
-    // but for now, we only update the name in the source of truth.
-    updateSchedule(date, monthlyUpdate);
+    if (Object.keys(monthlyUpdate).length > 0) {
+        updateSchedule(date, monthlyUpdate);
+    }
   }
 
 
@@ -163,3 +185,4 @@ export default function SchedulePage() {
     </div>
   );
 }
+
