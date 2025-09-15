@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { ListMusic, Library, Users, CalendarRange, Settings, Home, Presentation } from 'lucide-react';
+import { ListMusic, Library, Users, CalendarRange, Settings, Home, Guitar } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 
 const navItems = [
@@ -19,7 +19,7 @@ const navItems = [
   { href: '/monthly-schedule', label: 'Escala Mensal', icon: CalendarRange },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },
-  { href: '/sala-ao-vivo', label: 'Sala ao Vivo', icon: Presentation, permission: 'manage:playlists' },
+  { href: '/sala-ao-vivo', label: 'Sala ao Vivo', icon: Guitar, permission: 'manage:playlists' },
 ];
 
 const adminNavItems = [

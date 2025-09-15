@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ListMusic, Library, Users, CalendarRange, Settings, Home, Presentation } from 'lucide-react';
+import { ListMusic, Library, Users, CalendarRange, Settings, Home, Guitar } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
@@ -12,7 +12,7 @@ const navItems = [
   { href: '/', label: 'Início', icon: Home },
   { href: '/schedule', label: 'Aberturas', icon: ListMusic },
   { href: '/monthly-schedule', label: 'Escala', icon: CalendarRange },
-  { href: '/sala-ao-vivo', label: 'Ao Vivo', icon: Presentation, permission: 'manage:playlists' },
+  { href: '/sala-ao-vivo', label: 'Ao Vivo', icon: Guitar, permission: 'manage:playlists' },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },
 ];
