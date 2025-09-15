@@ -17,8 +17,8 @@ import { getTransposedKey } from '@/lib/transpose';
 import { cn } from '@/lib/utils';
 import {
   ListMusic, Play, Pause, FileText, Music, X, SkipBack, SkipForward,
-  Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Power, PowerOff, RotateCcw,
-  Volume2, VolumeX
+  Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, PowerOff, RotateCcw,
+  Volume2, VolumeX, Loader2
 } from 'lucide-react';
 
 const MIN_FONT_SIZE = 0.8;
@@ -35,7 +35,11 @@ const LiveRoomPageComponent = () => {
     const searchParams = useSearchParams();
     const { can, userId, isLoading: isAuthLoading } = useAuth();
     const { songs, monthlySchedules } = useSchedule();
-    const { data: liveState, mutate, error } = useSWR<LiveState | null>('liveState', fetchLiveState, { refreshInterval: 1000 });
+    const { data: liveState, mutate, error, isLoading: isSWRLoading } = useSWR<LiveState | null>('liveState', fetchLiveState, { 
+      refreshInterval: 1000,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+    });
 
     const [isHost, setIsHost] = useState(false);
     const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
@@ -48,6 +52,7 @@ const LiveRoomPageComponent = () => {
     const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const metronomeAudioContext = useRef<AudioContext | null>(null);
     const metronomeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const isInitializing = useRef(false);
     
     const scheduleId = searchParams.get('scheduleId');
     const scheduleTimestamp = scheduleId ? parseInt(scheduleId.split('-')[1], 10) : 0;
@@ -55,22 +60,14 @@ const LiveRoomPageComponent = () => {
 
     const schedule = monthlySchedules.find(s => s.date.getTime() === scheduleTimestamp);
     
-    const activeSong = songs.find(s => s.id === liveState?.activeSongId);
-    
     const playlistSongIds = schedule 
         ? (scheduleType === 'manha' ? schedule.playlist_manha : schedule.playlist_noite) || []
         : [];
     const playlistSongs = playlistSongIds.map(id => songs.find(s => s.id === id)).filter((s): s is Song => !!s);
     
+    const activeSong = songs.find(s => s.id === liveState?.activeSongId);
     const activeSongIndex = playlistSongs.findIndex(s => s.id === liveState?.activeSongId);
     
-    // Determine if current user is the host
-    useEffect(() => {
-        if (liveState && userId) {
-            setIsHost(liveState.hostId === userId);
-        }
-    }, [liveState, userId]);
-
     // Permissions check
     useEffect(() => {
         if (!isAuthLoading && !can('start:live_room')) {
@@ -78,14 +75,18 @@ const LiveRoomPageComponent = () => {
         }
     }, [isAuthLoading, can, router]);
 
-    // Initialize or join a session
+    // Initialize or join a session logic
     useEffect(() => {
-        if (!scheduleId || isAuthLoading || !userId) return;
+        if (isSWRLoading || !scheduleId || !userId || isInitializing.current || liveState) return;
 
-        const isSessionActive = liveState && liveState.scheduleId === scheduleId && (Date.now() - liveState.lastUpdate < 300000); // 5 min timeout
-        
-        if (!isSessionActive && userId) {
-            // No active session for this schedule, start one if this user is the first.
+        const initializeSession = async () => {
+          isInitializing.current = true;
+          const currentLiveState = await mutate(); // re-fetch the latest state first.
+          
+          const isSessionActive = currentLiveState && currentLiveState.scheduleId === scheduleId && (Date.now() - currentLiveState.lastUpdate < 300000); // 5 min timeout
+          
+          if (!isSessionActive) {
+            console.log("No active session found. Creating a new one.");
             const newState: LiveState = {
                 scheduleId: scheduleId,
                 hostId: userId,
@@ -95,10 +96,26 @@ const LiveRoomPageComponent = () => {
                 metronome: { isPlaying: false, bpm: 120 },
                 lastUpdate: Date.now(),
             };
-            saveLiveState(newState).then(() => mutate(newState));
+            await saveLiveState(newState);
+            await mutate(newState, false);
             setIsHost(true);
+          } else {
+            console.log("Joining active session.");
+          }
+        };
+
+        initializeSession().finally(() => {
+          isInitializing.current = false;
+        });
+
+    }, [scheduleId, userId, isSWRLoading, playlistSongs, mutate, liveState]);
+
+    // Determine if current user is the host
+    useEffect(() => {
+        if (liveState && userId) {
+            setIsHost(liveState.hostId === userId);
         }
-    }, [scheduleId, liveState, isAuthLoading, userId, mutate, playlistSongs]);
+    }, [liveState, userId]);
 
     // Function to update state and push to server
     const updateState = async (updates: Partial<LiveState>) => {
@@ -224,8 +241,8 @@ const LiveRoomPageComponent = () => {
     const resetBpm = () => updateState({ metronome: { ...liveState!.metronome, bpm: activeSong?.bpm || 120 }});
 
 
-    if (!scheduleId || !liveState) {
-        return <div className="flex h-screen items-center justify-center">Carregando sala...</div>;
+    if (isSWRLoading || !liveState) {
+        return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
     const transposedKey = activeSong ? getTransposedKey(activeSong.key, liveState.transpose) : null;
@@ -274,11 +291,11 @@ const LiveRoomPageComponent = () => {
                     </div>
                      <div className="w-full sm:w-auto flex justify-between sm:justify-end items-center gap-2">
                         {isHost && (
-                             <Button variant="destructive" size="icon" onClick={() => router.push('/schedule')}>
+                             <Button variant="destructive" size="icon" onClick={() => router.push('/')}>
                                  <PowerOff/>
                              </Button>
                         )}
-                        <Button variant="ghost" size="icon" onClick={() => router.push('/schedule')}>
+                        <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
                              <X/>
                          </Button>
                      </div>
@@ -357,8 +374,10 @@ const LiveRoomPageComponent = () => {
 
 export default function LiveRoomPage() {
     return (
-        <Suspense fallback={<div className="flex h-screen items-center justify-center">Carregando...</div>}>
+        <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
             <LiveRoomPageComponent />
         </Suspense>
     );
 }
+
+    
