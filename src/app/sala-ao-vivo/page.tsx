@@ -55,7 +55,8 @@ const LiveRoomPageComponent = () => {
     const isInitializing = useRef(false);
     
     const scheduleId = searchParams.get('scheduleId');
-    const scheduleTimestamp = scheduleId ? parseInt(scheduleId.split('-')[1], 10) : 0;
+    const scheduleIdParts = scheduleId ? scheduleId.split('-') : [];
+    const scheduleTimestamp = scheduleIdParts.length > 0 ? parseInt(scheduleIdParts[scheduleIdParts.length - 1], 10) : 0;
     const scheduleType = scheduleId?.includes('manha') ? 'manha' : 'noite';
 
     const schedule = monthlySchedules.find(s => s.date.getTime() === scheduleTimestamp);
@@ -379,5 +380,3 @@ export default function LiveRoomPage() {
         </Suspense>
     );
 }
-
-    
