@@ -37,6 +37,7 @@ export type Schedule = {
   preacherId: string | null;
   playlist: string[]; // array of song ids
   team?: Record<string, (string | null)[]>; // roleId -> memberId[]
+  icon?: 'sun' | 'moon';
 };
 
 export type ScheduleColumn = {
@@ -72,6 +73,7 @@ export type LiveState = {
   };
   lastUpdate: number;
 };
+
 
 
 

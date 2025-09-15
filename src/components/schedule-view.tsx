@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -19,6 +20,7 @@ import * as htmlToImage from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Link from 'next/link';
+import { Input } from './ui/input';
 
 
 interface ScheduleViewProps {
@@ -26,25 +28,92 @@ interface ScheduleViewProps {
   members: Member[];
   songs: Song[];
   weeklyRepeatedSongIds: Set<string>;
+  onScheduleUpdate: (scheduleId: string, updates: Partial<Schedule>) => void;
 }
 
-const getScheduleIcon = (scheduleName: string) => {
-    const lowerCaseName = scheduleName.toLowerCase();
-    if (lowerCaseName.includes('manhã')) {
+const getScheduleIcon = (scheduleIcon?: 'sun' | 'moon') => {
+    if (scheduleIcon === 'sun') {
         return <Sun className="w-5 h-5 text-amber-500"/>;
     }
-    if (lowerCaseName.includes('noite')) {
+    if (scheduleIcon === 'moon') {
         return <Moon className="w-5 h-5 text-blue-400"/>;
     }
     return null;
 };
 
 const getMemberById = (members: Member[], id: string | null) => id ? members.find(m => m.id === id) : null;
-const getSongById = (songs: Song[], id: string) => songs.find(s => s.id === id);
+const getSongById = (songs: Song[], id:string) => songs.find(s => s.id === id);
 const getMemberInitial = (name: string) => name.charAt(0).toUpperCase();
 
 
-export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedSongIds }: ScheduleViewProps) {
+const EditableTitle = ({ schedule, canEdit, onUpdate }: { schedule: Schedule, canEdit: boolean, onUpdate: (updates: Partial<Schedule>) => void}) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [name, setName] = useState(schedule.name);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (isEditing && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [isEditing]);
+    
+    const handleBlur = () => {
+        setIsEditing(false);
+        if (name !== schedule.name) {
+            onUpdate({ name });
+        }
+    }
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            handleBlur();
+        } else if (e.key === 'Escape') {
+            setName(schedule.name);
+            setIsEditing(false);
+        }
+    }
+
+    const handleIconChange = (icon: 'sun' | 'moon') => {
+        if (canEdit) {
+            onUpdate({ icon });
+        }
+    }
+
+    if (isEditing) {
+        return (
+            <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleIconChange('sun')}><Sun className={cn("w-5 h-5", schedule.icon === 'sun' ? "text-amber-500" : "text-muted-foreground")} /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleIconChange('moon')}><Moon className={cn("w-5 h-5", schedule.icon === 'moon' ? "text-blue-400" : "text-muted-foreground")} /></Button>
+                </div>
+                <Input 
+                    ref={inputRef}
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    onBlur={handleBlur}
+                    onKeyDown={handleKeyDown}
+                    className="h-8 text-base font-bold"
+                />
+            </div>
+        )
+    }
+
+    return (
+        <div className="flex items-center gap-2">
+            {getScheduleIcon(schedule.icon)}
+            <CardTitle 
+                className={cn("font-headline font-bold text-base capitalize", canEdit && "cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1 -ml-2")}
+                onClick={() => canEdit && setIsEditing(true)}
+            >
+                {schedule.name}
+            </CardTitle>
+        </div>
+    )
+}
+
+
+export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedSongIds, onScheduleUpdate }: ScheduleViewProps) {
   const [schedules, setSchedules] = useState(initialSchedules);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
@@ -85,6 +154,11 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
   const handleOpenViewer = (schedule: Schedule) => {
     setSelectedSchedule(schedule);
     setIsPlaylistViewerOpen(true);
+  }
+
+  const handleTitleUpdate = (scheduleId: string, updates: Partial<Schedule>) => {
+    setSchedules(prev => prev.map(s => s.id === scheduleId ? {...s, ...updates} : s));
+    onScheduleUpdate(scheduleId, updates);
   }
 
   const captureAndAct = useCallback(async (scheduleId: string, action: 'download' | 'share') => {
@@ -181,6 +255,7 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                 const isCurrentlyExporting = isCapturing === schedule.id;
                 const hasPlaylist = playlistSongs.length > 0;
                 const canManage = can('manage:playlists');
+                const canEditSchedule = can('edit:schedule');
                 const actionIcon = isMobile && canShare ? <Share2 className="w-4 h-4 mr-2" /> : <Download className="w-4 h-4 mr-2" />;
                 const actionLabel = isMobile && canShare ? 'Compartilhar' : 'Baixar PNG';
                 const actionType = isMobile && canShare ? 'share' : 'download';
@@ -191,12 +266,7 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                     <CardHeader className="p-3">
                     <div className="flex justify-between items-start">
                         <div>
-                           <div className="flex items-center gap-2">
-                                {getScheduleIcon(schedule.name)}
-                                <CardTitle className="font-headline font-bold text-base capitalize">
-                                    {schedule.name}
-                                </CardTitle>
-                           </div>
+                           <EditableTitle schedule={schedule} canEdit={canEditSchedule} onUpdate={(updates) => handleTitleUpdate(schedule.id, updates)} />
                            <CardDescription className="text-xs capitalize ml-7">
                             {format(schedule.date, 'dd MMMM yyyy', { locale: ptBR })}
                           </CardDescription>

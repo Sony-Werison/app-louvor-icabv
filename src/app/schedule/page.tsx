@@ -46,7 +46,8 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 leaderId: assignments.abertura_manha![0]!,
                 preacherId: assignments.pregacao_manha?.[0] || null,
                 team: team,
-                playlist: ms.playlist_manha || []
+                playlist: ms.playlist_manha || [],
+                icon: 'sun',
             });
         }
 
@@ -62,7 +63,8 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 leaderId: assignments.abertura_noite![0]!,
                 preacherId: assignments.pregacao_noite?.[0] || null,
                 team: team,
-                playlist: ms.playlist_noite || []
+                playlist: ms.playlist_noite || [],
+                icon: 'moon',
             });
         }
     });
@@ -72,7 +74,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
 
 
 export default function SchedulePage() {
-  const { monthlySchedules, members, songs } = useSchedule();
+  const { monthlySchedules, members, songs, updateSchedule } = useSchedule();
   const [relevantSchedules, setRelevantSchedules] = useState<Schedule[]>([]);
   
   useEffect(() => {
@@ -124,6 +126,24 @@ export default function SchedulePage() {
     return repeated;
   }, [relevantSchedules]);
 
+  const handleScheduleUpdate = (scheduleId: string, updates: Partial<Schedule>) => {
+    const [type, timestampStr] = scheduleId.replace('s-', '').split('-');
+    const timestamp = parseInt(timestampStr, 10);
+    const date = new Date(timestamp);
+
+    const scheduleToUpdate = monthlySchedules.find(s => s.date.getTime() === date.getTime());
+    if (!scheduleToUpdate) return;
+    
+    let monthlyUpdate: Partial<MonthlySchedule> = {};
+    if (updates.name) {
+        monthlyUpdate = type === 'manha' ? { name_manha: updates.name } : { name_noite: updates.name };
+    }
+    
+    // In a real scenario, you might want to update the icon preference as well
+    // but for now, we only update the name in the source of truth.
+    updateSchedule(date, monthlyUpdate);
+  }
+
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -138,6 +158,7 @@ export default function SchedulePage() {
         members={members} 
         songs={songs} 
         weeklyRepeatedSongIds={weeklyRepeatedSongIds}
+        onScheduleUpdate={handleScheduleUpdate}
       />
     </div>
   );
