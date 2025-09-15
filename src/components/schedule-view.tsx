@@ -32,11 +32,11 @@ interface ScheduleViewProps {
   onScheduleUpdate: (scheduleId: string, updates: Partial<Schedule>) => void;
 }
 
-const getScheduleIcon = (scheduleIcon?: 'sun' | 'moon') => {
-    if (scheduleIcon === 'sun') {
+const getScheduleIcon = (schedule: Schedule) => {
+    if (schedule.id.includes('manha')) {
         return <Sun className="w-5 h-5 text-amber-500"/>;
     }
-    if (scheduleIcon === 'moon') {
+    if (schedule.id.includes('noite')) {
         return <Moon className="w-5 h-5 text-blue-400"/>;
     }
     return null;
@@ -82,7 +82,7 @@ const EditableTitle = ({ schedule, canEdit, onUpdate }: { schedule: Schedule, ca
     if (isEditing) {
         return (
             <div className="flex items-center gap-2">
-                 {getScheduleIcon(schedule.icon)}
+                {getScheduleIcon(schedule)}
                 <Input 
                     ref={inputRef}
                     value={name}
@@ -97,7 +97,7 @@ const EditableTitle = ({ schedule, canEdit, onUpdate }: { schedule: Schedule, ca
 
     return (
         <div className="flex items-center gap-2">
-            {getScheduleIcon(schedule.icon)}
+            {getScheduleIcon(schedule)}
             <CardTitle 
                 className={cn("font-headline font-bold text-base capitalize", canEdit && "cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1 -ml-2")}
                 onClick={() => canEdit && setIsEditing(true)}
@@ -419,3 +419,5 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
     </>
   );
 }
+
+    

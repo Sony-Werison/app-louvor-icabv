@@ -94,7 +94,7 @@ const LiveRoomPageComponent = () => {
                 activeSongId: playlistSongs[0]?.id || null,
                 transpose: 0,
                 scroll: { isScrolling: false, speed: 5 },
-                metronome: { isPlaying: false, bpm: 120 },
+                metronome: { isPlaying: false, bpm: playlistSongs[0]?.bpm || 120 },
                 lastUpdate: Date.now(),
             };
             await saveLiveState(newState);
@@ -172,30 +172,37 @@ const LiveRoomPageComponent = () => {
             clearInterval(metronomeIntervalRef.current);
             metronomeIntervalRef.current = null;
         }
+        if (metronomeAudioContext.current && metronomeAudioContext.current.state !== 'closed') {
+            metronomeAudioContext.current.close();
+            metronomeAudioContext.current = null;
+        }
         setIsMetronomePlaying(false);
     }, []);
 
     const startMetronome = useCallback((bpm: number) => {
         stopMetronome();
-        if (!metronomeAudioContext.current) {
-            metronomeAudioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        }
-        const context = metronomeAudioContext.current;
+        if (typeof window === 'undefined') return;
+        
+        const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+        metronomeAudioContext.current = context;
+
         const interval = 60000 / bpm;
         let beatCount = 0;
 
         const playTick = () => {
-            if (!context) return;
-            const osc = context.createOscillator();
-            const gain = context.createGain();
+            if (!metronomeAudioContext.current || metronomeAudioContext.current.state === 'closed') return;
+            const currentContext = metronomeAudioContext.current;
+            const osc = currentContext.createOscillator();
+            const gain = currentContext.createGain();
             osc.connect(gain);
-            gain.connect(context.destination);
+            gain.connect(currentContext.destination);
             
             osc.frequency.value = (beatCount % 4 === 0) ? 880 : 440;
-            gain.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.5, currentContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.00001, currentContext.currentTime + 0.1);
             
-            osc.start(context.currentTime);
-            osc.stop(context.currentTime + 0.1);
+            osc.start(currentContext.currentTime);
+            osc.stop(currentContext.currentTime + 0.1);
             beatCount++;
         };
 
@@ -215,10 +222,11 @@ const LiveRoomPageComponent = () => {
 
     // --- Host Controls ---
     const selectSong = (songId: string) => {
+        if (!liveState) return;
         const song = songs.find(s => s.id === songId);
         updateState({ 
             activeSongId: songId, 
-            metronome: { isPlaying: false, bpm: song?.bpm || 120 },
+            metronome: { ...liveState.metronome, bpm: song?.bpm || liveState.metronome.bpm },
             scroll: { isScrolling: false, speed: 5 }
         });
     };
@@ -239,7 +247,10 @@ const LiveRoomPageComponent = () => {
         const newBpm = Math.max(MIN_BPM, Math.min(MAX_BPM, (liveState?.metronome.bpm || 120) + delta));
         updateState({ metronome: { ...liveState!.metronome, bpm: newBpm }});
     };
-    const resetBpm = () => updateState({ metronome: { ...liveState!.metronome, bpm: activeSong?.bpm || 120 }});
+    const resetBpm = () => {
+        if (!liveState) return;
+        updateState({ metronome: { ...liveState.metronome, bpm: activeSong?.bpm || 120 }});
+    };
 
 
     if (isSWRLoading || !liveState) {
@@ -380,3 +391,5 @@ export default function LiveRoomPage() {
         </Suspense>
     );
 }
+
+    

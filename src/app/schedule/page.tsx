@@ -26,8 +26,8 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
             return dayName.charAt(0).toUpperCase() + dayName.slice(1, 3);
         }
         
-        const hasManha = assignments.abertura_manha && assignments.abertura_manha.some(id => !!id);
-        const hasNoite = assignments.abertura_noite && assignments.abertura_noite.some(id => !!id);
+        const hasManha = (assignments.abertura_manha && assignments.abertura_manha.some(id => !!id)) || ms.playlist_manha?.length;
+        const hasNoite = (assignments.abertura_noite && assignments.abertura_noite.some(id => !!id)) || ms.playlist_noite?.length;
 
         // Treat as two separate potential events: morning and night
         if (hasManha) {
@@ -38,11 +38,10 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 id: `s-manha-${scheduleDate.getTime()}`,
                 name: ms.name_manha || `${getShortDay(dateManha)}. Manhã`,
                 date: dateManha,
-                leaderId: assignments.abertura_manha![0]!,
+                leaderId: assignments.abertura_manha?.[0] || '',
                 preacherId: assignments.pregacao_manha?.[0] || null,
                 team: team,
                 playlist: ms.playlist_manha || [],
-                icon: 'sun',
             });
         }
         
@@ -54,27 +53,37 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 id: `s-noite-${scheduleDate.getTime()}`,
                 name: ms.name_noite || `${getShortDay(dateNoite)}. Noite`,
                 date: dateNoite,
-                leaderId: assignments.abertura_noite![0]!,
+                leaderId: assignments.abertura_noite?.[0] || '',
                 preacherId: assignments.pregacao_noite?.[0] || null,
                 team: team,
                 playlist: ms.playlist_noite || [],
-                icon: 'moon',
             });
         }
 
-        // If no assignments, create a shell for it to appear on the schedule page
+        // If no assignments or playlists, create shells for it to appear on the schedule page
+        // This ensures a newly created date is visible immediately.
         if (!hasManha && !hasNoite) {
              const dateShell = new Date(scheduleDate);
-             dateShell.setHours(10,0,0,0); // Default to morning
+             dateShell.setHours(10,0,0,0);
              schedules.push({
-                id: `s-manha-${scheduleDate.getTime()}`, // Default to manha for ID generation
+                id: `s-manha-${scheduleDate.getTime()}`, 
                 name: ms.name_manha || `${getShortDay(dateShell)}. Manhã`,
                 date: dateShell,
-                leaderId: '', // No leader
+                leaderId: '',
                 preacherId: null,
                 team: team,
-                playlist: ms.playlist_manha || [],
-                icon: 'sun',
+                playlist: [],
+            });
+            const dateShellNoite = new Date(scheduleDate);
+            dateShellNoite.setHours(19,0,0,0);
+            schedules.push({
+                id: `s-noite-${scheduleDate.getTime()}`, 
+                name: ms.name_noite || `${getShortDay(dateShellNoite)}. Noite`,
+                date: dateShellNoite,
+                leaderId: '',
+                preacherId: null,
+                team: team,
+                playlist: [],
             });
         }
     });
@@ -137,7 +146,8 @@ export default function SchedulePage() {
   }, [relevantSchedules]);
 
   const handleScheduleUpdate = (scheduleId: string, updates: Partial<Schedule>) => {
-    const [type, timestampStr] = scheduleId.replace('s-', '').split('-');
+    const [type, ...timestampParts] = scheduleId.replace('s-', '').split('-');
+    const timestampStr = timestampParts.join('-');
     const timestamp = parseInt(timestampStr, 10);
     
     // Create a new Date object ensuring it's treated as UTC then converted to local timezone correctly.
@@ -182,3 +192,6 @@ export default function SchedulePage() {
   );
 }
 
+
+
+    
