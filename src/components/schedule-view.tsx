@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
 import { PlaylistViewer } from '@/components/playlist-viewer';
-import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2, AlertTriangle, Share2 } from 'lucide-react';
+import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2, AlertTriangle, Share2, Presentation } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useSchedule } from '@/context/schedule-context';
 import { Separator } from './ui/separator';
@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import * as htmlToImage from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import Link from 'next/link';
 
 
 interface ScheduleViewProps {
@@ -100,21 +101,22 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
     }
 
     try {
+      // Temporarily add a class to hide the footer
+      scheduleCard.classList.add('capturing');
+
       const dataUrl = await htmlToImage.toPng(scheduleCard, {
         quality: 1,
         pixelRatio: 2,
-        backgroundColor: '#121212', 
-        filter: (node) => {
-            if (node instanceof HTMLElement) {
-                return !node.classList.contains('schedule-card-footer');
-            }
-            return true;
-        },
+        backgroundColor: '#121212',
+        // Re-fetch images to avoid CORS issues
         fetchRequestInit: {
             mode: 'cors',
             cache: 'no-cache',
         },
       });
+      
+      // Remove the class after capturing
+      scheduleCard.classList.remove('capturing');
       
       const schedule = schedules.find(s => s.id === scheduleId);
       if (!schedule) return;
@@ -147,6 +149,7 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
       }
       
     } catch (error: any) {
+        if (scheduleCard) scheduleCard.classList.remove('capturing');
         if (error.name !== 'AbortError') { 
             console.error(`Action failed:`, error);
             toast({ title: `Falha na Ação`, description: 'Não foi possível processar a imagem.', variant: 'destructive' });
@@ -186,6 +189,7 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
 
                 return (
                 <Card key={schedule.id} id={`schedule-card-${schedule.id}`} className="flex flex-col relative bg-card text-card-foreground">
+                    <style>{`.capturing .schedule-card-footer { display: none !important; }`}</style>
                     <CardHeader className="p-3">
                     <div className="flex justify-between items-start">
                         <div>
@@ -273,6 +277,16 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                     </CardContent>
                     <CardFooter className="p-2 schedule-card-footer">
                         <div className="flex flex-col gap-2 w-full">
+                            {canManage && (
+                                <Link href={`/sala-ao-vivo?scheduleId=${schedule.id}`} passHref>
+                                    <Button asChild variant="destructive" className="w-full h-8 text-xs">
+                                        <a>
+                                            <Presentation className="w-4 h-4 mr-2" />
+                                            Iniciar Sala ao Vivo
+                                        </a>
+                                    </Button>
+                                </Link>
+                            )}
                             <div className="flex gap-2">
                                 <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/2">
                                     <Eye className="w-4 h-4 mr-2" />

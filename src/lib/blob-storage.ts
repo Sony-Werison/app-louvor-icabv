@@ -9,7 +9,7 @@ import {
   whatsappMessage as initialWhatsappMessage,
   shareMessage as initialShareMessage,
 } from './data';
-import type { Member, Song, MonthlySchedule, Role } from '@/types';
+import type { Member, Song, MonthlySchedule, Role, LiveState } from '@/types';
 
 // Define keys for Vercel Blob (which are filenames)
 const KEYS = {
@@ -19,6 +19,7 @@ const KEYS = {
   PASSWORDS: 'passwords.json',
   WHATSAPP_MESSAGE: 'whatsappMessage.json',
   SHARE_MESSAGE: 'shareMessage.json',
+  LIVE_STATE: 'liveState.json',
 };
 
 // --- Helper Functions ---
@@ -75,7 +76,7 @@ export async function fetchSongs(): Promise<Song[]> {
 }
 
 export async function fetchMonthlySchedules(): Promise<MonthlySchedule[]> {
-  const schedules = await fetchData<any[]>(KEYS.SCHEDULES, initialMonthlySchedules);
+  const schedules = await fetchData<any[]>(KEYS.SCHEDULES, initialMonthlySchedules(initialMembers));
   if (!schedules) return [];
   // Deserialize dates from string
   return schedules.map(s => ({ ...s, date: new Date(s.date) }));
@@ -91,6 +92,17 @@ export async function fetchWhatsappMessage(): Promise<string> {
 
 export async function fetchShareMessage(): Promise<string> {
     return await fetchData<string>(KEYS.SHARE_MESSAGE, initialShareMessage);
+}
+
+export async function fetchLiveState(): Promise<LiveState | null> {
+    try {
+        const blob = await head(KEYS.LIVE_STATE);
+        const response = await fetch(blob.url);
+        if (!response.ok) return null;
+        return await response.json();
+    } catch (error) {
+        return null;
+    }
 }
 
 
@@ -123,4 +135,8 @@ export async function saveWhatsappMessage(message: string): Promise<void> {
 
 export async function saveShareMessage(message: string): Promise<void> {
     await saveData(KEYS.SHARE_MESSAGE, message);
+}
+
+export async function saveLiveState(state: LiveState): Promise<void> {
+    await saveData(KEYS.LIVE_STATE, state);
 }

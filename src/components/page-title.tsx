@@ -11,6 +11,7 @@ const routeTitles: { [key: string]: string } = {
     '/music': 'Biblioteca de Músicas',
     '/members': 'Membros',
     '/settings': 'Configurações',
+    '/sala-ao-vivo': 'Sala ao Vivo',
 };
 
 const getTitleFromPath = (path: string): string => {

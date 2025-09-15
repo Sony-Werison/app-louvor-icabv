@@ -4,7 +4,17 @@ import type { Member, Song, MonthlySchedule, ScheduleColumn, SongCategory, Role,
 import { Tv, Sun, Moon, BookUser, Mic } from 'lucide-react';
 import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths } from 'date-fns';
 
-export const members: Member[] = [];
+export const members: Member[] = [
+  { id: 'm1', name: 'João da Silva', avatar: '/avatars/m1.jpg', roles: ['Abertura', 'Multimídia'] },
+  { id: 'm2', name: 'Maria Oliveira', avatar: '/avatars/m2.jpg', roles: ['Abertura', 'Pregação'] },
+  { id: 'm3', name: 'Carlos Pereira', avatar: '/avatars/m3.jpg', roles: ['Multimídia'] },
+  { id: 'm4', name: 'Ana Costa', avatar: '/avatars/m4.jpg', roles: ['Abertura'] },
+  { id: 'm5', name: 'Pedro Martins', avatar: '/avatars/m5.jpg', roles: ['Pregação', 'Convidado'] },
+  { id: 'm6', name: 'Sofia Almeida', avatar: '/avatars/m6.jpg', roles: ['Multimídia'] },
+  { id: 'm7', name: 'Lucas Souza', avatar: '/avatars/m7.jpg', roles: ['Abertura'] },
+  { id: 'm8', name: 'Beatriz Santos', avatar: '/avatars/m8.jpg', roles: ['Pregação'] },
+  { id: 'm9', name: 'Daniel Ferreira', avatar: '/avatars/m9.jpg', roles: ['Convidado'] },
+];
 
 export const songs: Song[] = [
   { 
@@ -15,6 +25,7 @@ export const songs: Song[] = [
     category: 'Louvor',
     timesPlayedQuarterly: 5,
     timesPlayedTotal: 25,
+    bpm: 76,
     lyrics: `Com esplendor de um rei
 Em majestade e luz
 Faz a Terra se alegrar
@@ -73,6 +84,7 @@ Quão [D]grande é o meu [G]Deus`
     category: 'Louvor',
     timesPlayedQuarterly: 2,
     timesPlayedTotal: 15,
+    bpm: 124,
     lyrics: `You call me out upon the waters
 The great unknown where feet may fail
 And there I find You in the mystery
@@ -111,15 +123,15 @@ And [G]keep my eyes a[D]bove the [A]waves
 When oceans [G]rise, my [D]soul will rest in [A]Your embrace
 For [G]I am [A]Yours and [Bm]You are mine`
   },
-  { id: 's3', title: 'Amazing Grace (My Chains Are Gone)', artist: 'Chris Tomlin', key: 'G', category: 'Hino', timesPlayedQuarterly: 1, timesPlayedTotal: 30 },
+  { id: 's3', title: 'Amazing Grace (My Chains Are Gone)', artist: 'Chris Tomlin', key: 'G', category: 'Hino', timesPlayedQuarterly: 1, timesPlayedTotal: 30, bpm: 70 },
   { id: 's4', title: 'Te Agradeço', artist: 'Diante do Trono', key: 'A', category: 'Louvor', timesPlayedQuarterly: 3, timesPlayedTotal: 12 },
-  { id: 's5', title: 'What a Beautiful Name', artist: 'Hillsong Worship', key: 'D', category: 'Louvor', timesPlayedQuarterly: 4, timesPlayedTotal: 22 },
-  { id: 's6', title: 'Grandes Coisas', artist: 'Fernandinho', key: 'C', category: 'Louvor', timesPlayedQuarterly: 6, timesPlayedTotal: 18 },
+  { id: 's5', title: 'What a Beautiful Name', artist: 'Hillsong Worship', key: 'D', category: 'Louvor', timesPlayedQuarterly: 4, timesPlayedTotal: 22, bpm: 68 },
+  { id: 's6', title: 'Grandes Coisas', artist: 'Fernandinho', key: 'C', category: 'Louvor', timesPlayedQuarterly: 6, timesPlayedTotal: 18, bpm: 130 },
   { id: 's7', title: 'Aquieta Minh\'alma', artist: 'Ministério Zoe', key: 'Em', category: 'Louvor', timesPlayedQuarterly: 1, timesPlayedTotal: 9 },
-  { id: 's8', title: 'Reckless Love', artist: 'Cory Asbury', key: 'F#m', category: 'Louvor', timesPlayedQuarterly: 2, timesPlayedTotal: 11 },
-  { id: 's9', title: '10,000 Reasons (Bless the Lord)', artist: 'Matt Redman', key: 'G', category: 'Louvor', timesPlayedQuarterly: 3, timesPlayedTotal: 28 },
+  { id: 's8', title: 'Reckless Love', artist: 'Cory Asbury', key: 'F#m', category: 'Louvor', timesPlayedQuarterly: 2, timesPlayedTotal: 11, bpm: 83 },
+  { id: 's9', title: '10,000 Reasons (Bless the Lord)', artist: 'Matt Redman', key: 'G', category: 'Louvor', timesPlayedQuarterly: 3, timesPlayedTotal: 28, bpm: 72 },
   { id: 's10', title: 'Em Teus Braços', artist: 'Laura Souguellis', key: 'C', category: 'Louvor', timesPlayedQuarterly: 0, timesPlayedTotal: 8 },
-  { id: 's11', title: 'A Benção', artist: 'Gateway Worship', key: 'B', category: 'Louvor', timesPlayedQuarterly: 7, timesPlayedTotal: 14 },
+  { id: 's11', title: 'A Benção', artist: 'Gateway Worship', key: 'B', category: 'Louvor', timesPlayedQuarterly: 7, timesPlayedTotal: 14, bpm: 70 },
   { id: 's12', title: 'Rude Cruz', artist: 'Harpa Cristã', key: 'A', category: 'Hino', timesPlayedQuarterly: 0, timesPlayedTotal: 40 },
   { id: 's13', title: 'Três Palavrinhas', artist: 'Turma do Cristãozinho', key: 'C', category: 'Infantil', timesPlayedQuarterly: 8, timesPlayedTotal: 50 },
   { id: 's14', title: 'Soldado de Cristo', artist: '3 Palavrinhas', key: 'G', category: 'Infantil', timesPlayedQuarterly: 5, timesPlayedTotal: 35 },
@@ -159,7 +171,7 @@ const getSundays = (date: Date): Date[] => {
     return days.filter(day => getDay(day) === 0);
 };
 
-const generateInitialSchedules = (): MonthlySchedule[] => {
+const generateInitialSchedules = (memberList: Member[]): MonthlySchedule[] => {
     const today = new Date();
     const monthsToGenerate = [addMonths(today, -1), today, addMonths(today, 1), addMonths(today, 2)];
     let allSundays: Date[] = [];
@@ -175,32 +187,36 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
       })
       .sort((a,b) => a.getTime() - b.getTime());
 
-    const preachers = members.filter(m => m.roles.includes('Pregação'));
-    const leaders = members.filter(m => m.roles.includes('Abertura'));
-    const multimedia = members.filter(m => m.roles.includes('Multimídia'));
+    const preachers = memberList.filter(m => m.roles.includes('Pregação'));
+    const leaders = memberList.filter(m => m.roles.includes('Abertura'));
+    const multimedia = memberList.filter(m => m.roles.includes('Multimídia'));
 
-    if (preachers.length === 0) preachers.push(members[0]);
-    if (leaders.length === 0) leaders.push(members[0]);
-    if (multimedia.length < 2) multimedia.push(...members.slice(0, 2));
+    if (preachers.length === 0 && memberList.length > 0) preachers.push(memberList[0]);
+    if (leaders.length === 0 && memberList.length > 0) leaders.push(memberList[0]);
+    if (multimedia.length < 2 && memberList.length > 1) multimedia.push(...memberList.slice(0, 2));
 
 
     return uniqueDates.map((date, index) => {
         const isSunday = getDay(date) === 0;
 
-        const leaderMorning = leaders[index % leaders.length];
-        const leaderNight = leaders[(index + 1) % leaders.length];
-        const preacherMorning = preachers[index % preachers.length];
-        const preacherNight = preachers[(index + 1) % preachers.length];
-        const multimedia1 = multimedia[index % multimedia.length];
-        const multimedia2 = multimedia[(index + 2) % multimedia.length];
-        
-        const assignments = (isSunday && members.length > 0) ? {
-                'abertura_manha': [leaderMorning.id],
-                'pregacao_manha': [preacherMorning.id],
-                'abertura_noite': [leaderNight.id],
-                'pregacao_noite': [preacherNight.id],
-                'multimedia': [multimedia1.id, multimedia2.id],
-            } : {};
+        let assignments = {};
+
+        if (isSunday && memberList.length > 0) {
+            const leaderMorning = leaders[index % leaders.length];
+            const leaderNight = leaders[(index + 1) % leaders.length];
+            const preacherMorning = preachers[index % preachers.length];
+            const preacherNight = preachers[(index + 1) % preachers.length];
+            const multimedia1 = multimedia[index % multimedia.length];
+            const multimedia2 = multimedia.length > 1 ? multimedia[(index + 2) % multimedia.length] : multimedia1;
+            
+            assignments = {
+                    'abertura_manha': [leaderMorning.id],
+                    'pregacao_manha': [preacherMorning.id],
+                    'abertura_noite': [leaderNight.id],
+                    'pregacao_noite': [preacherNight.id],
+                    'multimedia': [multimedia1.id, multimedia2.id],
+                };
+        }
 
         return {
             date: date,
@@ -210,4 +226,4 @@ const generateInitialSchedules = (): MonthlySchedule[] => {
 };
 
 
-export const monthlySchedules: MonthlySchedule[] = generateInitialSchedules();
+export const monthlySchedules = generateInitialSchedules;

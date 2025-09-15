@@ -20,6 +20,7 @@ interface AuthContextType {
   updateShareMessage: (newMessage: string) => Promise<boolean>;
   aberturaPassword: string;
   isLoading: boolean;
+  userId: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,9 +39,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [whatsappMessage, setWhatsappMessage] = useState('');
   const [shareMessage, setShareMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState('');
   const { toast } = useToast();
 
   const isAuthenticated = !!role;
+
+  useEffect(() => {
+    // Generate a simple unique ID for the user session
+    let sessionUserId = sessionStorage.getItem('userId');
+    if (!sessionUserId) {
+        sessionUserId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        sessionStorage.setItem('userId', sessionUserId);
+    }
+    setUserId(sessionUserId);
+  }, []);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -189,6 +201,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       updateShareMessage,
       aberturaPassword: rolePasswords?.abertura || '',
       isLoading: isLoading || !role, // Consider loading until role is also set
+      userId,
   };
 
   return (

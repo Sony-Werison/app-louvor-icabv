@@ -25,6 +25,7 @@ export type Song = {
   chords?: string;
   timesPlayedQuarterly?: number;
   timesPlayedTotal?: number;
+  bpm?: number;
 };
 
 export type Schedule = {
@@ -51,4 +52,20 @@ export type MonthlySchedule = {
   playlist_manha?: string[];
   playlist_noite?: string[];
   exporting?: boolean; // Used for PNG export styling
+};
+
+export type LiveState = {
+  scheduleId: string;
+  hostId: string;
+  activeSongId: string | null;
+  transpose: number;
+  scroll: {
+    isScrolling: boolean;
+    speed: number;
+  };
+  metronome: {
+    isPlaying: boolean;
+    bpm: number;
+  };
+  lastUpdate: number;
 };
