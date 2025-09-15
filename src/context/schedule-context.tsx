@@ -57,15 +57,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
           fetchMonthlySchedules(),
         ]);
         
-        const correctedSchedules = loadedSchedules.filter(schedule => {
-            const day = getDay(schedule.date);
-            return day === 0;
-        });
-
-        if (correctedSchedules.length !== loadedSchedules.length) {
-            await saveMonthlySchedules(correctedSchedules);
-        }
-
         // Data migration for member roles
         let membersModified = false;
         const migratedMembers = loadedMembers.map(member => {
@@ -106,7 +97,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         }
         
         setSongs(loadedSongs);
-        setMonthlySchedules(correctedSchedules);
+        setMonthlySchedules(loadedSchedules);
 
       } catch (error) {
         console.error("Failed to load data from blob store:", error);

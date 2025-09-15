@@ -47,7 +47,7 @@ const getSongById = (songs: Song[], id:string) => songs.find(s => s.id === id);
 const getMemberInitial = (name: string) => name.charAt(0).toUpperCase();
 
 
-const EditableTitle = ({ schedule, canEdit, onUpdate }: { schedule: Schedule, canEdit: boolean, onUpdate: (updates: Partial<Schedule>) => void}) => {
+const EditableTitle = ({ schedule, canEdit, onUpdate }: { schedule: Schedule, canEdit: boolean, onUpdate: (scheduleId: string, updates: Partial<Schedule>) => void}) => {
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(schedule.name);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -62,7 +62,7 @@ const EditableTitle = ({ schedule, canEdit, onUpdate }: { schedule: Schedule, ca
     const handleBlur = () => {
         setIsEditing(false);
         if (name !== schedule.name) {
-            onUpdate({ name });
+            onUpdate(schedule.id, { name });
         }
     }
 
@@ -77,7 +77,7 @@ const EditableTitle = ({ schedule, canEdit, onUpdate }: { schedule: Schedule, ca
 
     const handleIconChange = (icon: 'sun' | 'moon') => {
         if (canEdit) {
-            onUpdate({ icon });
+            onUpdate(schedule.id, { icon });
         }
     }
 
@@ -268,7 +268,7 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                     <CardHeader className="p-3">
                     <div className="flex justify-between items-start">
                         <div>
-                           <EditableTitle schedule={schedule} canEdit={canEditSchedule} onUpdate={(updates) => handleTitleUpdate(schedule.id, updates)} />
+                           <EditableTitle schedule={schedule} canEdit={canEditSchedule} onUpdate={handleTitleUpdate} />
                            <CardDescription className="text-xs capitalize ml-7">
                             {format(schedule.date, 'dd MMMM yyyy', { locale: ptBR })}
                           </CardDescription>
