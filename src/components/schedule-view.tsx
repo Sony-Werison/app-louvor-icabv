@@ -79,19 +79,10 @@ const EditableTitle = ({ schedule, canEdit, onUpdate }: { schedule: Schedule, ca
         }
     }
 
-    const handleIconChange = (icon: 'sun' | 'moon') => {
-        if (canEdit) {
-            onUpdate(schedule.id, { icon });
-        }
-    }
-
     if (isEditing) {
         return (
             <div className="flex items-center gap-2">
-                <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleIconChange('sun')}><Sun className={cn("w-5 h-5", schedule.icon === 'sun' ? "text-amber-500" : "text-muted-foreground")} /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleIconChange('moon')}><Moon className={cn("w-5 h-5", schedule.icon === 'moon' ? "text-blue-400" : "text-muted-foreground")} /></Button>
-                </div>
+                 {getScheduleIcon(schedule.icon)}
                 <Input 
                     ref={inputRef}
                     value={name}

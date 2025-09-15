@@ -42,7 +42,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 preacherId: assignments.pregacao_manha?.[0] || null,
                 team: team,
                 playlist: ms.playlist_manha || [],
-                icon: ms.icon_manha || 'sun',
+                icon: 'sun',
             });
         }
         
@@ -58,7 +58,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 preacherId: assignments.pregacao_noite?.[0] || null,
                 team: team,
                 playlist: ms.playlist_noite || [],
-                icon: ms.icon_noite || 'moon',
+                icon: 'moon',
             });
         }
 
@@ -74,7 +74,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
                 preacherId: null,
                 team: team,
                 playlist: ms.playlist_manha || [],
-                icon: ms.icon_manha || 'sun',
+                icon: 'sun',
             });
         }
     });
@@ -155,10 +155,6 @@ export default function SchedulePage() {
 
     if (updates.name !== undefined) {
         monthlyUpdate = type === 'manha' ? { name_manha: updates.name } : { name_noite: updates.name };
-    }
-    if (updates.icon !== undefined) {
-        const iconKey = type === 'manha' ? 'icon_manha' : 'icon_noite';
-        monthlyUpdate[iconKey] = updates.icon;
     }
     
     if (Object.keys(monthlyUpdate).length > 0) {
