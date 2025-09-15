@@ -214,7 +214,7 @@ export function ScheduleListItem({
             {columns.map((col) => {
                if (col.id.includes('manha')) {
                   return (
-                     <TableCell key={col.id} className="p-2 min-w-44 border-r">
+                     <TableCell key={col.id} className="p-2 min-w-44">
                         {renderDesktopAssignment(col)}
                     </TableCell>
                   )
