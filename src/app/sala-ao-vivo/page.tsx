@@ -76,18 +76,30 @@ const LiveRoomPageComponent = () => {
         }
     }, [isAuthLoading, can, router]);
 
-    // Initialize or join a session logic
+    // Determine if current user is the host
     useEffect(() => {
-        if (isSWRLoading || !scheduleId || !userId || isInitializing.current || liveState) return;
+        if (liveState && userId) {
+            setIsHost(liveState.hostId === userId);
+        } else if (!liveState && userId && !isInitializing.current && can('start:live_room')) {
+             // If there's no state, the first admin to enter becomes host
+            setIsHost(true);
+        }
+    }, [liveState, userId, can]);
+
+
+    // Initialize a session if none is active and user is host
+    useEffect(() => {
+        if (isSWRLoading || !scheduleId || !userId || isInitializing.current || !isHost) return;
 
         const initializeSession = async () => {
-          isInitializing.current = true;
-          const currentLiveState = await mutate(); // re-fetch the latest state first.
+          // Re-fetch the latest state first to avoid race conditions.
+          const currentLiveState = await mutate(); 
           
           const isSessionActive = currentLiveState && currentLiveState.scheduleId === scheduleId && (Date.now() - currentLiveState.lastUpdate < 300000); // 5 min timeout
-          
+
           if (!isSessionActive) {
-            console.log("No active session found. Creating a new one.");
+            isInitializing.current = true;
+            console.log("No active session found. Creating a new one as host.");
             const newState: LiveState = {
                 scheduleId: scheduleId,
                 hostId: userId,
@@ -99,24 +111,18 @@ const LiveRoomPageComponent = () => {
             };
             await saveLiveState(newState);
             await mutate(newState, false);
-            setIsHost(true);
+            isInitializing.current = false;
           } else {
-            console.log("Joining active session.");
+             console.log("Joining active session as host.");
           }
         };
 
-        initializeSession().finally(() => {
-          isInitializing.current = false;
-        });
-
-    }, [scheduleId, userId, isSWRLoading, playlistSongs, mutate, liveState]);
-
-    // Determine if current user is the host
-    useEffect(() => {
-        if (liveState && userId) {
-            setIsHost(liveState.hostId === userId);
+        if (isHost && !liveState) {
+            initializeSession();
         }
-    }, [liveState, userId]);
+
+    }, [scheduleId, userId, isSWRLoading, playlistSongs, mutate, liveState, isHost]);
+
 
     // Function to update state and push to server
     const updateState = async (updates: Partial<LiveState>) => {
@@ -224,11 +230,16 @@ const LiveRoomPageComponent = () => {
     const selectSong = (songId: string) => {
         if (!liveState) return;
         const song = songs.find(s => s.id === songId);
-        updateState({ 
-            activeSongId: songId, 
-            metronome: { ...liveState.metronome, bpm: song?.bpm || liveState.metronome.bpm },
-            scroll: { isScrolling: false, speed: 5 }
-        });
+        const newBpm = song?.bpm || liveState.metronome.bpm;
+
+        // Only update state if something actually changes
+        if (liveState.activeSongId !== songId || liveState.metronome.bpm !== newBpm) {
+            updateState({ 
+                activeSongId: songId, 
+                metronome: { ...liveState.metronome, bpm: newBpm },
+                scroll: { isScrolling: false, speed: 5 }
+            });
+        }
     };
     const navigateSong = (direction: 'next' | 'prev') => {
         const newIndex = direction === 'next' ? activeSongIndex + 1 : activeSongIndex - 1;
@@ -248,8 +259,10 @@ const LiveRoomPageComponent = () => {
         updateState({ metronome: { ...liveState!.metronome, bpm: newBpm }});
     };
     const resetBpm = () => {
-        if (!liveState) return;
-        updateState({ metronome: { ...liveState.metronome, bpm: activeSong?.bpm || 120 }});
+        if (!liveState || !activeSong) return;
+        if (liveState.metronome.bpm !== (activeSong.bpm || 120)) {
+            updateState({ metronome: { ...liveState.metronome, bpm: activeSong.bpm || 120 }});
+        }
     };
 
 
