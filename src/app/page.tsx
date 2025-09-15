@@ -18,7 +18,6 @@ const menuItems = [
   { href: '/monthly-schedule', label: 'Escala Mensal', icon: CalendarRange },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },
-  { href: '/sala-ao-vivo', label: 'Sala ao Vivo', icon: Guitar, permission: 'start:live_room' },
 ];
 
 const adminMenuItems = [
