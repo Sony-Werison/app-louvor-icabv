@@ -40,8 +40,7 @@ const LiveRoomPageComponent = () => {
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
     });
-
-    const [isHost, setIsHost] = useState(false);
+    
     const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
     
     // Local state for client-side effects
@@ -68,6 +67,7 @@ const LiveRoomPageComponent = () => {
     
     const activeSong = songs.find(s => s.id === liveState?.activeSongId);
     const activeSongIndex = playlistSongs.findIndex(s => s.id === liveState?.activeSongId);
+    const isHost = liveState?.hostId === userId;
     
     // Permissions check
     useEffect(() => {
@@ -76,27 +76,15 @@ const LiveRoomPageComponent = () => {
         }
     }, [isAuthLoading, can, router]);
 
-    // Determine if current user is the host
+    // Initialize a session if none is active
     useEffect(() => {
-        if (liveState && userId) {
-            setIsHost(liveState.hostId === userId);
-        } else if (!liveState && userId && !isInitializing.current && can('start:live_room')) {
-            setIsHost(true);
+        if (isSWRLoading || !scheduleId || !userId || isInitializing.current || liveState || !can('start:live_room')) {
+            return;
         }
-    }, [liveState, userId, can]);
-
-
-    // Initialize a session if none is active and user is host
-    useEffect(() => {
-        if (isSWRLoading || !scheduleId || !userId || isInitializing.current || !isHost) return;
 
         const initializeSession = async () => {
-          isInitializing.current = true;
-          // Re-fetch the latest state first to avoid race conditions.
-          const currentLiveState = await mutate(); 
-          
-          if (!currentLiveState || currentLiveState.scheduleId !== scheduleId) {
-            console.log("No active session found or session mismatch. Creating a new one as host.");
+            isInitializing.current = true;
+            console.log("No active session found. Attempting to create one as the first user.");
             const newState: LiveState = {
                 scheduleId: scheduleId,
                 hostId: userId,
@@ -108,29 +96,21 @@ const LiveRoomPageComponent = () => {
             };
             await saveLiveState(newState);
             await mutate(newState, false);
-          } else {
-             console.log("Joining active session as host.");
-             // Ensure host status is correct if rejoining
-             if (currentLiveState.hostId !== userId) {
-                await updateState({ hostId: userId });
-             }
-          }
-          isInitializing.current = false;
+            isInitializing.current = false;
         };
         
-        if (isHost) {
-          initializeSession();
-        }
+        initializeSession();
 
-    }, [scheduleId, userId, isSWRLoading, playlistSongs, mutate, isHost]);
+    }, [scheduleId, userId, isSWRLoading, playlistSongs, mutate, liveState, can]);
 
 
     // Function to update state and push to server
     const updateState = async (updates: Partial<LiveState>) => {
         if (!isHost || !liveState) return;
         const newState = { ...liveState, ...updates, lastUpdate: Date.now() };
+        // Prevent re-fetching from the server immediately after our own update
+        mutate(newState, false);
         await saveLiveState(newState);
-        mutate(newState, false); // Optimistic update
     };
     
     // --- SCROLL LOGIC ---
@@ -159,11 +139,13 @@ const LiveRoomPageComponent = () => {
                 if (scrollViewportRef.current.scrollTop < currentMaxScroll) {
                     scrollViewportRef.current.scrollTop += 1;
                 } else {
-                    updateState({ scroll: { ...liveState!.scroll, isScrolling: false }});
+                    if (isHost) {
+                        updateState({ scroll: { ...liveState!.scroll, isScrolling: false }});
+                    }
                 }
             }
         }, interval);
-    }, [stopScrolling, liveState]);
+    }, [stopScrolling, liveState, isHost, updateState]);
 
     useEffect(() => {
         if (liveState?.scroll.isScrolling) {
@@ -235,7 +217,7 @@ const LiveRoomPageComponent = () => {
 
         updateState({
             activeSongId: songId,
-            metronome: { ...liveState.metronome, bpm: newBpm },
+            metronome: { ...liveState.metronome, bpm: newBpm, isPlaying: liveState.metronome.isPlaying },
             scroll: { isScrolling: false, speed: liveState.scroll.speed } // Stop scroll on song change
         });
     };
@@ -259,7 +241,7 @@ const LiveRoomPageComponent = () => {
     };
     const resetBpm = () => {
         if (!liveState || !activeSong) return;
-        updateState({ metronome: { ...liveState.metronome, bpm: activeSong.bpm || 120 }});
+        updateState({ metronome: { ...liveState.metronome, bpm: activeSong.bpm || 120, isPlaying: liveState.metronome.isPlaying }});
     };
 
 
@@ -405,3 +387,5 @@ export default function LiveRoomPage() {
         </Suspense>
     );
 }
+
+    
