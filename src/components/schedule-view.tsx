@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
 import { PlaylistViewer } from '@/components/playlist-viewer';
-import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2, AlertTriangle, Share2, Presentation } from 'lucide-react';
+import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2, AlertTriangle, Share2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useSchedule } from '@/context/schedule-context';
 import { Separator } from './ui/separator';
@@ -20,7 +20,6 @@ import { cn } from '@/lib/utils';
 import * as htmlToImage from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import Link from 'next/link';
 import { Input } from './ui/input';
 
 
@@ -28,7 +27,7 @@ interface ScheduleViewProps {
   initialSchedules: Schedule[];
   members: Member[];
   songs: Song[];
-  weeklyRepeatedSongIds: Set<string>;
+  repeatedSongIds: Set<string>;
   onScheduleUpdate: (scheduleId: string, updates: Partial<Schedule>) => void;
 }
 
@@ -109,7 +108,7 @@ const EditableTitle = ({ schedule, canEdit, onUpdate }: { schedule: Schedule, ca
 }
 
 
-export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedSongIds, onScheduleUpdate }: ScheduleViewProps) {
+export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds, onScheduleUpdate }: ScheduleViewProps) {
   const [schedules, setSchedules] = useState(initialSchedules);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
@@ -330,13 +329,13 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                             <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5 ml-1">
                                 {playlistSongs.map(song => (
                                     <li key={song.id} className="truncate flex items-center gap-1.5">
-                                      {weeklyRepeatedSongIds.has(song.id) && (
+                                      {repeatedSongIds.has(song.id) && (
                                         <Tooltip>
                                             <TooltipTrigger>
                                                 <AlertTriangle className="h-3.5 w-3.5 text-amber-500"/>
                                             </TooltipTrigger>
                                             <TooltipContent>
-                                                <p>Música repetida esta semana.</p>
+                                                <p>Música repetida no mesmo dia.</p>
                                             </TooltipContent>
                                         </Tooltip>
                                       )}
@@ -392,7 +391,7 @@ export function ScheduleView({ initialSchedules, members, songs, weeklyRepeatedS
                     setSelectedSchedule(null);
                 }
             }}
-            repeatedSongIds={weeklyRepeatedSongIds}
+            repeatedSongIds={repeatedSongIds}
         />
     )}
      {isPlaylistViewerOpen && selectedSchedule && (

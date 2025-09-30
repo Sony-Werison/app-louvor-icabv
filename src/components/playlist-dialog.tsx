@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { Schedule, Song, SongCategory } from '@/types';
@@ -290,7 +291,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                                           <AlertTriangle className="h-4 w-4 text-amber-500" />
                                                         </TooltipTrigger>
                                                         <TooltipContent>
-                                                          <p>Essa música já está em outro repertório esta semana.</p>
+                                                          <p>Essa música já está em outro repertório no mesmo dia.</p>
                                                         </TooltipContent>
                                                       </Tooltip>
                                                     )}
@@ -361,7 +362,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                           <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                          <p>Música repetida.</p>
+                                          <p>Música repetida no mesmo dia.</p>
                                         </TooltipContent>
                                       </Tooltip>
                                       </TooltipProvider>

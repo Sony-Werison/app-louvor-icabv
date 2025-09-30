@@ -4,7 +4,7 @@
 import { useSchedule } from '@/context/schedule-context';
 import { ScheduleView } from '@/components/schedule-view';
 import { ReminderCard } from '@/components/reminder-card';
-import { startOfWeek, endOfWeek, isWithinInterval, format, getDay } from 'date-fns';
+import { startOfWeek, endOfWeek, isWithinInterval, format, getDay, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Schedule, MonthlySchedule } from '@/types';
 import { useEffect, useState, useMemo } from 'react';
@@ -128,20 +128,30 @@ export default function SchedulePage() {
     relevantSchedules.filter(schedule => schedule.playlist.length === 0 && schedule.leaderId)
   , [relevantSchedules]);
   
-  const weeklyRepeatedSongIds = useMemo(() => {
-    const songCounts = new Map<string, number>();
+  const dailyRepeatedSongIds = useMemo(() => {
+    const songCountsByDay: Record<string, Map<string, number>> = {};
+
     relevantSchedules.forEach(s => {
+        const dayKey = format(startOfDay(s.date), 'yyyy-MM-dd');
+        if (!songCountsByDay[dayKey]) {
+            songCountsByDay[dayKey] = new Map<string, number>();
+        }
+        
+        const dailyCounts = songCountsByDay[dayKey];
         s.playlist.forEach(songId => {
-            songCounts.set(songId, (songCounts.get(songId) || 0) + 1);
+            dailyCounts.set(songId, (dailyCounts.get(songId) || 0) + 1);
         });
     });
-    
+
     const repeated = new Set<string>();
-    for (const [songId, count] of songCounts.entries()) {
-        if (count > 1) {
-            repeated.add(songId);
+    Object.values(songCountsByDay).forEach(dailyCounts => {
+        for (const [songId, count] of dailyCounts.entries()) {
+            if (count > 1) {
+                repeated.add(songId);
+            }
         }
-    }
+    });
+    
     return repeated;
   }, [relevantSchedules]);
 
@@ -185,7 +195,7 @@ export default function SchedulePage() {
         initialSchedules={relevantSchedules} 
         members={members} 
         songs={songs} 
-        weeklyRepeatedSongIds={weeklyRepeatedSongIds}
+        repeatedSongIds={dailyRepeatedSongIds}
         onScheduleUpdate={handleScheduleUpdate}
       />
     </div>
