@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
 import type { MonthlySchedule, Member, Song, ScheduleColumn, SongCategory, MemberRole } from '@/types';
 import { scheduleColumns as initialScheduleColumns } from '@/lib/data';
 import {
@@ -13,7 +12,7 @@ import {
   saveSongs,
   saveMonthlySchedules,
 } from '@/lib/blob-storage';
-import { getDay } from 'date-fns';
+import { subMonths } from 'date-fns';
 
 interface ScheduleContextType {
   monthlySchedules: MonthlySchedule[];
@@ -42,7 +41,7 @@ const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined
 export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [monthlySchedules, setMonthlySchedules] = useState<MonthlySchedule[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
-  const [songs, setSongs] = useState<Song[]>([]);
+  const [rawSongs, setRawSongs] = useState<Song[]>([]); // Songs as stored
   const [scheduleColumns] = useState<ScheduleColumn[]>(initialScheduleColumns);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -96,7 +95,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             setMembers(loadedMembers);
         }
         
-        setSongs(loadedSongs);
+        setRawSongs(loadedSongs);
         setMonthlySchedules(loadedSchedules);
 
       } catch (error) {
@@ -107,6 +106,37 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
     loadData();
   }, []);
+
+  const songs = useMemo(() => {
+    const today = new Date();
+    const threeMonthsAgo = subMonths(today, 3);
+    const quarterlyPlayCounts = new Map<string, number>();
+    const totalPlayCounts = new Map<string, number>();
+
+    monthlySchedules.forEach(schedule => {
+        const scheduleDate = new Date(schedule.date);
+        const playlists = [schedule.playlist_manha, schedule.playlist_noite].filter(Boolean) as string[][];
+
+        playlists.forEach(playlist => {
+            playlist.forEach(songId => {
+                // Total count
+                totalPlayCounts.set(songId, (totalPlayCounts.get(songId) || 0) + 1);
+
+                // Quarterly count
+                if (scheduleDate >= threeMonthsAgo) {
+                    quarterlyPlayCounts.set(songId, (quarterlyPlayCounts.get(songId) || 0) + 1);
+                }
+            });
+        });
+    });
+    
+    return rawSongs.map(song => ({
+        ...song,
+        timesPlayedQuarterly: (quarterlyPlayCounts.get(song.id) || 0) + (song.timesPlayedQuarterly || 0),
+        timesPlayedTotal: (totalPlayCounts.get(song.id) || 0) + (song.timesPlayedTotal || 0)
+    }));
+  }, [rawSongs, monthlySchedules]);
+
 
   const addSchedule = (date: Date) => {
     const newSchedule: MonthlySchedule = {
@@ -131,7 +161,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const updateSchedulePlaylist = (scheduleId: string, playlist: string[]) => {
-    const [type, timestampStr] = scheduleId.replace('s-', '').split('-');
+    const [type, ...timestampParts] = scheduleId.replace('s-', '').split('-');
+    const timestampStr = timestampParts.join('-');
     const timestamp = parseInt(timestampStr, 10);
 
     const newSchedules = monthlySchedules.map(schedule => {
@@ -180,14 +211,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   
   const addSong = (songData: Omit<Song, 'id'>) => {
     const newSong: Song = { ...songData, id: `s${Date.now()}` };
-    const newSongs = [...songs, newSong];
-    setSongs(newSongs);
+    const newSongs = [...rawSongs, newSong];
+    setRawSongs(newSongs);
     saveSongs(newSongs);
   };
 
   const updateSong = (songId: string, updates: Partial<Song>) => {
-    const newSongs = songs.map(s => s.id === songId ? { ...s, ...updates } as Song : s);
-    setSongs(newSongs);
+    const newSongs = rawSongs.map(s => s.id === songId ? { ...s, ...updates } as Song : s);
+    setRawSongs(newSongs);
     saveSongs(newSongs);
   };
 
@@ -197,8 +228,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   
   const removeSongs = (songIds: string[]) => {
     const songIdSet = new Set(songIds);
-    const newSongs = songs.filter(s => !songIdSet.has(s.id));
-    setSongs(newSongs);
+    const newSongs = rawSongs.filter(s => !songIdSet.has(s.id));
+    setRawSongs(newSongs);
     saveSongs(newSongs);
 
     const updatedSchedules = monthlySchedules.map(schedule => ({
@@ -213,24 +244,24 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const addOrUpdateSongs = (songsToUpdate: Song[]) => {
     const songsToUpdateMap = new Map(songsToUpdate.map(s => [s.id, s]));
     
-    const newSongs = songs.map(song => {
+    const newSongs = rawSongs.map(song => {
       if (songsToUpdateMap.has(song.id)) {
         const updatedSongData = songsToUpdateMap.get(song.id)!;
         return { 
           ...song, 
-          timesPlayedQuarterly: updatedSongData.timesPlayedQuarterly, 
-          timesPlayedTotal: updatedSongData.timesPlayedTotal 
+          timesPlayedQuarterly: (song.timesPlayedQuarterly || 0) + (updatedSongData.timesPlayedQuarterly || 0), 
+          timesPlayedTotal: (song.timesPlayedTotal || 0) + (updatedSongData.timesPlayedTotal || 0)
         };
       }
       return song;
     });
       
-    setSongs(newSongs);
+    setRawSongs(newSongs);
     saveSongs(newSongs);
   };
 
   const importSongsFromTxt = (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
-    let newSongs = [...songs];
+    let newSongs = [...rawSongs];
 
     // Update existing songs' lyrics
     const updateMap = new Map(songsToUpdate.map(s => [s.title.toLowerCase(), s]));
@@ -250,16 +281,16 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
     newSongs.push(...newSongsToAdd);
 
-    setSongs(newSongs);
+    setRawSongs(newSongs);
     saveSongs(newSongs);
   }
 
   const updateSongs = (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => {
     const songIdSet = new Set(songIds);
-    const newSongs = songs.map(s =>
+    const newSongs = rawSongs.map(s =>
       songIdSet.has(s.id) ? { ...s, ...updates } : s
     );
-    setSongs(newSongs);
+    setRawSongs(newSongs);
     saveSongs(newSongs);
   };
 

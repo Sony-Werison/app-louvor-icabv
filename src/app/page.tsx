@@ -9,7 +9,7 @@ import {
   Users,
   CalendarRange,
   Settings,
-  Guitar,
+  History,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 
@@ -18,6 +18,7 @@ const menuItems = [
   { href: '/monthly-schedule', label: 'Escala Mensal', icon: CalendarRange },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },
+  { href: '/history', label: 'Histórico', icon: History },
 ];
 
 const adminMenuItems = [
@@ -26,7 +27,7 @@ const adminMenuItems = [
 
 export default function HomePage() {
   const { can } = useAuth();
-  const allItems = [...menuItems.filter(item => !item.permission || can(item.permission as any)), ...adminMenuItems.filter(item => can(item.permission as any))];
+  const allItems = [...menuItems, ...adminMenuItems.filter(item => can(item.permission as any))];
 
   return (
     <div className="flex items-center justify-center p-4" style={{minHeight: 'calc(100vh - 8rem)'}}>

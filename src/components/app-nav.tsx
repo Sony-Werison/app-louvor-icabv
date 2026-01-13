@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { ListMusic, Library, Users, CalendarRange, Settings, Home, Guitar } from 'lucide-react';
+import { ListMusic, Library, Users, CalendarRange, Settings, Home, History } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 
 const navItems = [
@@ -19,6 +19,7 @@ const navItems = [
   { href: '/monthly-schedule', label: 'Escala Mensal', icon: CalendarRange },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },
+  { href: '/history', label: 'Histórico', icon: History },
 ];
 
 const adminNavItems = [
@@ -31,7 +32,7 @@ export function AppNav() {
   const { can } = useAuth();
   
   const allNavItems = [
-      ...navItems.filter(item => !item.permission || can(item.permission as any)),
+      ...navItems,
       ...adminNavItems.filter(item => can(item.permission as any))
   ];
 
