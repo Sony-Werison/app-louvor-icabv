@@ -3,7 +3,7 @@
 
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm, useForm as useReminderForm, useForm as useShareForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,6 +14,20 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { exportAllData, importAllData } from '@/lib/blob-storage';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Loader2 } from 'lucide-react';
+import type { BackupData } from '@/types';
+
 
 const passwordFormSchema = z.object({
   currentAdminPassword: z.string().optional(),
@@ -45,6 +59,12 @@ export default function SettingsPage() {
   const { role, can, updatePassword, whatsappMessage, updateWhatsappMessage, shareMessage, updateShareMessage } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isImportAlertOpen, setIsImportAlertOpen] = useState(false);
+  const [backupFileToImport, setBackupFileToImport] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const passwordForm = useForm<z.infer<typeof passwordFormSchema>>({
     resolver: zodResolver(passwordFormSchema),
@@ -125,6 +145,67 @@ export default function SettingsPage() {
           toast({ title: 'Erro', description: 'Não foi possível salvar a mensagem.', variant: 'destructive'});
       }
   }
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+        const data = await exportAllData();
+        const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
+        const link = document.createElement('a');
+        link.href = jsonString;
+        link.download = `backup_louvor_icabv_${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        toast({ title: 'Exportação Concluída', description: 'O arquivo de backup foi baixado.' });
+    } catch (error) {
+        toast({ title: 'Erro na Exportação', description: 'Não foi possível gerar o arquivo de backup.', variant: 'destructive' });
+    } finally {
+        setIsExporting(false);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setBackupFileToImport(file);
+      setIsImportAlertOpen(true);
+    }
+  };
+
+  const handleImportConfirm = async () => {
+    if (!backupFileToImport) return;
+    
+    setIsImporting(true);
+    setIsImportAlertOpen(false);
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const text = e.target?.result;
+            if (typeof text !== 'string') {
+              throw new Error('Falha ao ler o arquivo.');
+            }
+            const data = JSON.parse(text) as BackupData;
+            
+            // Basic validation
+            if (!data.members || !data.songs || !data.monthlySchedules || !data.passwords) {
+              throw new Error('Arquivo de backup inválido ou corrompido.');
+            }
+            
+            await importAllData(data);
+            
+            toast({ title: 'Importação Concluída!', description: 'Os dados foram restaurados. A página será recarregada.' });
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+
+        } catch (error: any) {
+            toast({ title: 'Erro na Importação', description: error.message || 'Não foi possível restaurar os dados.', variant: 'destructive' });
+            setIsImporting(false);
+        }
+    };
+    reader.readAsText(backupFileToImport);
+  };
   
   if (!can('manage:settings')) {
     return null;
@@ -291,6 +372,49 @@ export default function SettingsPage() {
                 </Form>
             </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Backup e Restauração</CardTitle>
+            <CardDescription>
+              Exporte todos os dados da aplicação para um arquivo ou importe um backup para restaurar o estado. Cuidado: importar um backup substituirá todos os dados existentes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button onClick={handleExport} disabled={isExporting} className="w-full">
+                {isExporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Exportar Backup Completo
+              </Button>
+              <Button onClick={() => fileInputRef.current?.click()} disabled={isImporting} variant="outline" className="w-full">
+                {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Importar Backup
+              </Button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept=".json"
+                onChange={handleFileSelect}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <AlertDialog open={isImportAlertOpen} onOpenChange={setIsImportAlertOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação substituirá **TODOS** os dados atuais (membros, escalas, músicas e configurações) pelo conteúdo do arquivo de backup. Essa ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setBackupFileToImport(null)}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleImportConfirm}>Sim, importar backup</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
       </div>
     </div>

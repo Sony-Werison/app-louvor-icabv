@@ -9,7 +9,7 @@ import {
   whatsappMessage as initialWhatsappMessage,
   shareMessage as initialShareMessage,
 } from './data';
-import type { Member, Song, MonthlySchedule, Role, LiveState } from '@/types';
+import type { Member, Song, MonthlySchedule, Role, LiveState, BackupData } from '@/types';
 
 // Define keys for Vercel Blob (which are filenames)
 const KEYS = {
@@ -139,4 +139,44 @@ export async function saveShareMessage(message: string): Promise<void> {
 
 export async function saveLiveState(state: LiveState): Promise<void> {
     await saveData(KEYS.LIVE_STATE, state);
+}
+
+
+// --- Backup and Restore ---
+export async function exportAllData(): Promise<BackupData> {
+  const [members, songs, monthlySchedules, passwords, whatsappMessage, shareMessage] = await Promise.all([
+    fetchMembers(),
+    fetchSongs(),
+    fetchMonthlySchedules(),
+    fetchPasswords(),
+    fetchWhatsappMessage(),
+    fetchShareMessage(),
+  ]);
+
+  // Serialize dates for export
+  const schedulesToStore = monthlySchedules.map(s => ({
+    ...s,
+    date: s.date.toISOString(),
+  }));
+
+  return {
+    members,
+    songs,
+    monthlySchedules: schedulesToStore,
+    passwords,
+    whatsappMessage,
+    shareMessage,
+    exportDate: new Date().toISOString(),
+  };
+}
+
+export async function importAllData(data: BackupData): Promise<void> {
+  await Promise.all([
+    saveMembers(data.members),
+    saveSongs(data.songs),
+    saveData(KEYS.SCHEDULES, data.monthlySchedules), // Schedules are already serialized in the backup
+    savePasswords(data.passwords),
+    saveWhatsappMessage(data.whatsappMessage),
+    saveShareMessage(data.shareMessage),
+  ]);
 }

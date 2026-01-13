@@ -55,8 +55,6 @@ export type MonthlySchedule = {
   isFeatured?: boolean;
   name_manha?: string;
   name_noite?: string;
-  icon_manha?: 'sun' | 'moon';
-  icon_noite?: 'sun' | 'moon';
 };
 
 export type LiveState = {
@@ -75,5 +73,12 @@ export type LiveState = {
   lastUpdate: number;
 };
 
-
-    
+export type BackupData = {
+  members: Member[];
+  songs: Song[];
+  monthlySchedules: Omit<MonthlySchedule, 'date'> & { date: string }[];
+  passwords: Record<Role, string>;
+  whatsappMessage: string;
+  shareMessage: string;
+  exportDate: string;
+};
