@@ -30,11 +30,12 @@ import { doc, collection } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useState, useEffect } from 'react';
 import { Loader2, Upload } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface MemberFormDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (memberData: Member) => void;
+  onSave: (memberData: Member) => Promise<void>;
   member: Member | null;
 }
 
@@ -54,6 +55,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -103,13 +105,14 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!firestore || !storage) {
         console.error("Firebase not initialized");
+        toast({ title: 'Erro de Inicialização', description: 'O Firebase não foi inicializado corretamente.', variant: 'destructive'});
         return;
     }
 
     setIsUploading(true);
-    let avatarUrl = member?.avatar || '';
-
+    
     try {
+      let avatarUrl = member?.avatar || '';
       const memberId = member?.id ?? doc(collection(firestore, 'members')).id;
       
       if (avatarFile) {
@@ -126,11 +129,13 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
         roles: values.roles as MemberRole[],
       };
       
-      onSave(finalData);
-      onOpenChange(false); // Close dialog on success
+      await onSave(finalData);
+      toast({ title: 'Sucesso!', description: `Membro ${member ? 'atualizado' : 'criado'} com sucesso.`});
+      onOpenChange(false);
 
     } catch (error) {
         console.error("Error saving member:", error);
+        toast({ title: 'Erro ao Salvar', description: 'Não foi possível salvar o membro. Tente novamente.', variant: 'destructive' });
     } finally {
         setIsUploading(false);
     }

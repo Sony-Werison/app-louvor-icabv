@@ -64,8 +64,8 @@ export default function MembersPage() {
   const exportRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const handleSaveMember = (memberData: Member) => {
-    saveMember(memberData);
+  const handleSaveMember = async (memberData: Member) => {
+    await saveMember(memberData);
     setSelectedMember(null);
   };
 
@@ -383,4 +383,5 @@ export default function MembersPage() {
     
 
     
+
 

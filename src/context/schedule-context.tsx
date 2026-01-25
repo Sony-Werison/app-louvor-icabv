@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
@@ -17,7 +18,7 @@ interface ScheduleContextType {
   removeSchedule: (date: Date) => void;
   updateSchedule: (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => void;
   updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => void;
-  saveMember: (memberData: Member) => void;
+  saveMember: (memberData: Member) => Promise<void>;
   removeMember: (memberId: string) => void;
   addSong: (songData: Omit<Song, 'id'>) => void;
   updateSong: (songId: string, updates: Partial<Song>) => void;
@@ -157,10 +158,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const saveMember = (memberData: Member) => {
+  const saveMember = async (memberData: Member) => {
+    if (!firestore) return;
     const { id, ...data } = memberData;
     // Use setDoc with the specified ID. This works for both create and update.
-    setDocumentNonBlocking(doc(firestore, 'members', id), data);
+    await setDoc(doc(firestore, 'members', id), data);
   };
 
   const removeMember = (memberId: string) => {
