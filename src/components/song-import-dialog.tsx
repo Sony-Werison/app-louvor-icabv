@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -28,7 +27,7 @@ interface SongImportDialogProps {
 
 type ParsedSong = Omit<Song, 'id' | 'key' | 'category'> & { category: string };
 
-const requiredHeaders = ['title', 'timesPlayedQuarterly', 'timesPlayedTotal'];
+const requiredHeaders = ['title', 'timesPlayedQuarterly'];
 
 export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }: SongImportDialogProps) {
     const [file, setFile] = useState<File | null>(null);
@@ -81,7 +80,6 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
                         toUpdate.push({
                            ...existingSong,
                            timesPlayedQuarterly: Number(parsedSong.timesPlayedQuarterly) || existingSong.timesPlayedQuarterly || 0,
-                           timesPlayedTotal: Number(parsedSong.timesPlayedTotal) || existingSong.timesPlayedTotal || 0,
                         });
                     } else {
                         notFound.push(parsedSong);
@@ -126,7 +124,7 @@ export function SongImportDialog({ isOpen, onOpenChange, onSave, existingSongs }
           <DialogHeader>
             <DialogTitle>Atualizar Frequência via CSV</DialogTitle>
             <DialogDescription>
-                Selecione um arquivo CSV com as colunas: title, timesPlayedQuarterly, timesPlayedTotal. Apenas músicas existentes serão atualizadas.
+                Selecione um arquivo CSV com as colunas: title, timesPlayedQuarterly. Apenas músicas existentes serão atualizadas.
             </DialogDescription>
           </DialogHeader>
           

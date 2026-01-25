@@ -26,7 +26,6 @@ export type Song = {
   lyrics?: string;
   chords?: string;
   timesPlayedQuarterly?: number;
-  timesPlayedTotal?: number;
   bpm?: number;
 };
 

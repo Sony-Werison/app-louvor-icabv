@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import type { Schedule, Song, SongCategory } from '@/types';
@@ -23,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Badge } from './ui/badge';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 
 
 interface PlaylistDialogProps {
@@ -34,7 +32,7 @@ interface PlaylistDialogProps {
   repeatedSongIds?: Set<string>;
 }
 
-type SortKey = 'title' | 'quarterly' | 'total';
+type SortKey = 'title' | 'quarterly';
 type SortDirection = 'asc' | 'desc';
 
 const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
@@ -59,13 +57,6 @@ const getQuarterlyColorClass = (count: number = 0) => {
     if (count > 4) return 'bg-destructive/40';
     if (count > 2) return 'bg-destructive/20';
     if (count > 0) return 'bg-destructive/10';
-    return 'bg-transparent';
-}
-
-const getTotalColorClass = (count: number = 0) => {
-    if (count > 40) return 'bg-destructive/40';
-    if (count > 25) return 'bg-destructive/20';
-    if (count > 10) return 'bg-destructive/10';
     return 'bg-transparent';
 }
 
@@ -114,7 +105,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
   };
 
   const handleSort = (key: SortKey) => {
-    const isNumeric = key === 'quarterly' || key === 'total';
+    const isNumeric = key === 'quarterly';
     let newDirection: SortDirection = 'asc';
 
     if (sortConfig.key === key) {
@@ -151,7 +142,6 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
             const dir = direction === 'asc' ? 1 : -1;
             switch (key) {
                 case 'quarterly': return ((a.timesPlayedQuarterly ?? 0) - (b.timesPlayedQuarterly ?? 0)) * dir;
-                case 'total': return ((a.timesPlayedTotal ?? 0) - (b.timesPlayedTotal ?? 0)) * dir;
                 case 'title': default: return a.title.localeCompare(b.title) * dir;
             }
         });
@@ -178,7 +168,6 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
         const dir = direction === 'asc' ? 1 : -1;
         switch (key) {
             case 'quarterly': return ((a.song.timesPlayedQuarterly ?? 0) - (b.song.timesPlayedQuarterly ?? 0)) * dir;
-            case 'total': return ((a.song.timesPlayedTotal ?? 0) - (b.song.timesPlayedTotal ?? 0)) * dir;
             case 'title': default: return a.song.title.localeCompare(b.song.title) * dir;
         }
     });
@@ -245,7 +234,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                         </div>
                     )}
                 </div>
-                 <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground shrink-0">
+                 <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground shrink-0">
                     <button onClick={() => handleSort('title')} className="flex items-center gap-1 text-left">
                         Música 
                         {sortConfig.key === 'title' && <ArrowDownUp className="h-3 w-3" />}
@@ -253,10 +242,6 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                     <button onClick={() => handleSort('quarterly')} className="w-20 text-center flex items-center justify-center gap-1">
                         Trimestre
                         {sortConfig.key === 'quarterly' && <ArrowDownUp className="h-3 w-3" />}
-                    </button>
-                    <button onClick={() => handleSort('total')} className="w-20 text-center flex items-center justify-center gap-1">
-                        Total
-                        {sortConfig.key === 'total' && <ArrowDownUp className="h-3 w-3" />}
                     </button>
                 </div>
                 <ScrollArea className="flex-grow">
@@ -273,7 +258,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                             <Label 
                                                 htmlFor={`song-${song.id}`} 
                                                 key={song.id} 
-                                                className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-3 p-4 pl-3 cursor-pointer hover:bg-accent/50"
+                                                className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 p-4 pl-3 cursor-pointer hover:bg-accent/50"
                                             >
                                                 <Checkbox 
                                                     id={`song-${song.id}`} 
@@ -300,9 +285,6 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                                 </div>
                                                 <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-20", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
                                                     {song.timesPlayedQuarterly ?? 0}
-                                                </div>
-                                                 <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-20", getTotalColorClass(song.timesPlayedTotal))}>
-                                                    {song.timesPlayedTotal ?? 0}
                                                 </div>
                                             </Label>
                                         ))}

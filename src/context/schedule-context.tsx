@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
@@ -76,7 +75,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const today = new Date();
     const threeMonthsAgo = subMonths(today, 3);
     const quarterlyPlayCounts = new Map<string, number>();
-    const totalPlayCounts = new Map<string, number>();
 
     monthlySchedules.forEach(schedule => {
         const scheduleDate = new Date(schedule.date);
@@ -84,7 +82,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
         playlists.forEach(playlist => {
             playlist.forEach(songId => {
-                totalPlayCounts.set(songId, (totalPlayCounts.get(songId) || 0) + 1);
                 if (scheduleDate >= threeMonthsAgo) {
                     quarterlyPlayCounts.set(songId, (quarterlyPlayCounts.get(songId) || 0) + 1);
                 }
@@ -95,7 +92,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     return rawSongs.map(song => ({
         ...song,
         timesPlayedQuarterly: quarterlyPlayCounts.get(song.id) || 0,
-        timesPlayedTotal: totalPlayCounts.get(song.id) || 0
     }));
   }, [rawSongs, monthlySchedules]);
 
@@ -223,7 +219,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         const docRef = doc(firestore, 'songs', song.id);
         batch.update(docRef, { 
             timesPlayedQuarterly: song.timesPlayedQuarterly, 
-            timesPlayedTotal: song.timesPlayedTotal 
         });
     });
     await batch.commit();
