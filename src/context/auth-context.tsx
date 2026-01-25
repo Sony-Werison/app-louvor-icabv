@@ -25,11 +25,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-type Permission = 'edit:schedule' | 'edit:members' | 'edit:songs' | 'manage:playlists' | 'manage:settings' | 'start:live_room';
+type Permission = 'edit:schedule' | 'edit:members' | 'edit:songs' | 'manage:playlists' | 'manage:settings';
 
 const rolePermissions: Record<Role, Permission[]> = {
-  admin: ['edit:schedule', 'edit:members', 'edit:songs', 'manage:playlists', 'manage:settings', 'start:live_room'],
-  abertura: ['manage:playlists', 'start:live_room'],
+  admin: ['edit:schedule', 'edit:members', 'edit:songs', 'manage:playlists', 'manage:settings'],
+  abertura: ['manage:playlists'],
   viewer: [],
 };
 

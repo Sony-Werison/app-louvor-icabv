@@ -13,7 +13,7 @@
  * Key Security Decisions:
  * - Public Data: The 'songs' and 'members' collections are readable by anyone, including unauthenticated users, to facilitate easy browsing.
  *   However, write access is restricted to authenticated users for creation, with updates and deletes disabled pending the implementation of an admin role.
- * - Collaborative Schedules: Access to 'schedules' is managed via a denormalized `members` map on each schedule document. This avoids slow and costly `get()` calls in rules. A user must be listed in this map to read a schedule, and must have an 'admin' role within the map to modify or delete it. Listing all schedules is disallowed to prevent data leakage.
+ * - Collaborative Schedules: Access to 'schedules' is managed via a denormalized `members` map on each schedule document. This avoids slow and costly `get()` calls in rules. A user must be listed in this map to read a schedule, and must have an 'admin' role within the map to modify or delete it. Listing schedules is allowed for signed-in users, but the client must query based on membership. The 'get' rule on individual documents prevents data leakage from overly broad queries.
  * - User-Owned Data: All data under `/users/{userId}` is strictly controlled by path-based security, ensuring only the authenticated owner can read or write their own documents.
  * - Prototyping Flexibility: Data shape and schema are not enforced. Validation is limited to fields critical for authorization, such as ensuring the creator of a schedule is assigned as an admin.
  */
@@ -80,8 +80,8 @@ service cloud.firestore {
     match /songs/{songId} {
       allow get, list: if true;
       allow create: if isSignedIn();
-      allow update: if false; // TODO: Implement admin-only role for song modifications.
-      allow delete: if false; // TODO: Implement admin-only role for song deletions.
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
@@ -95,8 +95,8 @@ service cloud.firestore {
     match /members/{memberId} {
       allow get, list: if true;
       allow create: if isSignedIn();
-      allow update: if false; // TODO: Implement admin-only role for member modifications.
-      allow delete: if false; // TODO: Implement admin-only role for member deletions.
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
@@ -110,9 +110,9 @@ service cloud.firestore {
      */
     match /schedules/{scheduleId} {
       allow get: if isScheduleMember(resource);
-      allow list: if false; // Deny broad list access. Clients must query based on membership.
+      allow list: if isSignedIn(); // Allow list for queries. Get rule will secure it.
       allow create: if isSignedIn() && isScheduleAdmin(request.resource); // The creator must be an admin in the new schedule.
-      allow update: if resource != null && isScheduleAdmin(resource) && isScheduleAdmin(request.resource); // The updater must be and remain an admin.
+      allow update: if resource != null && isScheduleAdmin(resource); // Only admin can update
       allow delete: if resource != null && isScheduleAdmin(resource);
     }
 

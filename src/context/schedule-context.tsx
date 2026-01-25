@@ -43,15 +43,20 @@ const initialScheduleColumns: ScheduleColumn[] = [
 
 export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const firestore = useFirestore();
-  const { user } = useAuth();
+  const { user, userId } = useAuth();
 
   const membersCollection = useMemoFirebase(() => collection(firestore, 'members'), [firestore]);
   const songsCollection = useMemoFirebase(() => collection(firestore, 'songs'), [firestore]);
-  const schedulesCollection = useMemoFirebase(() => collection(firestore, 'schedules'), [firestore]);
+
+  const schedulesQuery = useMemoFirebase(() => {
+    if (!firestore || !userId) return null;
+    return query(collection(firestore, 'schedules'), where('participantIds', 'array-contains', userId));
+  }, [firestore, userId]);
+  
 
   const { data: membersData, isLoading: loadingMembers } = useCollection<Member>(membersCollection);
   const { data: songsData, isLoading: loadingSongs } = useCollection<Song>(songsCollection);
-  const { data: schedulesData, isLoading: loadingSchedules } = useCollection<Omit<MonthlySchedule, 'date'> & {date: Timestamp}>(schedulesCollection);
+  const { data: schedulesData, isLoading: loadingSchedules } = useCollection<Omit<MonthlySchedule, 'date'> & {date: Timestamp}>(schedulesQuery);
 
   const monthlySchedules = useMemo(() => {
     if (!schedulesData) return [];
@@ -94,9 +99,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const isLoading = loadingMembers || loadingSongs || loadingSchedules;
 
   const addSchedule = (date: Date) => {
+    if (!user) return;
     const newSchedule: Omit<MonthlySchedule, 'id'> = {
       date: Timestamp.fromDate(date),
       assignments: {},
+      participantIds: [user.uid],
+      members: {
+        [user.uid]: 'admin'
+      }
     };
     addDocumentNonBlocking(collection(firestore, 'schedules'), newSchedule);
   };
@@ -111,8 +121,29 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const updateSchedule = (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => {
     const schedule = monthlySchedules.find(s => s.date.getTime() === date.getTime());
     if (schedule) {
+      const finalUpdates = { ...updates };
+
+      if (updates.assignments) {
+        const currentAdmins = Object.entries(schedule.members || {})
+          .filter(([, role]) => role === 'admin')
+          .map(([uid]) => uid);
+        
+        const allAssignedIds = Object.values(updates.assignments).flat().filter(id => id !== null) as string[];
+        
+        const newMembersMap: Record<string, 'admin' | 'participant'> = {};
+        currentAdmins.forEach(uid => { newMembersMap[uid] = 'admin'; });
+        allAssignedIds.forEach(uid => {
+          if (!newMembersMap[uid]) {
+            newMembersMap[uid] = 'participant';
+          }
+        });
+
+        finalUpdates.members = newMembersMap;
+        finalUpdates.participantIds = Object.keys(newMembersMap);
+      }
+
       const scheduleRef = doc(firestore, 'schedules', schedule.id);
-      updateDocumentNonBlocking(scheduleRef, updates);
+      updateDocumentNonBlocking(scheduleRef, finalUpdates);
     }
   };
   
@@ -135,7 +166,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     updateDocumentNonBlocking(doc(firestore, 'members', memberId), updates);
   };
 
-  const removeMember = async (memberId: string) => {
+  const removeMember = (memberId: string) => {
      deleteDocumentNonBlocking(doc(firestore, 'members', memberId));
      // This part is more complex with Firestore and might need a batch write or cloud function
      // For now, we leave assigned members as stale references that won't resolve.
@@ -154,6 +185,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const removeSongs = async (songIds: string[]) => {
+    if (!firestore) return;
     const batch = writeBatch(firestore);
     songIds.forEach(id => {
       batch.delete(doc(firestore, 'songs', id));
@@ -184,6 +216,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addOrUpdateSongs = async (songsToUpdate: Song[]) => {
+    if (!firestore) return;
     const batch = writeBatch(firestore);
     songsToUpdate.forEach(song => {
         const docRef = doc(firestore, 'songs', song.id);
@@ -196,6 +229,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const importSongsFromTxt = async (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
+      if (!firestore) return;
       const batch = writeBatch(firestore);
       
       songsToCreate.forEach(songData => {
@@ -214,6 +248,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const updateSongs = async (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => {
+    if (!firestore) return;
     const batch = writeBatch(firestore);
     songIds.forEach(id => {
         batch.update(doc(firestore, 'songs', id), updates);

@@ -52,6 +52,8 @@ export type MonthlySchedule = {
   id: string;
   date: Date;
   assignments: Record<string, (string | null)[]>; // columnId -> memberId[]
+  participantIds?: string[];
+  members?: Record<string, 'admin' | 'participant'>;
   playlist_manha?: string[];
   playlist_noite?: string[];
   isFeatured?: boolean;
