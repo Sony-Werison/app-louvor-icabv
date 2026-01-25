@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -51,7 +51,7 @@ const passwordFormSchema = z.object({
 
 export default function SettingsPage() {
   const { can, login } = useAuth();
-  const { exportData, importData } = useSchedule();
+  const { exportData, importData, clearAllData } = useSchedule();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -60,6 +60,9 @@ export default function SettingsPage() {
   const [isImportAlertOpen, setIsImportAlertOpen] = useState(false);
   const [backupFileToImport, setBackupFileToImport] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [isClearing, setIsClearing] = useState(false);
+  const [isClearAlertOpen, setIsClearAlertOpen] = useState(false);
 
   const passwordForm = useForm<z.infer<typeof passwordFormSchema>>({
     resolver: zodResolver(passwordFormSchema),
@@ -149,6 +152,23 @@ export default function SettingsPage() {
         setIsImporting(false);
     } finally {
         setBackupFileToImport(null);
+    }
+  };
+
+  const handleClearConfirm = async () => {
+    setIsClearAlertOpen(false);
+    setIsClearing(true);
+    try {
+        await clearAllData();
+        toast({ title: 'Dados Apagados!', description: 'Todos os dados foram removidos com sucesso. A página será recarregada.'});
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    } catch (error) {
+        console.error(error);
+        toast({ title: 'Erro ao Limpar Dados', description: 'Não foi possível apagar os dados.', variant: 'destructive'});
+    } finally {
+        setIsClearing(false);
     }
   };
   
@@ -276,6 +296,21 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+        
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle>Zona de Perigo</CardTitle>
+            <CardDescription>
+              Ações irreversíveis. Use com cuidado.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => setIsClearAlertOpen(true)} disabled={isClearing} variant="destructive" className="w-full">
+                {isClearing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Limpar Todos os Dados
+            </Button>
+          </CardContent>
+        </Card>
 
       </div>
     </div>
@@ -292,6 +327,28 @@ export default function SettingsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setBackupFileToImport(null)}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleImportConfirm}>Continuar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação é irreversível e excluirá permanentemente
+              TODOS os dados da aplicação, incluindo membros, músicas e escalas.
+              Recomendamos fazer um backup antes de continuar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleClearConfirm}
+              className={buttonVariants({ variant: "destructive" })}
+            >
+                Sim, apagar tudo
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

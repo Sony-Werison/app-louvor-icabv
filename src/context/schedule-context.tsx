@@ -29,6 +29,7 @@ interface ScheduleContextType {
   updateSongs: (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => void;
   exportData: () => Promise<BackupData>;
   importData: (data: BackupData) => Promise<void>;
+  clearAllData: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -325,6 +326,23 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       await batch.commit();
   }
 
+  const clearAllData = async (): Promise<void> => {
+      if (!firestore) throw new Error("Firestore not initialized");
+      
+      const batch = writeBatch(firestore);
+
+      const [membersSnap, songsSnap, schedulesSnap] = await Promise.all([
+          getDocs(collection(firestore, 'members')),
+          getDocs(collection(firestore, 'songs')),
+          getDocs(collection(firestore, 'schedules')),
+      ]);
+      membersSnap.docs.forEach(d => batch.delete(d.ref));
+      songsSnap.docs.forEach(d => batch.delete(d.ref));
+      schedulesSnap.docs.forEach(d => batch.delete(d.ref));
+      
+      await batch.commit();
+  }
+
 
   return (
     <ScheduleContext.Provider value={{ 
@@ -348,6 +366,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       updateSongs,
       exportData,
       importData,
+      clearAllData,
       isLoading,
     }}>
       {isLoading ? (
