@@ -26,7 +26,11 @@ import { Checkbox } from './ui/checkbox';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useFirebase } from '@/firebase';
 import { doc, collection, setDoc } from 'firebase/firestore';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import {
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+} from 'firebase/storage';
 import { useState, useEffect } from 'react';
 import { Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -102,39 +106,31 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!firestore || !storage) {
-        console.error("Firebase not initialized");
-        toast({ title: 'Erro de Inicialização', description: 'O Firebase não foi inicializado corretamente.', variant: 'destructive'});
-        return;
+      console.error('Firebase not initialized');
+      toast({
+        title: 'Erro de Inicialização',
+        description: 'O Firebase não foi inicializado corretamente.',
+        variant: 'destructive',
+      });
+      return;
     }
 
     setIsUploading(true);
-    
+
     try {
       let avatarUrl = member?.avatar || '';
       const memberId = member?.id ?? doc(collection(firestore, 'members')).id;
-      
+
       if (avatarFile) {
         const filePath = `members/${memberId}/avatar`;
         const fileRef = storageRef(storage, filePath);
         const metadata = { contentType: avatarFile.type };
-        
-        avatarUrl = await new Promise<string>((resolve, reject) => {
-          const uploadTask = uploadBytesResumable(fileRef, avatarFile, metadata);
-          uploadTask.on('state_changed',
-            (snapshot) => {
-              // Optional: handle progress if needed in the future
-            },
-            (error) => {
-              console.error("Upload failed:", error);
-              reject(error);
-            },
-            () => {
-              getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                resolve(downloadURL);
-              }).catch(reject);
-            }
-          );
-        });
+
+        // Use the simpler uploadBytes function
+        await uploadBytes(fileRef, avatarFile, metadata);
+
+        // Then get the download URL
+        avatarUrl = await getDownloadURL(fileRef);
       }
 
       const finalData: Member = {
@@ -143,7 +139,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
         avatar: avatarUrl,
         roles: values.roles as MemberRole[],
       };
-      
+
       await setDoc(doc(firestore, 'members', finalData.id), {
         name: finalData.name,
         email: finalData.email,
@@ -152,14 +148,21 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
         avatar: finalData.avatar,
       });
 
-      toast({ title: 'Sucesso!', description: `Membro ${member ? 'atualizado' : 'criado'} com sucesso.`});
+      toast({
+        title: 'Sucesso!',
+        description: `Membro ${member ? 'atualizado' : 'criado'} com sucesso.`,
+      });
       onOpenChange(false);
-
     } catch (error) {
-        console.error("Error saving member:", error);
-        toast({ title: 'Erro ao Salvar', description: 'Não foi possível salvar o membro. Tente novamente.', variant: 'destructive' });
+      console.error('Error saving member:', error);
+      toast({
+        title: 'Erro ao Salvar',
+        description:
+          'Não foi possível salvar o membro. Verifique sua conexão e as permissões do Firebase.',
+        variant: 'destructive',
+      });
     } finally {
-        setIsUploading(false);
+      setIsUploading(false);
     }
   };
 
