@@ -1,0 +1,133 @@
+/**
+ * Core Philosophy: This ruleset implements a hybrid security model tailored for a church management application.
+ * It provides public read access for shared resources, collaborative access for event schedules, and strict
+ * user ownership for personal data like playlists. The default posture is secure, requiring authentication
+ * for all write operations.
+ *
+ * Data Structure:
+ * - /songs/{songId}: A global, publicly readable library of songs.
+ * - /members/{memberId}: A global, publicly readable directory of church members.
+ * - /schedules/{scheduleId}: A collaborative collection where access is controlled by a 'members' map on each document.
+ * - /users/{userId}/playlists/{playlistId}: A user-specific collection where each user has exclusive control over their own playlists.
+ *
+ * Key Security Decisions:
+ * - Public Data: The 'songs' and 'members' collections are readable by anyone, including unauthenticated users, to facilitate easy browsing.
+ *   However, write access is restricted to authenticated users for creation, with updates and deletes disabled pending the implementation of an admin role.
+ * - Collaborative Schedules: Access to 'schedules' is managed via a denormalized `members` map on each schedule document. This avoids slow and costly `get()` calls in rules. A user must be listed in this map to read a schedule, and must have an 'admin' role within the map to modify or delete it. Listing all schedules is disallowed to prevent data leakage.
+ * - User-Owned Data: All data under `/users/{userId}` is strictly controlled by path-based security, ensuring only the authenticated owner can read or write their own documents.
+ * - Prototyping Flexibility: Data shape and schema are not enforced. Validation is limited to fields critical for authorization, such as ensuring the creator of a schedule is assigned as an admin.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    //-------------------------------------------------------------------------
+    // Helper Functions
+    //-------------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the foundation of the user-ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Combines an ownership check with a check to ensure the document already exists.
+     * This is crucial for safe update and delete operations.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Checks if the user is a member of a schedule by looking for their UID
+     * in the `members` map on the schedule document.
+     */
+    function isScheduleMember(scheduleDoc) {
+      return isSignedIn() && request.auth.uid in scheduleDoc.data.members;
+    }
+
+    /**
+     * Checks if the user has an 'admin' role within the schedule's `members` map.
+     * This grants them permissions to modify or delete the schedule.
+     */
+    function isScheduleAdmin(scheduleDoc) {
+      return isScheduleMember(scheduleDoc) && scheduleDoc.data.members[request.auth.uid] == 'admin';
+    }
+
+
+    //-------------------------------------------------------------------------
+    // Collection Rules
+    //-------------------------------------------------------------------------
+
+    /**
+     * @description Manages the public music library. Allows anyone to read songs,
+     * but only authenticated users can add new ones. Modification is disabled.
+     * @path /songs/{songId}
+     * @allow (get) Any user, signed in or not, can read a song's details.
+     * @deny (update) No user can modify an existing song document.
+     * @principle Public read access for global data, with restricted writes to prevent vandalism.
+     */
+    match /songs/{songId} {
+      allow get, list: if true;
+      allow create: if isSignedIn();
+      allow update: if false; // TODO: Implement admin-only role for song modifications.
+      allow delete: if false; // TODO: Implement admin-only role for song deletions.
+    }
+
+    /**
+     * @description Manages the public member directory. Allows anyone to view member
+     * profiles, but only authenticated users can create new ones. Modification is disabled.
+     * @path /members/{memberId}
+     * @allow (get) Any user, signed in or not, can view a member's profile.
+     * @deny (update) A signed-in user cannot update another member's profile.
+     * @principle Public read access for global data, with restricted writes to prevent vandalism.
+     */
+    match /members/{memberId} {
+      allow get, list: if true;
+      allow create: if isSignedIn();
+      allow update: if false; // TODO: Implement admin-only role for member modifications.
+      allow delete: if false; // TODO: Implement admin-only role for member deletions.
+    }
+
+    /**
+     * @description Secures collaborative schedules. Access is controlled by a `members` map
+     * on each schedule. Only members can read, and only 'admins' can write.
+     * @path /schedules/{scheduleId}
+     * @allow (get) A signed-in user who is listed in the schedule's `members` map can read it.
+     * @deny (list) A user cannot list all schedules to prevent discovering private events. They must query for schedules they belong to.
+     * @deny (update) A user who is a 'participant' but not an 'admin' cannot update the schedule.
+     * @principle Enforces shared access using denormalized roles on the document itself, avoiding insecure queries and costly lookups.
+     */
+    match /schedules/{scheduleId} {
+      allow get: if isScheduleMember(resource);
+      allow list: if false; // Deny broad list access. Clients must query based on membership.
+      allow create: if isSignedIn() && isScheduleAdmin(request.resource); // The creator must be an admin in the new schedule.
+      allow update: if resource != null && isScheduleAdmin(resource) && isScheduleAdmin(request.resource); // The updater must be and remain an admin.
+      allow delete: if resource != null && isScheduleAdmin(resource);
+    }
+
+    /**
+     * @description Defines rules for user-specific data, specifically their private playlists.
+     * Access is strictly limited to the document owner.
+     * @path /users/{userId}/playlists/{playlistId}
+     * @allow (create) User 'abc' can create a playlist at `/users/abc/playlists/new-playlist`.
+     * @deny (get) User 'xyz' cannot read a playlist at `/users/abc/playlists/some-playlist`.
+     * @deny (list) User 'xyz' cannot list all playlists belonging to user 'abc'.
+     * @principle Restricts access to a user's own data tree using path-based security.
+     */
+    match /users/{userId}/playlists/{playlistId} {
+      allow get, list, create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
+    }
+  }
+}
