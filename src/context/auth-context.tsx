@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // This is now a mock login. In a real scenario, you'd use custom claims.
     // For the prototype, we just switch the role.
     // A real implementation would involve a backend function to set the claim.
-    if (roleToSet === 'admin' && password !== 'admin') {
+    if (roleToSet === 'admin' && password !== 'admin123') {
          toast({ title: 'Senha de Admin Incorreta', variant: 'destructive' });
          return false;
     }
