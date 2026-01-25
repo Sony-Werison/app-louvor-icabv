@@ -1,3 +1,4 @@
+import { Timestamp } from 'firebase/firestore';
 
 
 export type Role = 'admin' | 'abertura' | 'viewer';
@@ -48,6 +49,7 @@ export type ScheduleColumn = {
 };
 
 export type MonthlySchedule = {
+  id: string;
   date: Date;
   assignments: Record<string, (string | null)[]>; // columnId -> memberId[]
   playlist_manha?: string[];
@@ -76,9 +78,6 @@ export type LiveState = {
 export type BackupData = {
   members: Member[];
   songs: Song[];
-  monthlySchedules: Omit<MonthlySchedule, 'date'> & { date: string }[];
-  passwords: Record<Role, string>;
-  whatsappMessage: string;
-  shareMessage: string;
+  monthlySchedules: Omit<MonthlySchedule, 'date' | 'id'> & { date: string }[];
   exportDate: string;
 };

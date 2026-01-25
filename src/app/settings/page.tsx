@@ -1,20 +1,17 @@
-
 'use client';
 
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
-import { useForm, useForm as useReminderForm, useForm as useShareForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription as FormDesc } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { exportAllData, importAllData } from '@/lib/blob-storage';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,13 +47,9 @@ const passwordFormSchema = z.object({
     path: ['newAberturaPassword']
 });
 
-const textFormSchema = z.object({
-    message: z.string().min(10, { message: 'A mensagem deve ter pelo menos 10 caracteres.' }),
-});
-
 
 export default function SettingsPage() {
-  const { role, can, updatePassword, whatsappMessage, updateWhatsappMessage, shareMessage, updateShareMessage } = useAuth();
+  const { can, login } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -75,136 +68,43 @@ export default function SettingsPage() {
       newAberturaPassword: '',
     },
   });
-  
-  const reminderForm = useReminderForm<z.infer<typeof textFormSchema>>({
-      resolver: zodResolver(textFormSchema),
-      defaultValues: {
-          message: whatsappMessage || '',
-      }
-  });
-
-  const shareForm = useShareForm<z.infer<typeof textFormSchema>>({
-      resolver: zodResolver(textFormSchema),
-      defaultValues: {
-          message: shareMessage || '',
-      }
-  });
 
   useEffect(() => {
     if (!can('manage:settings')) {
       router.push('/');
     }
-  }, [role, can, router]);
+  }, [can, router]);
   
-  useEffect(() => {
-    reminderForm.reset({ message: whatsappMessage });
-  }, [whatsappMessage, reminderForm]);
 
-  useEffect(() => {
-    shareForm.reset({ message: shareMessage });
-  }, [shareMessage, shareForm]);
-
-
-  const onPasswordSubmit = async (values: z.infer<typeof passwordFormSchema>) => {
+  const onPasswordSubmit = (values: z.infer<typeof passwordFormSchema>) => {
     let changed = false;
     if (values.currentAdminPassword && values.newAdminPassword) {
-        const adminSuccess = await updatePassword('admin', values.currentAdminPassword, values.newAdminPassword);
-        if(adminSuccess) {
-            passwordForm.resetField('currentAdminPassword');
-            passwordForm.resetField('newAdminPassword');
-            changed = true;
-        }
+        // In firebase world, this would be a call to a cloud function
+        // for now, we just show a toast
+        toast({title: "Função não implementada", description: "A alteração de senha de admin requer um backend seguro."});
+        changed = true;
     }
     if (values.currentAberturaPassword && values.newAberturaPassword) {
-        const aberturaSuccess = await updatePassword('abertura', values.currentAberturaPassword, values.newAberturaPassword);
-        if(aberturaSuccess) {
-            passwordForm.resetField('currentAberturaPassword');
-            passwordForm.resetField('newAberturaPassword');
-            changed = true;
-        }
+        toast({title: "Função não implementada", description: "A alteração de senha de abertura requer um backend seguro."});
+        changed = true;
     }
     if(!changed) {
-        passwordForm.setError('root', { message: 'Nenhuma alteração foi feita. Verifique as senhas atuais.'})
+        passwordForm.setError('root', { message: 'Nenhuma alteração foi feita.'})
     }
   };
   
-  const onReminderSubmit = async (values: z.infer<typeof textFormSchema>) => {
-      const success = await updateWhatsappMessage(values.message);
-      if (success) {
-          toast({ title: 'Sucesso!', description: 'A mensagem de lembrete do WhatsApp foi atualizada.'});
-      } else {
-          toast({ title: 'Erro', description: 'Não foi possível salvar a mensagem.', variant: 'destructive'});
-      }
-  }
-
-  const onShareSubmit = async (values: z.infer<typeof textFormSchema>) => {
-      const success = await updateShareMessage(values.message);
-      if (success) {
-          toast({ title: 'Sucesso!', description: 'A mensagem de compartilhamento foi atualizada.'});
-      } else {
-          toast({ title: 'Erro', description: 'Não foi possível salvar a mensagem.', variant: 'destructive'});
-      }
-  }
-
   const handleExport = async () => {
     setIsExporting(true);
-    try {
-        const data = await exportAllData();
-        const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
-        const link = document.createElement('a');
-        link.href = jsonString;
-        link.download = `backup_louvor_icabv_${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
-        toast({ title: 'Exportação Concluída', description: 'O arquivo de backup foi baixado.' });
-    } catch (error) {
-        toast({ title: 'Erro na Exportação', description: 'Não foi possível gerar o arquivo de backup.', variant: 'destructive' });
-    } finally {
-        setIsExporting(false);
-    }
+    toast({title: "Função não implementada", description: "Exportação de dados ainda não está disponível com Firebase."});
+    setIsExporting(false);
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setBackupFileToImport(file);
-      setIsImportAlertOpen(true);
-    }
+    toast({title: "Função não implementada", description: "Importação de dados ainda não está disponível com Firebase."});
   };
 
   const handleImportConfirm = async () => {
-    if (!backupFileToImport) return;
-    
-    setIsImporting(true);
-    setIsImportAlertOpen(false);
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const text = e.target?.result;
-            if (typeof text !== 'string') {
-              throw new Error('Falha ao ler o arquivo.');
-            }
-            const data = JSON.parse(text) as BackupData;
-            
-            // Basic validation
-            if (!data.members || !data.songs || !data.monthlySchedules || !data.passwords) {
-              throw new Error('Arquivo de backup inválido ou corrompido.');
-            }
-            
-            await importAllData(data);
-            
-            toast({ title: 'Importação Concluída!', description: 'Os dados foram restaurados. A página será recarregada.' });
-            
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
-
-        } catch (error: any) {
-            toast({ title: 'Erro na Importação', description: error.message || 'Não foi possível restaurar os dados.', variant: 'destructive' });
-            setIsImporting(false);
-        }
-    };
-    reader.readAsText(backupFileToImport);
+     toast({title: "Função não implementada", description: "Importação de dados ainda não está disponível com Firebase."});
   };
   
   if (!can('manage:settings')) {
@@ -219,7 +119,7 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle>Gerenciamento de Senhas</CardTitle>
             <CardDescription>
-              Altere as senhas para os perfis de Admin e Abertura. Preencha os campos apenas do perfil que deseja alterar.
+             Altere as senhas para os perfis de Admin e Abertura. Esta função está desativada na versão Firebase.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -234,7 +134,7 @@ export default function SettingsPage() {
                             <FormItem>
                             <FormLabel>Senha Atual</FormLabel>
                             <FormControl>
-                                <Input type="password" placeholder="Digite a senha atual de admin" {...field} />
+                                <Input type="password" placeholder="Digite a senha atual de admin" {...field} disabled/>
                             </FormControl>
                             <FormMessage />
                             </FormItem>
@@ -247,7 +147,7 @@ export default function SettingsPage() {
                         <FormItem>
                         <FormLabel>Nova Senha de Administrador</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="Digite a nova senha de admin" {...field} />
+                            <Input type="password" placeholder="Digite a nova senha de admin" {...field} disabled/>
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -266,7 +166,7 @@ export default function SettingsPage() {
                         <FormItem>
                         <FormLabel>Senha Atual</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="Digite a senha atual de abertura" {...field} />
+                            <Input type="password" placeholder="Digite a senha atual de abertura" {...field} disabled/>
                         </FormControl>
                          <FormMessage />
                         </FormItem>
@@ -279,7 +179,7 @@ export default function SettingsPage() {
                         <FormItem>
                         <FormLabel>Nova Senha de Abertura</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="Digite a nova senha de abertura" {...field} />
+                            <Input type="password" placeholder="Digite a nova senha de abertura" {...field} disabled/>
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -292,7 +192,7 @@ export default function SettingsPage() {
                 )}
 
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={passwordForm.formState.isSubmitting}>
+                    <Button type="submit" disabled={true}>
                         Salvar Alterações de Senha
                     </Button>
                 </div>
@@ -302,91 +202,19 @@ export default function SettingsPage() {
         </Card>
         
         <Card>
-            <CardHeader>
-                <CardTitle>Mensagem de Lembrete (WhatsApp)</CardTitle>
-                <CardDescription>
-                    Personalize a mensagem automática enviada via WhatsApp para os membros de abertura.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <Form {...reminderForm}>
-                    <form onSubmit={reminderForm.handleSubmit(onReminderSubmit)} className="space-y-4">
-                        <FormField
-                            control={reminderForm.control}
-                            name="message"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Template da Mensagem</FormLabel>
-                                <FormControl>
-                                    <Textarea rows={10} {...field} />
-                                </FormControl>
-                                <FormDesc>
-                                    Use as variáveis: `[NOME]`, `[PERIODO]`, `[SENHA]`.
-                                </FormDesc>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <div className="flex justify-end">
-                            <Button type="submit" disabled={reminderForm.formState.isSubmitting}>
-                                Salvar Mensagem de Lembrete
-                            </Button>
-                        </div>
-                    </form>
-                </Form>
-            </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader>
-                <CardTitle>Mensagem de Compartilhamento</CardTitle>
-                <CardDescription>
-                    Personalize a mensagem padrão que acompanha a imagem ao usar a função "Compartilhar".
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <Form {...shareForm}>
-                    <form onSubmit={shareForm.handleSubmit(onShareSubmit)} className="space-y-4">
-                        <FormField
-                            control={shareForm.control}
-                            name="message"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Template da Mensagem</FormLabel>
-                                <FormControl>
-                                    <Textarea rows={5} {...field} />
-                                </FormControl>
-                                <FormDesc>
-                                    Use as variáveis: `[PERIODO]`, `[DATA]`.
-                                </FormDesc>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <div className="flex justify-end">
-                            <Button type="submit" disabled={shareForm.formState.isSubmitting}>
-                                Salvar Mensagem de Compartilhamento
-                            </Button>
-                        </div>
-                    </form>
-                </Form>
-            </CardContent>
-        </Card>
-
-        <Card>
           <CardHeader>
             <CardTitle>Backup e Restauração</CardTitle>
             <CardDescription>
-              Exporte todos os dados da aplicação para um arquivo ou importe um backup para restaurar o estado. Cuidado: importar um backup substituirá todos os dados existentes.
+             Esta funcionalidade está temporariamente desativada após a migração para o Firebase.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button onClick={handleExport} disabled={isExporting} className="w-full">
+              <Button onClick={handleExport} disabled={true} className="w-full">
                 {isExporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Exportar Backup Completo
               </Button>
-              <Button onClick={() => fileInputRef.current?.click()} disabled={isImporting} variant="outline" className="w-full">
+              <Button onClick={() => fileInputRef.current?.click()} disabled={true} variant="outline" className="w-full">
                 {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Importar Backup
               </Button>
@@ -396,25 +224,11 @@ export default function SettingsPage() {
                 className="hidden"
                 accept=".json"
                 onChange={handleFileSelect}
+                disabled={true}
               />
             </div>
           </CardContent>
         </Card>
-
-        <AlertDialog open={isImportAlertOpen} onOpenChange={setIsImportAlertOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta ação substituirá **TODOS** os dados atuais (membros, escalas, músicas e configurações) pelo conteúdo do arquivo de backup. Essa ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setBackupFileToImport(null)}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleImportConfirm}>Sim, importar backup</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
 
       </div>
     </div>

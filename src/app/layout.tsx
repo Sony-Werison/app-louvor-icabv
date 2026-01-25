@@ -13,6 +13,7 @@ import { BottomNav } from '@/components/bottom-nav';
 import { PageTitle } from '@/components/page-title';
 import { AppLogo } from '@/components/app-logo';
 import Link from 'next/link';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'Louvor ICABV',
@@ -46,30 +47,32 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn('font-body antialiased', 'min-h-screen bg-background')}>
-        <AuthProvider>
-            <ScheduleProvider>
-              <SidebarProvider>
-                <Sidebar>
-                  <AppNav />
-                </Sidebar>
-                <SidebarInset>
-                  <Header>
-                    <div className="flex items-center gap-2">
-                        <PageTitle />
-                        <Link href="/">
-                          <AppLogo />
-                        </Link>
-                    </div>
-                    <div className="ml-auto flex items-center gap-2">
-                      <ProfileSwitcher />
-                    </div>
-                  </Header>
-                  <main className="pb-20 md:pb-0">{children}</main>
-                  <BottomNav />
-                </SidebarInset>
-              </SidebarProvider>
-            </ScheduleProvider>
-        </AuthProvider>
+        <FirebaseClientProvider>
+          <AuthProvider>
+              <ScheduleProvider>
+                <SidebarProvider>
+                  <Sidebar>
+                    <AppNav />
+                  </Sidebar>
+                  <SidebarInset>
+                    <Header>
+                      <div className="flex items-center gap-2">
+                          <PageTitle />
+                          <Link href="/">
+                            <AppLogo />
+                          </Link>
+                      </div>
+                      <div className="ml-auto flex items-center gap-2">
+                        <ProfileSwitcher />
+                      </div>
+                    </Header>
+                    <main className="pb-20 md:pb-0">{children}</main>
+                    <BottomNav />
+                  </SidebarInset>
+                </SidebarProvider>
+              </ScheduleProvider>
+          </AuthProvider>
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>

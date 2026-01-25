@@ -1,17 +1,11 @@
-
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
 import type { MonthlySchedule, Member, Song, ScheduleColumn, SongCategory, MemberRole } from '@/types';
-import { scheduleColumns as initialScheduleColumns } from '@/lib/data';
-import {
-  fetchMembers,
-  fetchSongs,
-  fetchMonthlySchedules,
-  saveMembers,
-  saveSongs,
-  saveMonthlySchedules,
-} from '@/lib/blob-storage';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, writeBatch, Timestamp, where, query } from 'firebase/firestore';
+import { setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useAuth } from './auth-context';
 import { subMonths } from 'date-fns';
 
 interface ScheduleContextType {
@@ -38,74 +32,37 @@ interface ScheduleContextType {
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
+// Hardcoded for now, would be in a DB in a real app
+const initialScheduleColumns: ScheduleColumn[] = [
+    { id: 'abertura_manha', label: 'Abertura Manhã', role: 'Abertura' },
+    { id: 'pregacao_manha', label: 'Pregação Manhã', role: 'Pregação' },
+    { id: 'abertura_noite', label: 'Abertura Noite', role: 'Abertura' },
+    { id: 'pregacao_noite', label: 'Pregação Noite', role: 'Pregação' },
+    { id: 'multimedia', label: 'Multimídia', isMulti: true, role: 'Multimídia' },
+];
+
 export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
-  const [monthlySchedules, setMonthlySchedules] = useState<MonthlySchedule[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [rawSongs, setRawSongs] = useState<Song[]>([]); // Songs as stored
-  const [scheduleColumns] = useState<ScheduleColumn[]>(initialScheduleColumns);
-  const [isLoading, setIsLoading] = useState(true);
+  const firestore = useFirestore();
+  const { user } = useAuth();
 
-  // Load data from blob storage on initial render
-  useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-      try {
-        const [loadedMembers, loadedSongs, loadedSchedules] = await Promise.all([
-          fetchMembers(),
-          fetchSongs(),
-          fetchMonthlySchedules(),
-        ]);
-        
-        // Data migration for member roles
-        let membersModified = false;
-        const migratedMembers = loadedMembers.map(member => {
-            if (!member.roles) {
-              membersModified = true;
-              return { ...member, roles: [] };
-            }
+  const membersCollection = useMemoFirebase(() => collection(firestore, 'members'), [firestore]);
+  const songsCollection = useMemoFirebase(() => collection(firestore, 'songs'), [firestore]);
+  const schedulesCollection = useMemoFirebase(() => collection(firestore, 'schedules'), [firestore]);
 
-            let newRoles = [...member.roles];
-            let changed = false;
+  const { data: membersData, isLoading: loadingMembers } = useCollection<Member>(membersCollection);
+  const { data: songsData, isLoading: loadingSongs } = useCollection<Song>(songsCollection);
+  const { data: schedulesData, isLoading: loadingSchedules } = useCollection<Omit<MonthlySchedule, 'date'> & {date: Timestamp}>(schedulesCollection);
 
-            const roleMap: Record<string, MemberRole> = {
-                'Dirigente': 'Abertura',
-                'Pregador': 'Pregação'
-            };
-            
-            newRoles = newRoles.map(role => {
-                const newRole = roleMap[role];
-                if (newRole) {
-                    changed = true;
-                    return newRole;
-                }
-                return role;
-            });
+  const monthlySchedules = useMemo(() => {
+    if (!schedulesData) return [];
+    return schedulesData.map(s => ({
+      ...s,
+      date: s.date.toDate(),
+    }));
+  }, [schedulesData]);
 
-            if(changed) {
-                membersModified = true;
-                return {...member, roles: [...new Set(newRoles)] as MemberRole[]};
-            }
-            return member;
-        });
-
-        if (membersModified) {
-            setMembers(migratedMembers);
-            await saveMembers(migratedMembers);
-        } else {
-            setMembers(loadedMembers);
-        }
-        
-        setRawSongs(loadedSongs);
-        setMonthlySchedules(loadedSchedules);
-
-      } catch (error) {
-        console.error("Failed to load data from blob store:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadData();
-  }, []);
+  const members = useMemo(() => membersData || [], [membersData]);
+  const rawSongs = useMemo(() => songsData || [], [songsData]);
 
   const songs = useMemo(() => {
     const today = new Date();
@@ -119,10 +76,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
         playlists.forEach(playlist => {
             playlist.forEach(songId => {
-                // Total count
                 totalPlayCounts.set(songId, (totalPlayCounts.get(songId) || 0) + 1);
-
-                // Quarterly count
                 if (scheduleDate >= threeMonthsAgo) {
                     quarterlyPlayCounts.set(songId, (quarterlyPlayCounts.get(songId) || 0) + 1);
                 }
@@ -137,161 +91,134 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [rawSongs, monthlySchedules]);
 
+  const isLoading = loadingMembers || loadingSongs || loadingSchedules;
 
   const addSchedule = (date: Date) => {
-    const newSchedule: MonthlySchedule = {
-      date,
+    const newSchedule: Omit<MonthlySchedule, 'id'> = {
+      date: Timestamp.fromDate(date),
       assignments: {},
     };
-    const newSchedules = [...monthlySchedules, newSchedule].sort((a,b) => a.date.getTime() - b.date.getTime());
-    setMonthlySchedules(newSchedules);
-    saveMonthlySchedules(newSchedules);
+    addDocumentNonBlocking(collection(firestore, 'schedules'), newSchedule);
   };
 
   const removeSchedule = (date: Date) => {
-    const newSchedules = monthlySchedules.filter(s => s.date.getTime() !== date.getTime());
-    setMonthlySchedules(newSchedules);
-    saveMonthlySchedules(newSchedules);
+    const schedule = monthlySchedules.find(s => s.date.getTime() === date.getTime());
+    if (schedule) {
+      deleteDocumentNonBlocking(doc(firestore, 'schedules', schedule.id));
+    }
   };
 
   const updateSchedule = (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => {
-    const newSchedules = monthlySchedules.map(s => (s.date.getTime() === date.getTime() ? { ...s, ...updates } : s));
-    setMonthlySchedules(newSchedules);
-    saveMonthlySchedules(newSchedules);
+    const schedule = monthlySchedules.find(s => s.date.getTime() === date.getTime());
+    if (schedule) {
+      const scheduleRef = doc(firestore, 'schedules', schedule.id);
+      updateDocumentNonBlocking(scheduleRef, updates);
+    }
   };
   
   const updateSchedulePlaylist = (scheduleId: string, playlist: string[]) => {
     const [type, ...timestampParts] = scheduleId.replace('s-', '').split('-');
-    const timestampStr = timestampParts.join('-');
-    const timestamp = parseInt(timestampStr, 10);
-
-    const newSchedules = monthlySchedules.map(schedule => {
-        if (schedule.date.getTime() === timestamp) {
-            const newSchedule = { ...schedule };
-            if (type === 'manha') {
-                newSchedule.playlist_manha = playlist;
-            } else if (type === 'noite') {
-                newSchedule.playlist_noite = playlist;
-            }
-            return newSchedule;
-        }
-        return schedule;
-    });
-    setMonthlySchedules(newSchedules);
-    saveMonthlySchedules(newSchedules);
+    const timestamp = parseInt(timestampParts.join('-'), 10);
+    
+    const schedule = monthlySchedules.find(s => s.date.getTime() === timestamp);
+    if(schedule) {
+        const fieldToUpdate = type === 'manha' ? 'playlist_manha' : 'playlist_noite';
+        updateDocumentNonBlocking(doc(firestore, 'schedules', schedule.id), { [fieldToUpdate]: playlist });
+    }
   };
 
   const addMember = (memberData: Omit<Member, 'id'>) => {
-    const newMember: Member = { ...memberData, id: `m${Date.now()}` };
-    const newMembers = [...members, newMember];
-    setMembers(newMembers);
-    saveMembers(newMembers);
+    addDocumentNonBlocking(collection(firestore, 'members'), memberData);
   };
 
   const updateMember = (memberId: string, updates: Partial<Member>) => {
-    const newMembers = members.map(m => m.id === memberId ? { ...m, ...updates } as Member : m);
-    setMembers(newMembers);
-    saveMembers(newMembers);
+    updateDocumentNonBlocking(doc(firestore, 'members', memberId), updates);
   };
 
-  const removeMember = (memberId: string) => {
-    const newMembers = members.filter(m => m.id !== memberId);
-    setMembers(newMembers);
-    saveMembers(newMembers);
-    const updatedSchedules = monthlySchedules.map(schedule => {
-      const newAssignments = { ...schedule.assignments };
-      Object.keys(newAssignments).forEach(columnId => {
-        newAssignments[columnId] = newAssignments[columnId].map(id => id === memberId ? null : id);
-      });
-      return { ...schedule, assignments: newAssignments };
-    });
-    setMonthlySchedules(updatedSchedules);
-    saveMonthlySchedules(updatedSchedules);
+  const removeMember = async (memberId: string) => {
+     deleteDocumentNonBlocking(doc(firestore, 'members', memberId));
+     // This part is more complex with Firestore and might need a batch write or cloud function
+     // For now, we leave assigned members as stale references that won't resolve.
   };
   
   const addSong = (songData: Omit<Song, 'id'>) => {
-    const newSong: Song = { ...songData, id: `s${Date.now()}` };
-    const newSongs = [...rawSongs, newSong];
-    setRawSongs(newSongs);
-    saveSongs(newSongs);
+    addDocumentNonBlocking(collection(firestore, 'songs'), songData);
   };
 
   const updateSong = (songId: string, updates: Partial<Song>) => {
-    const newSongs = rawSongs.map(s => s.id === songId ? { ...s, ...updates } as Song : s);
-    setRawSongs(newSongs);
-    saveSongs(newSongs);
+    updateDocumentNonBlocking(doc(firestore, 'songs', songId), updates);
   };
 
   const removeSong = (songId: string) => {
     removeSongs([songId]);
   };
   
-  const removeSongs = (songIds: string[]) => {
-    const songIdSet = new Set(songIds);
-    const newSongs = rawSongs.filter(s => !songIdSet.has(s.id));
-    setRawSongs(newSongs);
-    saveSongs(newSongs);
-
-    const updatedSchedules = monthlySchedules.map(schedule => ({
-      ...schedule,
-      playlist_manha: schedule.playlist_manha?.filter(id => !songIdSet.has(id)),
-      playlist_noite: schedule.playlist_noite?.filter(id => !songIdSet.has(id)),
-    }));
-    setMonthlySchedules(updatedSchedules);
-    saveMonthlySchedules(updatedSchedules);
-  };
-
-  const addOrUpdateSongs = (songsToUpdate: Song[]) => {
-    const songsToUpdateMap = new Map(songsToUpdate.map(s => [s.id, s]));
+  const removeSongs = async (songIds: string[]) => {
+    const batch = writeBatch(firestore);
+    songIds.forEach(id => {
+      batch.delete(doc(firestore, 'songs', id));
+    });
     
-    const newSongs = rawSongs.map(song => {
-      if (songsToUpdateMap.has(song.id)) {
-        const updatedSongData = songsToUpdateMap.get(song.id)!;
-        return { 
-          ...song, 
-          timesPlayedQuarterly: (song.timesPlayedQuarterly || 0) + (updatedSongData.timesPlayedQuarterly || 0), 
-          timesPlayedTotal: (song.timesPlayedTotal || 0) + (updatedSongData.timesPlayedTotal || 0)
-        };
-      }
-      return song;
+    // Also remove from playlists (this is a client-side heavy operation)
+    // A cloud function would be better for this at scale.
+    monthlySchedules.forEach(schedule => {
+        let changed = false;
+        const newPlaylistManha = schedule.playlist_manha?.filter(id => !songIds.includes(id));
+        const newPlaylistNoite = schedule.playlist_noite?.filter(id => !songIds.includes(id));
+        
+        if (newPlaylistManha && newPlaylistManha.length !== (schedule.playlist_manha?.length || 0)) {
+            changed = true;
+        }
+        if (newPlaylistNoite && newPlaylistNoite.length !== (schedule.playlist_noite?.length || 0)) {
+            changed = true;
+        }
+        if (changed) {
+            batch.update(doc(firestore, 'schedules', schedule.id), {
+                playlist_manha: newPlaylistManha,
+                playlist_noite: newPlaylistNoite,
+            });
+        }
     });
-      
-    setRawSongs(newSongs);
-    saveSongs(newSongs);
+
+    await batch.commit();
   };
 
-  const importSongsFromTxt = (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
-    let newSongs = [...rawSongs];
-
-    // Update existing songs' lyrics
-    const updateMap = new Map(songsToUpdate.map(s => [s.title.toLowerCase(), s]));
-    newSongs = newSongs.map(existingSong => {
-      const newVersion = updateMap.get(existingSong.title.toLowerCase());
-      if (newVersion && newVersion.artist.toLowerCase() === existingSong.artist.toLowerCase()) {
-        return { ...existingSong, lyrics: newVersion.lyrics };
-      }
-      return existingSong;
+  const addOrUpdateSongs = async (songsToUpdate: Song[]) => {
+    const batch = writeBatch(firestore);
+    songsToUpdate.forEach(song => {
+        const docRef = doc(firestore, 'songs', song.id);
+        batch.update(docRef, { 
+            timesPlayedQuarterly: song.timesPlayedQuarterly, 
+            timesPlayedTotal: song.timesPlayedTotal 
+        });
     });
+    await batch.commit();
+  };
 
-    // Add new songs
-    const newSongsToAdd = songsToCreate.map(songData => ({
-        ...songData,
-        id: `s${Date.now()}${Math.random().toString(36).substring(2, 9)}`
-    }));
+  const importSongsFromTxt = async (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
+      const batch = writeBatch(firestore);
+      
+      songsToCreate.forEach(songData => {
+          const newDocRef = doc(collection(firestore, 'songs'));
+          batch.set(newDocRef, songData);
+      });
 
-    newSongs.push(...newSongsToAdd);
+      songsToUpdate.forEach(songData => {
+          const existing = rawSongs.find(s => s.title.toLowerCase() === songData.title.toLowerCase() && s.artist.toLowerCase() === songData.artist.toLowerCase());
+          if (existing) {
+              batch.update(doc(firestore, 'songs', existing.id), { lyrics: songData.lyrics });
+          }
+      });
 
-    setRawSongs(newSongs);
-    saveSongs(newSongs);
+      await batch.commit();
   }
 
-  const updateSongs = (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => {
-    const songIdSet = new Set(songIds);
-    const newSongs = rawSongs.map(s =>
-      songIdSet.has(s.id) ? { ...s, ...updates } : s
-    );
-    setRawSongs(newSongs);
-    saveSongs(newSongs);
+  const updateSongs = async (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => {
+    const batch = writeBatch(firestore);
+    songIds.forEach(id => {
+        batch.update(doc(firestore, 'songs', id), updates);
+    });
+    await batch.commit();
   };
 
 
@@ -300,7 +227,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       monthlySchedules, 
       members, 
       songs, 
-      scheduleColumns,
+      scheduleColumns: initialScheduleColumns,
       addSchedule,
       removeSchedule,
       updateSchedule,
@@ -320,7 +247,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       {isLoading ? (
           <div className="flex items-center justify-center h-screen bg-background">
               <div className="flex flex-col items-center gap-2">
-                <p className="text-muted-foreground">Carregando dados da nuvem...</p>
+                <p className="text-muted-foreground">Carregando dados...</p>
               </div>
           </div>
       ) : children}
