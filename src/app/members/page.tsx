@@ -51,7 +51,7 @@ const roleColorMap: Record<string, string> = {
 
 export default function MembersPage() {
   const { can } = useAuth();
-  const { members, monthlySchedules, scheduleColumns, addMember, updateMember, removeMember } = useSchedule();
+  const { members, monthlySchedules, scheduleColumns, saveMember, removeMember } = useSchedule();
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isScheduleViewOpen, setIsScheduleViewOpen] = useState(false);
@@ -64,12 +64,8 @@ export default function MembersPage() {
   const exportRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const handleSaveMember = (memberData: Omit<Member, 'id'> & { id?: string }) => {
-    if (memberData.id) {
-      updateMember(memberData.id, memberData);
-    } else {
-      addMember(memberData);
-    }
+  const handleSaveMember = (memberData: Member) => {
+    saveMember(memberData);
     setIsFormDialogOpen(false);
     setSelectedMember(null);
   };

@@ -1,9 +1,10 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
 import type { MonthlySchedule, Member, Song, ScheduleColumn, SongCategory, BackupData } from '@/types';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, writeBatch, Timestamp, where, query, getDocs } from 'firebase/firestore';
+import { collection, doc, writeBatch, Timestamp, where, query, getDocs, setDoc } from 'firebase/firestore';
 import { setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useAuth } from './auth-context';
 import { subMonths } from 'date-fns';
@@ -17,8 +18,7 @@ interface ScheduleContextType {
   removeSchedule: (date: Date) => void;
   updateSchedule: (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => void;
   updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => void;
-  addMember: (memberData: Omit<Member, 'id'>) => void;
-  updateMember: (memberId: string, updates: Partial<Member>) => void;
+  saveMember: (memberData: Member) => void;
   removeMember: (memberId: string) => void;
   addSong: (songData: Omit<Song, 'id'>) => void;
   updateSong: (songId: string, updates: Partial<Song>) => void;
@@ -161,12 +161,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addMember = (memberData: Omit<Member, 'id'>) => {
-    addDocumentNonBlocking(collection(firestore, 'members'), memberData);
-  };
-
-  const updateMember = (memberId: string, updates: Partial<Member>) => {
-    updateDocumentNonBlocking(doc(firestore, 'members', memberId), updates);
+  const saveMember = (memberData: Member) => {
+    const { id, ...data } = memberData;
+    // Use setDoc with the specified ID. This works for both create and update.
+    setDocumentNonBlocking(doc(firestore, 'members', id), data);
   };
 
   const removeMember = (memberId: string) => {
@@ -354,8 +352,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       removeSchedule,
       updateSchedule,
       updateSchedulePlaylist,
-      addMember,
-      updateMember,
+      saveMember,
       removeMember,
       addSong,
       updateSong,

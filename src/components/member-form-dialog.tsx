@@ -25,11 +25,16 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { useFirebase } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useState, useEffect } from 'react';
+import { Loader2, Upload } from 'lucide-react';
 
 interface MemberFormDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (memberData: Omit<Member, 'id'> & { id?: string }) => void;
+  onSave: (memberData: Member) => void;
   member: Member | null;
 }
 
@@ -42,10 +47,14 @@ const formSchema = z.object({
   roles: z.array(z.string()).refine(value => value.some(item => item), {
     message: "Você deve selecionar pelo menos uma função.",
   }),
-  avatar: z.string().url({ message: "Por favor, insira uma URL válida." }).optional().or(z.literal('')),
 });
 
 export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: MemberFormDialogProps) {
+  const { firestore, storage } = useFirebase();
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -53,21 +62,77 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
       email: member?.email || '',
       phone: member?.phone || '',
       roles: member?.roles || [],
-      avatar: member?.avatar || '',
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const finalData = { ...values, roles: values.roles as MemberRole[] };
-
+  useEffect(() => {
+    if (member?.avatar) {
+      setAvatarPreview(member.avatar);
+    }
+     // Reset form and state when dialog opens for a new member
+    if (isOpen && !member) {
+      form.reset({ name: '', email: '', phone: '', roles: [] });
+      setAvatarFile(null);
+      setAvatarPreview(null);
+    }
+     // Reset form when member prop changes
     if (member) {
-      onSave({ ...finalData, id: member.id });
-    } else {
-      onSave(finalData);
+        form.reset({
+            name: member.name,
+            email: member.email,
+            phone: member.phone,
+            roles: member.roles,
+        });
+        setAvatarPreview(member.avatar);
+    }
+  }, [member, isOpen, form]);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
-  
-  const avatarUrl = form.watch('avatar');
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!firestore || !storage) {
+        console.error("Firebase not initialized");
+        return;
+    }
+
+    setIsUploading(true);
+    let avatarUrl = member?.avatar || '';
+
+    try {
+      const memberId = member?.id ?? doc(collection(firestore, 'members')).id;
+      
+      if (avatarFile) {
+        const filePath = `members/${memberId}/avatar`;
+        const fileRef = storageRef(storage, filePath);
+        await uploadBytes(fileRef, avatarFile);
+        avatarUrl = await getDownloadURL(fileRef);
+      }
+
+      const finalData: Member = {
+        ...values,
+        id: memberId,
+        avatar: avatarUrl,
+        roles: values.roles as MemberRole[],
+      };
+      
+      onSave(finalData);
+
+    } catch (error) {
+        console.error("Error saving member:", error);
+    } finally {
+        setIsUploading(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -80,6 +145,24 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+             <FormItem>
+                <FormLabel>Foto do Perfil</FormLabel>
+                <div className="flex items-center gap-4">
+                    <Avatar className="w-16 h-16">
+                        <AvatarImage src={avatarPreview || undefined} alt="Avatar preview" />
+                        <AvatarFallback>{form.watch('name')?.charAt(0) || '?'}</AvatarFallback>
+                    </Avatar>
+                    <FormControl>
+                      <Button asChild variant="outline" className="relative">
+                        <label htmlFor="avatar-upload" className="cursor-pointer">
+                          <Upload className="mr-2 h-4 w-4" />
+                          {avatarFile ? 'Trocar foto' : 'Escolher foto'}
+                          <Input id="avatar-upload" type="file" className="sr-only" accept="image/*" onChange={handleAvatarChange} />
+                        </label>
+                      </Button>
+                    </FormControl>
+                </div>
+              </FormItem>
             <FormField
               control={form.control}
               name="name"
@@ -166,31 +249,13 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="avatar"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>URL da Foto do Perfil</FormLabel>
-                   <div className="flex items-center gap-4">
-                        <Avatar className="w-16 h-16">
-                            <AvatarImage src={avatarUrl || undefined} alt="Avatar preview" />
-                            <AvatarFallback>{form.watch('name')?.charAt(0) || '?'}</AvatarFallback>
-                        </Avatar>
-                        <FormControl>
-                            <Input placeholder="https://exemplo.com/foto.png" {...field} />
-                        </FormControl>
-                   </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isUploading}>
                 Cancelar
               </Button>
-              <Button type="submit">
-                Salvar
+              <Button type="submit" disabled={isUploading}>
+                 {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isUploading ? 'Salvando...' : 'Salvar'}
               </Button>
             </DialogFooter>
           </form>
