@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Member, MemberRole } from '@/types';
@@ -26,8 +25,8 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useFirebase } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, collection, setDoc } from 'firebase/firestore';
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useState, useEffect } from 'react';
 import { Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +34,6 @@ import { useToast } from '@/hooks/use-toast';
 interface MemberFormDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (memberData: Member) => Promise<void>;
   member: Member | null;
 }
 
@@ -50,7 +48,7 @@ const formSchema = z.object({
   }),
 });
 
-export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: MemberFormDialogProps) {
+export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDialogProps) {
   const { firestore, storage } = useFirebase();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -119,8 +117,24 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
         const filePath = `members/${memberId}/avatar`;
         const fileRef = storageRef(storage, filePath);
         const metadata = { contentType: avatarFile.type };
-        await uploadBytes(fileRef, avatarFile, metadata);
-        avatarUrl = await getDownloadURL(fileRef);
+        
+        avatarUrl = await new Promise<string>((resolve, reject) => {
+          const uploadTask = uploadBytesResumable(fileRef, avatarFile, metadata);
+          uploadTask.on('state_changed',
+            (snapshot) => {
+              // Optional: handle progress if needed in the future
+            },
+            (error) => {
+              console.error("Upload failed:", error);
+              reject(error);
+            },
+            () => {
+              getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                resolve(downloadURL);
+              }).catch(reject);
+            }
+          );
+        });
       }
 
       const finalData: Member = {
@@ -130,7 +144,14 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
         roles: values.roles as MemberRole[],
       };
       
-      await onSave(finalData);
+      await setDoc(doc(firestore, 'members', finalData.id), {
+        name: finalData.name,
+        email: finalData.email,
+        phone: finalData.phone,
+        roles: finalData.roles,
+        avatar: finalData.avatar,
+      });
+
       toast({ title: 'Sucesso!', description: `Membro ${member ? 'atualizado' : 'criado'} com sucesso.`});
       onOpenChange(false);
 

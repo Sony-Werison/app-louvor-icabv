@@ -51,7 +51,7 @@ const roleColorMap: Record<string, string> = {
 
 export default function MembersPage() {
   const { can } = useAuth();
-  const { members, monthlySchedules, scheduleColumns, saveMember, removeMember } = useSchedule();
+  const { members, monthlySchedules, scheduleColumns, removeMember } = useSchedule();
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isScheduleViewOpen, setIsScheduleViewOpen] = useState(false);
@@ -63,11 +63,6 @@ export default function MembersPage() {
   const [isExporting, setIsExporting] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-
-  const handleSaveMember = async (memberData: Member) => {
-    await saveMember(memberData);
-    setSelectedMember(null);
-  };
 
   const handleAddNew = () => {
     setSelectedMember(null);
@@ -300,7 +295,6 @@ export default function MembersPage() {
         <MemberFormDialog
           isOpen={isFormDialogOpen}
           onOpenChange={setIsFormDialogOpen}
-          onSave={handleSaveMember}
           member={selectedMember}
         />
       )}
@@ -383,5 +377,6 @@ export default function MembersPage() {
     
 
     
+
 
 

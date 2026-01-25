@@ -18,7 +18,6 @@ interface ScheduleContextType {
   removeSchedule: (date: Date) => void;
   updateSchedule: (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => void;
   updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => void;
-  saveMember: (memberData: Member) => Promise<void>;
   removeMember: (memberId: string) => void;
   addSong: (songData: Omit<Song, 'id'>) => void;
   updateSong: (songId: string, updates: Partial<Song>) => void;
@@ -156,13 +155,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         const fieldToUpdate = type === 'manha' ? 'playlist_manha' : 'playlist_noite';
         updateDocumentNonBlocking(doc(firestore, 'schedules', schedule.id), { [fieldToUpdate]: playlist });
     }
-  };
-
-  const saveMember = async (memberData: Member) => {
-    if (!firestore) return;
-    const { id, ...data } = memberData;
-    // Use setDoc with the specified ID. This works for both create and update.
-    await setDoc(doc(firestore, 'members', id), data);
   };
 
   const removeMember = (memberId: string) => {
@@ -349,7 +341,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       removeSchedule,
       updateSchedule,
       updateSchedulePlaylist,
-      saveMember,
       removeMember,
       addSong,
       updateSong,
