@@ -2,18 +2,16 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
+import { Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { AppNav } from '@/components/app-nav';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/header';
-import { ScheduleProvider } from '@/context/schedule-context';
-import { AuthProvider } from '@/context/auth-context';
 import { ProfileSwitcher } from '@/components/profile-switcher';
 import { BottomNav } from '@/components/bottom-nav';
 import { PageTitle } from '@/components/page-title';
 import { AppLogo } from '@/components/app-logo';
 import Link from 'next/link';
-import { FirebaseClientProvider } from '@/firebase';
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'Louvor ICABV',
@@ -47,32 +45,26 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn('font-body antialiased', 'min-h-screen bg-background')}>
-        <FirebaseClientProvider>
-          <AuthProvider>
-              <ScheduleProvider>
-                <SidebarProvider>
-                  <Sidebar>
-                    <AppNav />
-                  </Sidebar>
-                  <SidebarInset>
-                    <Header>
-                      <div className="flex items-center gap-2">
-                          <PageTitle />
-                          <Link href="/">
-                            <AppLogo />
-                          </Link>
-                      </div>
-                      <div className="ml-auto flex items-center gap-2">
-                        <ProfileSwitcher />
-                      </div>
-                    </Header>
-                    <main className="pb-20 md:pb-0">{children}</main>
-                    <BottomNav />
-                  </SidebarInset>
-                </SidebarProvider>
-              </ScheduleProvider>
-          </AuthProvider>
-        </FirebaseClientProvider>
+        <Providers>
+          <Sidebar>
+            <AppNav />
+          </Sidebar>
+          <SidebarInset>
+            <Header>
+              <div className="flex items-center gap-2">
+                  <PageTitle />
+                  <Link href="/">
+                    <AppLogo />
+                  </Link>
+              </div>
+              <div className="ml-auto flex items-center gap-2">
+                <ProfileSwitcher />
+              </div>
+            </Header>
+            <main className="pb-20 md:pb-0">{children}</main>
+            <BottomNav />
+          </SidebarInset>
+        </Providers>
         <Toaster />
       </body>
     </html>
