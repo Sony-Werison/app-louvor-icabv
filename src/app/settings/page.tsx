@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Loader2 } from 'lucide-react';
 import type { BackupData } from '@/types';
+import { useSchedule } from '@/context/schedule-context';
 
 
 const passwordFormSchema = z.object({
@@ -50,6 +51,7 @@ const passwordFormSchema = z.object({
 
 export default function SettingsPage() {
   const { can, login } = useAuth();
+  const { exportData, importData } = useSchedule();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -79,14 +81,18 @@ export default function SettingsPage() {
   const onPasswordSubmit = (values: z.infer<typeof passwordFormSchema>) => {
     let changed = false;
     if (values.currentAdminPassword && values.newAdminPassword) {
-        // In firebase world, this would be a call to a cloud function
-        // for now, we just show a toast
-        toast({title: "Função não implementada", description: "A alteração de senha de admin requer um backend seguro."});
-        changed = true;
+        if (login('admin', values.currentAdminPassword)) {
+            // In a real app, this would be a secure backend call
+            // For now, we just show a toast and can't actually change it
+             toast({title: "Função não implementada", description: "A alteração de senha de admin requer um backend seguro."});
+             changed = true;
+        }
     }
     if (values.currentAberturaPassword && values.newAberturaPassword) {
-        toast({title: "Função não implementada", description: "A alteração de senha de abertura requer um backend seguro."});
-        changed = true;
+        if(login('abertura', values.currentAberturaPassword)) {
+            toast({title: "Função não implementada", description: "A alteração de senha de abertura requer um backend seguro."});
+            changed = true;
+        }
     }
     if(!changed) {
         passwordForm.setError('root', { message: 'Nenhuma alteração foi feita.'})
@@ -95,16 +101,55 @@ export default function SettingsPage() {
   
   const handleExport = async () => {
     setIsExporting(true);
-    toast({title: "Função não implementada", description: "Exportação de dados ainda não está disponível com Firebase."});
+    try {
+      const data = await exportData();
+      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+        JSON.stringify(data, null, 2)
+      )}`;
+      const link = document.createElement("a");
+      link.href = jsonString;
+      link.download = `backup_louvor_icabv_${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      toast({ title: 'Backup exportado com sucesso!' });
+    } catch (error) {
+      console.error(error);
+      toast({ title: 'Erro ao exportar', description: 'Não foi possível gerar o arquivo de backup.', variant: 'destructive'});
+    }
     setIsExporting(false);
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    toast({title: "Função não implementada", description: "Importação de dados ainda não está disponível com Firebase."});
+    const file = event.target.files?.[0];
+    if (file) {
+      setBackupFileToImport(file);
+      setIsImportAlertOpen(true);
+    }
   };
 
   const handleImportConfirm = async () => {
-     toast({title: "Função não implementada", description: "Importação de dados ainda não está disponível com Firebase."});
+    if (!backupFileToImport) return;
+    setIsImporting(true);
+    setIsImportAlertOpen(false);
+
+    try {
+        const fileContent = await backupFileToImport.text();
+        const backupData = JSON.parse(fileContent) as BackupData;
+        
+        await importData(backupData);
+
+        toast({ title: 'Importação Concluída!', description: 'Os dados foram restaurados com sucesso. A página será recarregada.'});
+        
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+
+    } catch (error) {
+        console.error(error);
+        toast({ title: 'Erro na Importação', description: 'O arquivo de backup é inválido ou está corrompido.', variant: 'destructive'});
+        setIsImporting(false);
+    } finally {
+        setBackupFileToImport(null);
+    }
   };
   
   if (!can('manage:settings')) {
@@ -112,6 +157,7 @@ export default function SettingsPage() {
   }
 
   return (
+    <>
     <div className="p-4 md:p-6">
       <div className="max-w-2xl mx-auto space-y-8">
         <h1 className="text-2xl font-headline font-bold">Configurações</h1>
@@ -134,7 +180,7 @@ export default function SettingsPage() {
                             <FormItem>
                             <FormLabel>Senha Atual</FormLabel>
                             <FormControl>
-                                <Input type="password" placeholder="Digite a senha atual de admin" {...field} disabled/>
+                                <Input type="password" placeholder="Digite a senha atual de admin" {...field} />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
@@ -147,7 +193,7 @@ export default function SettingsPage() {
                         <FormItem>
                         <FormLabel>Nova Senha de Administrador</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="Digite a nova senha de admin" {...field} disabled/>
+                            <Input type="password" placeholder="Digite a nova senha de admin" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -166,7 +212,7 @@ export default function SettingsPage() {
                         <FormItem>
                         <FormLabel>Senha Atual</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="Digite a senha atual de abertura" {...field} disabled/>
+                            <Input type="password" placeholder="Digite a senha atual de abertura" {...field} />
                         </FormControl>
                          <FormMessage />
                         </FormItem>
@@ -179,7 +225,7 @@ export default function SettingsPage() {
                         <FormItem>
                         <FormLabel>Nova Senha de Abertura</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="Digite a nova senha de abertura" {...field} disabled/>
+                            <Input type="password" placeholder="Digite a nova senha de abertura" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -192,7 +238,7 @@ export default function SettingsPage() {
                 )}
 
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={true}>
+                    <Button type="submit">
                         Salvar Alterações de Senha
                     </Button>
                 </div>
@@ -205,16 +251,17 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle>Backup e Restauração</CardTitle>
             <CardDescription>
-             Esta funcionalidade está temporariamente desativada após a migração para o Firebase.
+              Exporte todos os dados da aplicação para um arquivo JSON ou importe um backup para restaurar os dados. 
+              Atenção: importar um backup substituirá todos os dados existentes.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button onClick={handleExport} disabled={true} className="w-full">
+              <Button onClick={handleExport} disabled={isExporting} className="w-full">
                 {isExporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Exportar Backup Completo
               </Button>
-              <Button onClick={() => fileInputRef.current?.click()} disabled={true} variant="outline" className="w-full">
+              <Button onClick={() => fileInputRef.current?.click()} disabled={isImporting} variant="outline" className="w-full">
                 {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Importar Backup
               </Button>
@@ -224,7 +271,7 @@ export default function SettingsPage() {
                 className="hidden"
                 accept=".json"
                 onChange={handleFileSelect}
-                disabled={true}
+                onClick={(e) => { (e.target as HTMLInputElement).value = ''; }} // Allow re-selecting same file
               />
             </div>
           </CardContent>
@@ -232,5 +279,22 @@ export default function SettingsPage() {
 
       </div>
     </div>
+      <AlertDialog open={isImportAlertOpen} onOpenChange={setIsImportAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. Isso substituirá permanentemente
+              todos os dados do aplicativo (membros, músicas e escalas) pelos dados
+              do arquivo de backup.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setBackupFileToImport(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleImportConfirm}>Continuar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
-import type { MonthlySchedule, Member, Song, ScheduleColumn, SongCategory, MemberRole } from '@/types';
+import type { MonthlySchedule, Member, Song, ScheduleColumn, SongCategory, BackupData } from '@/types';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, writeBatch, Timestamp, where, query } from 'firebase/firestore';
+import { collection, doc, writeBatch, Timestamp, where, query, getDocs } from 'firebase/firestore';
 import { setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useAuth } from './auth-context';
 import { subMonths } from 'date-fns';
@@ -27,6 +27,8 @@ interface ScheduleContextType {
   addOrUpdateSongs: (songs: Song[]) => void;
   importSongsFromTxt: (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => void;
   updateSongs: (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => void;
+  exportData: () => Promise<BackupData>;
+  importData: (data: BackupData) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -91,8 +93,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     
     return rawSongs.map(song => ({
         ...song,
-        timesPlayedQuarterly: (quarterlyPlayCounts.get(song.id) || 0) + (song.timesPlayedQuarterly || 0),
-        timesPlayedTotal: (totalPlayCounts.get(song.id) || 0) + (song.timesPlayedTotal || 0)
+        timesPlayedQuarterly: quarterlyPlayCounts.get(song.id) || 0,
+        timesPlayedTotal: totalPlayCounts.get(song.id) || 0
     }));
   }, [rawSongs, monthlySchedules]);
 
@@ -256,6 +258,73 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     await batch.commit();
   };
 
+  const exportData = async (): Promise<BackupData> => {
+    if (!firestore) throw new Error("Firestore not initialized");
+
+    const [membersSnap, songsSnap, schedulesSnap] = await Promise.all([
+      getDocs(collection(firestore, 'members')),
+      getDocs(collection(firestore, 'songs')),
+      getDocs(collection(firestore, 'schedules')),
+    ]);
+
+    const membersData = membersSnap.docs.map(d => ({ ...d.data() as Omit<Member, 'id'> }));
+    const songsData = songsSnap.docs.map(d => ({ ...d.data() as Omit<Song, 'id'> }));
+    const schedulesData = schedulesSnap.docs.map(d => {
+        const data = d.data() as Omit<MonthlySchedule, 'id' | 'date'> & { date: Timestamp };
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { members, participantIds, ...rest } = data;
+        return {
+            ...rest,
+            date: data.date.toDate().toISOString(),
+        }
+    });
+
+    return {
+      members: membersData,
+      songs: songsData,
+      monthlySchedules: schedulesData,
+      exportDate: new Date().toISOString(),
+    };
+  };
+
+  const importData = async (data: BackupData): Promise<void> => {
+      if (!firestore) throw new Error("Firestore not initialized");
+      
+      const batch = writeBatch(firestore);
+
+      // 1. Delete all existing data
+      const [membersSnap, songsSnap, schedulesSnap] = await Promise.all([
+          getDocs(collection(firestore, 'members')),
+          getDocs(collection(firestore, 'songs')),
+          getDocs(collection(firestore, 'schedules')),
+      ]);
+      membersSnap.docs.forEach(d => batch.delete(d.ref));
+      songsSnap.docs.forEach(d => batch.delete(d.ref));
+      schedulesSnap.docs.forEach(d => batch.delete(d.ref));
+      
+      // 2. Add all new data
+      data.members.forEach(member => {
+        const newDoc = doc(collection(firestore, 'members'));
+        batch.set(newDoc, member);
+      });
+      data.songs.forEach(song => {
+        const newDoc = doc(collection(firestore, 'songs'));
+        batch.set(newDoc, song);
+      });
+      data.monthlySchedules.forEach(schedule => {
+        const newDoc = doc(collection(firestore, 'schedules'));
+        const { date, ...rest } = schedule;
+        batch.set(newDoc, {
+          ...rest,
+          date: Timestamp.fromDate(new Date(date)),
+          participantIds: userId ? [userId] : [],
+          members: userId ? { [userId]: 'admin' } : {}
+        });
+      });
+
+      await batch.commit();
+  }
+
 
   return (
     <ScheduleContext.Provider value={{ 
@@ -277,6 +346,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       addOrUpdateSongs,
       importSongsFromTxt,
       updateSongs,
+      exportData,
+      importData,
       isLoading,
     }}>
       {isLoading ? (

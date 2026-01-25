@@ -77,9 +77,11 @@ export type LiveState = {
   lastUpdate: number;
 };
 
+// Data format for backup files
+// We use string for date because JSON doesn't have a Date type
 export type BackupData = {
-  members: Member[];
-  songs: Song[];
-  monthlySchedules: Omit<MonthlySchedule, 'date' | 'id'> & { date: string }[];
+  members: Omit<Member, 'id'>[];
+  songs: Omit<Song, 'id'>[];
+  monthlySchedules: Omit<MonthlySchedule, 'id' | 'date' | 'members' | 'participantIds'> & { date: string }[];
   exportDate: string;
 };
