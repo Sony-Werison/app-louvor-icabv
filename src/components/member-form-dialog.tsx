@@ -118,7 +118,8 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
       if (avatarFile) {
         const filePath = `members/${memberId}/avatar`;
         const fileRef = storageRef(storage, filePath);
-        await uploadBytes(fileRef, avatarFile);
+        const metadata = { contentType: avatarFile.type };
+        await uploadBytes(fileRef, avatarFile, metadata);
         avatarUrl = await getDownloadURL(fileRef);
       }
 
