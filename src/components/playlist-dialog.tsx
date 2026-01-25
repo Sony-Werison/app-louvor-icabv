@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Schedule, Song, SongCategory } from '@/types';
@@ -21,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Badge } from './ui/badge';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 interface PlaylistDialogProps {

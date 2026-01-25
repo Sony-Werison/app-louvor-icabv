@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Song, SongCategory } from '@/types';
@@ -21,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 interface MusicLibraryProps {
