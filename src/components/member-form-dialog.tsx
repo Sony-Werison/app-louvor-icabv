@@ -106,7 +106,6 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!firestore || !storage) {
-      console.error('Firebase not initialized');
       toast({
         title: 'Erro de Inicialização',
         description: 'O Firebase não foi inicializado corretamente.',
@@ -121,32 +120,27 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
       let avatarUrl = member?.avatar || '';
       const memberId = member?.id ?? doc(collection(firestore, 'members')).id;
 
+      // 1. Upload da foto, se houver uma nova
       if (avatarFile) {
         const filePath = `members/${memberId}/avatar`;
         const fileRef = storageRef(storage, filePath);
         const metadata = { contentType: avatarFile.type };
 
-        // Use the simpler uploadBytes function
         await uploadBytes(fileRef, avatarFile, metadata);
-
-        // Then get the download URL
         avatarUrl = await getDownloadURL(fileRef);
       }
 
-      const finalData: Member = {
-        ...values,
-        id: memberId,
-        avatar: avatarUrl,
+      // 2. Preparar os dados para salvar
+      const memberData = {
+        name: values.name,
+        email: values.email || '',
+        phone: values.phone || '',
         roles: values.roles as MemberRole[],
+        avatar: avatarUrl,
       };
 
-      await setDoc(doc(firestore, 'members', finalData.id), {
-        name: finalData.name,
-        email: finalData.email,
-        phone: finalData.phone,
-        roles: finalData.roles,
-        avatar: finalData.avatar,
-      });
+      // 3. Salvar no Firestore
+      await setDoc(doc(firestore, 'members', memberId), memberData);
 
       toast({
         title: 'Sucesso!',
@@ -162,6 +156,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
         variant: 'destructive',
       });
     } finally {
+      // 4. Garantir que o estado de "carregando" seja sempre desativado
       setIsUploading(false);
     }
   };
