@@ -78,7 +78,7 @@ service cloud.firestore {
      * @principle Public read access for global data, with restricted writes to prevent vandalism.
      */
     match /songs/{songId} {
-      allow get, list: if true;
+      allow get, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
@@ -93,7 +93,7 @@ service cloud.firestore {
      * @principle Public read access for global data, with restricted writes to prevent vandalism.
      */
     match /members/{memberId} {
-      allow get, list: if true;
+      allow get, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
