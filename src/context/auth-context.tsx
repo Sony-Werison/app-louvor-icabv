@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -15,7 +16,7 @@ interface AuthContextType {
   role: Role | null;
   user: User | null;
   isAuthenticated: boolean;
-  login: (role: Role, password?: string) => boolean; // This will be simplified
+  login: (role: Role, password?: string) => boolean;
   logout: () => void;
   switchRole: (role: Role) => void;
   can: (permission: Permission) => boolean;
@@ -49,16 +50,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
-        // In a real app, you'd get the role from custom claims
-        // For now, we'll continue using session storage for the prototype
         const savedRole = sessionStorage.getItem('userRole') as Role;
         if (savedRole && rolePermissions[savedRole]) {
           setRole(savedRole);
         } else {
           setRole('viewer');
+          sessionStorage.setItem('userRole', 'viewer');
         }
       } else {
-        // If no user, sign in anonymously by default
         await signInAnonymously(auth);
       }
       setIsLoading(false);
@@ -68,16 +67,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [auth]);
 
   const login = (roleToSet: Role, password?: string): boolean => {
-    // This is now a mock login. In a real scenario, you'd use custom claims.
-    // For the prototype, we just switch the role.
-    // A real implementation would involve a backend function to set the claim.
-    if (roleToSet === 'admin' && password !== 'admin123') {
-         toast({ title: 'Senha de Admin Incorreta', variant: 'destructive' });
-         return false;
-    }
-     if (roleToSet === 'abertura' && password !== 'abertura') {
-         toast({ title: 'Senha de Abertura Incorreta', variant: 'destructive' });
-         return false;
+    // This is a mock login for the prototype.
+    // In a real app, this logic would be handled by a secure backend.
+    const passwords: Partial<Record<Role, string>> = {
+        admin: 'admin123',
+        abertura: 'abertura',
+    };
+
+    if (passwords[roleToSet] && password !== passwords[roleToSet]) {
+        toast({ title: 'Senha Incorreta', variant: 'destructive' });
+        return false;
     }
 
     setRole(roleToSet);
@@ -87,28 +86,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const switchRole = (newRole: Role) => {
+    // Directly switch for viewer, otherwise let the login dialog handle it.
     if (newRole === 'viewer') {
         setRole(newRole);
         sessionStorage.setItem('userRole', newRole);
-    } else {
-        // For prototype purposes, we allow direct switching for simplicity,
-        // but in a real app, this would trigger a login/verification flow.
-        // The `login` function will handle the "password".
     }
   }
 
   const logout = () => {
-    // For anonymous auth, "logout" means switching to a viewer role
     setRole('viewer');
     sessionStorage.setItem('userRole', 'viewer');
   };
   
-  const can = (permission: Permission) => {
+  const can = useCallback((permission: Permission) => {
     if (!isAuthenticated || !role) {
         return false;
     }
     return rolePermissions[role].includes(permission);
-  }
+  }, [isAuthenticated, role]);
 
   const value: AuthContextType = {
       role, 

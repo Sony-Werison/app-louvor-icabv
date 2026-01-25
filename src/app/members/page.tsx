@@ -66,7 +66,6 @@ export default function MembersPage() {
 
   const handleSaveMember = (memberData: Member) => {
     saveMember(memberData);
-    setIsFormDialogOpen(false);
     setSelectedMember(null);
   };
 
@@ -384,3 +383,4 @@ export default function MembersPage() {
     
 
     
+

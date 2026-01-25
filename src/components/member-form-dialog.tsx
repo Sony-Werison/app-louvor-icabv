@@ -58,34 +58,35 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: member?.name || '',
-      email: member?.email || '',
-      phone: member?.phone || '',
-      roles: member?.roles || [],
+      name: '',
+      email: '',
+      phone: '',
+      roles: [],
     },
   });
 
   useEffect(() => {
-    if (member?.avatar) {
-      setAvatarPreview(member.avatar);
-    }
-     // Reset form and state when dialog opens for a new member
-    if (isOpen && !member) {
-      form.reset({ name: '', email: '', phone: '', roles: [] });
-      setAvatarFile(null);
-      setAvatarPreview(null);
-    }
-     // Reset form when member prop changes
-    if (member) {
+    if (isOpen) {
+      if (member) {
         form.reset({
-            name: member.name,
-            email: member.email,
-            phone: member.phone,
-            roles: member.roles,
+          name: member.name || '',
+          email: member.email || '',
+          phone: member.phone || '',
+          roles: member.roles || [],
         });
-        setAvatarPreview(member.avatar);
+        setAvatarPreview(member.avatar || null);
+      } else {
+        form.reset({
+          name: '',
+          email: '',
+          phone: '',
+          roles: [],
+        });
+        setAvatarPreview(null);
+      }
+      setAvatarFile(null);
     }
-  }, [member, isOpen, form]);
+  }, [isOpen, member, form]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -99,7 +100,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
     }
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>>) => {
     if (!firestore || !storage) {
         console.error("Firebase not initialized");
         return;
@@ -126,6 +127,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
       };
       
       onSave(finalData);
+      onOpenChange(false); // Close dialog on success
 
     } catch (error) {
         console.error("Error saving member:", error);
