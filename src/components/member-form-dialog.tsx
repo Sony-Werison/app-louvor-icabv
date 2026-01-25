@@ -100,7 +100,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, member }: Membe
     }
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!firestore || !storage) {
         console.error("Firebase not initialized");
         return;
