@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import type { Schedule, Member } from '@/types';
@@ -31,7 +30,7 @@ export function ReminderCard({ schedules, members }: ReminderCardProps) {
     const firstName = member.name.split(' ')[0];
     
     const dayName = format(schedule.date, 'EEEE', { locale: ptBR }).toLowerCase();
-    const period = schedule.id.includes('manha') ? 'de manhã' : 'da noite';
+    const period = schedule.id.includes('manha') ? 'de manhã' : 'à noite';
     const fullPeriod = `${dayName} ${period}`;
 
     const message = reminderMessage
