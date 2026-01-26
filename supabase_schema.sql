@@ -1,65 +1,95 @@
--- Create members table
-create table if not exists
-  public.members (
-    id text not null,
-    name text not null,
-    email text null,
-    phone text null,
-    avatar text null,
-    roles text[] null,
-    constraint members_pkey primary key (id),
-    constraint members_id_key unique (id)
-  ) tablespace pg_default;
+-- Create tables if they don't exist
+CREATE TABLE IF NOT EXISTS members (
+    id text PRIMARY KEY,
+    name text NOT NULL,
+    roles jsonb,
+    email text,
+    phone text,
+    avatar text
+);
 
--- Create songs table
-create table if not exists
-  public.songs (
-    id text not null,
-    title text not null,
-    artist text null,
-    key text null,
-    category text null,
-    "isNew" boolean null default false,
-    lyrics text null,
-    chords text null,
-    "timesPlayedQuarterly" integer null default 0,
-    "timesPlayedTotal" integer null default 0,
-    constraint songs_pkey primary key (id),
-    constraint songs_id_key unique (id)
-  ) tablespace pg_default;
+CREATE TABLE IF NOT EXISTS songs (
+    id text PRIMARY KEY,
+    title text NOT NULL,
+    artist text,
+    key text,
+    category text,
+    "isNew" boolean DEFAULT false,
+    "youtubeUrl" text,
+    lyrics text,
+    chords text,
+    "timesPlayedQuarterly" integer DEFAULT 0,
+    "timesPlayedTotal" integer DEFAULT 0,
+    bpm integer
+);
 
--- Create monthly_schedules table
-create table if not exists
-  public.monthly_schedules (
-    id text not null,
-    date timestamp with time zone not null,
-    assignments jsonb null,
-    playlist_manha text[] null,
-    playlist_noite text[] null,
-    "isFeatured" boolean null default false,
-    name_manha text null,
-    name_noite text null,
-    constraint monthly_schedules_pkey primary key (id),
-    constraint monthly_schedules_id_key unique (id)
-  ) tablespace pg_default;
+CREATE TABLE IF NOT EXISTS monthly_schedules (
+    id text PRIMARY KEY,
+    date timestamp with time zone NOT NULL,
+    assignments jsonb,
+    playlist_manha text[],
+    playlist_noite text[],
+    "isFeatured" boolean DEFAULT false,
+    name_manha text,
+    name_noite text
+);
+
+-- Create storage bucket for avatars if it doesn't exist
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Policies for members table
+ALTER TABLE public.members ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public members are viewable by everyone." ON public.members;
+CREATE POLICY "Public members are viewable by everyone." ON public.members FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can insert their own members." ON public.members;
+CREATE POLICY "Users can insert their own members." ON public.members FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Users can update their own members." ON public.members;
+CREATE POLICY "Users can update their own members." ON public.members FOR UPDATE USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Users can delete their own members." ON public.members;
+CREATE POLICY "Users can delete their own members." ON public.members FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Policies for songs table
+ALTER TABLE public.songs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public songs are viewable by everyone." ON public.songs;
+CREATE POLICY "Public songs are viewable by everyone." ON public.songs FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can insert their own songs." ON public.songs;
+CREATE POLICY "Users can insert their own songs." ON public.songs FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Users can update their own songs." ON public.songs;
+CREATE POLICY "Users can update their own songs." ON public.songs FOR UPDATE USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Users can delete their own songs." ON public.songs;
+CREATE POLICY "Users can delete their own songs." ON public.songs FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Policies for monthly_schedules table
+ALTER TABLE public.monthly_schedules ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public monthly_schedules are viewable by everyone." ON public.monthly_schedules;
+CREATE POLICY "Public monthly_schedules are viewable by everyone." ON public.monthly_schedules FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can insert their own monthly_schedules." ON public.monthly_schedules;
+CREATE POLICY "Users can insert their own monthly_schedules." ON public.monthly_schedules FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Users can update their own monthly_schedules." ON public.monthly_schedules;
+CREATE POLICY "Users can update their own monthly_schedules." ON public.monthly_schedules FOR UPDATE USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Users can delete their own monthly_schedules." ON public.monthly_schedules;
+CREATE POLICY "Users can delete their own monthly_schedules." ON public.monthly_schedules FOR DELETE USING (auth.role() = 'authenticated');
 
 
--- Storage Bucket for Avatars
-insert into
-  storage.buckets (id, name, public)
-values
-  ('avatars', 'avatars', true)
-on conflict(id) do nothing;
+-- Give users access to their own avatars
+DROP POLICY IF EXISTS "owner_select_1m2j5x_0" ON storage.objects;
+CREATE POLICY "owner_select_1m2j5x_0" ON storage.objects FOR SELECT USING (
+    bucket_id = 'avatars' AND auth.uid()::text = owner::text
+);
 
--- Policies for storage
-drop policy if exists "Allow authenticated users to upload avatars" on storage.objects;
-create policy "Allow authenticated users to upload avatars" on storage.objects for insert to authenticated with check (bucket_id = 'avatars');
+DROP POLICY IF EXISTS "owner_insert_1m2j5x_0" ON storage.objects;
+CREATE POLICY "owner_insert_1m2j5x_0" ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = 'avatars' AND auth.uid()::text = owner::text
+);
 
-drop policy if exists "Allow authenticated users to update their own avatar" on storage.objects;
-create policy "Allow authenticated users to update their own avatar" on storage.objects for update to authenticated with check (bucket_id = 'avatars' and (storage.owner_id (owner)::text = auth.uid ()::text));
+DROP POLICY IF EXISTS "owner_update_1m2j5x_0" ON storage.objects;
+CREATE POLICY "owner_update_1m2j5x_0" ON storage.objects FOR UPDATE USING (
+    bucket_id = 'avatars' AND auth.uid()::text = owner::text
+);
 
-drop policy if exists "Allow authenticated users to delete their own avatar" on storage.objects;
-create policy "Allow authenticated users to delete their own avatar" on storage.objects for delete to authenticated using (bucket_id = 'avatars' and (storage.owner_id (owner)::text = auth.uid ()::text));
-
-drop policy if exists "Allow public read access to avatars" on storage.objects;
-create policy "Allow public read access to avatars" on storage.objects for select using (bucket_id = 'avatars');
+DROP POLICY IF EXISTS "owner_delete_1m2j5x_0" ON storage.objects;
+CREATE POLICY "owner_delete_1m2j5x_0" ON storage.objects FOR DELETE USING (
+    bucket_id = 'avatars' AND auth.uid()::text = owner::text
+);
