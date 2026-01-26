@@ -1,13 +1,13 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect, useCallback } from 'react';
 import type { MonthlySchedule, Member, Song, BackupData, ImportSelections } from '@/types';
 import { subMonths } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
-import { initialMembers, initialSongs, initialMonthlySchedules, scheduleColumns } from './initial-data';
 import { supabase } from '@/lib/supabase-client';
 import { useToast } from '@/hooks/use-toast';
+import { scheduleColumns } from './initial-data';
 
 
 interface ScheduleContextType {
@@ -43,52 +43,52 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
+  const fetchData = useCallback(async () => {
+    // Don't set loading to true here to avoid flickering on refetches
+    if (!supabase) {
+      console.warn("Supabase not configured, falling back to empty data.");
+      setMembers([]);
+      setRawSongs([]);
+      setMonthlySchedules([]);
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      const [membersRes, songsRes, schedulesRes] = await Promise.all([
+        supabase.from('members').select('*'),
+        supabase.from('songs').select('*'),
+        supabase.from('monthly_schedules').select('*'),
+      ]);
 
-      if (!supabase) {
-        console.warn("Supabase not configured, falling back to empty data.");
-        setMembers([]);
-        setRawSongs([]);
-        setMonthlySchedules([]);
-        setIsLoading(false);
-        return;
-      }
+      if (membersRes.error) throw membersRes.error;
+      if (songsRes.error) throw songsRes.error;
+      if (schedulesRes.error) throw schedulesRes.error;
+
+      setMembers(membersRes.data || []);
+      setRawSongs(songsRes.data || []);
       
-      try {
-        const [membersRes, songsRes, schedulesRes] = await Promise.all([
-          supabase.from('members').select('*'),
-          supabase.from('songs').select('*'),
-          supabase.from('monthly_schedules').select('*'),
-        ]);
+      const parsedSchedules = (schedulesRes.data || []).map(s => ({
+          ...s,
+          date: new Date(s.date),
+      })).sort((a,b) => a.date.getTime() - b.date.getTime());
+      setMonthlySchedules(parsedSchedules);
 
-        if (membersRes.error) throw membersRes.error;
-        if (songsRes.error) throw songsRes.error;
-        if (schedulesRes.error) throw schedulesRes.error;
-
-        setMembers(membersRes.data || []);
-        setRawSongs(songsRes.data || []);
-        
-        const parsedSchedules = (schedulesRes.data || []).map(s => ({
-            ...s,
-            date: new Date(s.date),
-        }));
-        setMonthlySchedules(parsedSchedules);
-
-      } catch (error: any) {
-        console.error("Error fetching data from Supabase:", error);
-        toast({ title: 'Erro ao buscar dados', description: `Não foi possível carregar os dados. Verifique a conexão e as configurações do banco de dados. Detalhes: ${error.message}`, variant: 'destructive'});
-        setMembers([]);
-        setRawSongs([]);
-        setMonthlySchedules([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
+    } catch (error: any) {
+      console.error("Error fetching data from Supabase:", error);
+      toast({ title: 'Erro ao buscar dados', description: `Não foi possível carregar os dados. Verifique a conexão e as configurações do banco de dados. Detalhes: ${error.message}`, variant: 'destructive'});
+      setMembers([]);
+      setRawSongs([]);
+      setMonthlySchedules([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [toast]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    fetchData();
+  }, [fetchData]);
 
   const songs = useMemo(() => {
     const today = new Date();
@@ -131,18 +131,13 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       date: date.toISOString(),
       assignments: {},
     };
-    const { data, error } = await supabase.from('monthly_schedules').insert(newScheduleData).select().maybeSingle();
+    const { error } = await supabase.from('monthly_schedules').insert(newScheduleData);
     if (error) {
         toast({ title: 'Erro ao adicionar data', description: error.message, variant: 'destructive'});
         console.error(error);
         return;
     }
-    if (data) {
-        const newSchedule = { ...data, date: new Date(data.date) };
-        setMonthlySchedules(prev => [...prev, newSchedule].sort((a,b) => a.date.getTime() - b.date.getTime()));
-    } else if (!error) {
-      toast({ title: 'Falha ao adicionar data', description: 'Não foi possível obter o novo registro do banco de dados.', variant: 'destructive'});
-    }
+    await fetchData();
   };
 
   const removeSchedule = async (id: string) => {
@@ -151,15 +146,12 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
     
-    const previousSchedules = monthlySchedules;
-    setMonthlySchedules(prev => prev.filter(s => s.id !== id));
-
     const { error } = await supabase.from('monthly_schedules').delete().eq('id', id);
     if (error) {
         toast({ title: 'Erro ao remover data', description: error.message, variant: 'destructive'});
-        setMonthlySchedules(previousSchedules); // Revert
         return;
     }
+    await fetchData();
   };
 
   const updateSchedule = async (id: string, updates: Partial<Omit<MonthlySchedule, 'id'>>) => {
@@ -167,23 +159,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
-    
-    const previousSchedules = monthlySchedules;
-    
-    const originalSchedule = previousSchedules.find(s => s.id === id);
-    if (!originalSchedule) {
-        console.error("Optimistic update failed: schedule not found");
-        return;
-    }
-    
-    const optimisticSchedule = { ...originalSchedule, ...updates };
-
-    setMonthlySchedules(prev => 
-        prev
-          .map(s => s.id === id ? optimisticSchedule : s)
-          .sort((a,b) => a.date.getTime() - b.date.getTime())
-    );
-    
+        
     const updatePayload: { [key: string]: any } = { ...updates };
     if (updates.date) {
       updatePayload.date = updates.date.toISOString();
@@ -195,9 +171,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       .eq('id', id);
 
      if (error) {
-        toast({ title: 'Erro ao salvar escala', description: `Não foi possível salvar. Desfazendo. (${error.message})`, variant: 'destructive'});
+        toast({ title: 'Erro ao salvar escala', description: `Não foi possível salvar. (${error.message})`, variant: 'destructive'});
         console.error(error);
-        setMonthlySchedules(previousSchedules);
+    } else {
+        await fetchData();
     }
   };
   
@@ -206,32 +183,23 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
-    const [type, ...timestampParts] = scheduleId.replace('s-', '').split('-');
-    const timestampStr = timestampParts.join('-');
-    const timestamp = parseInt(timestampStr, 10);
-    
-    const dateObj = new Date(timestamp);
-    const date = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
+    const [type, ...idParts] = scheduleId.replace('s-', '').split('-');
+    const monthlyScheduleId = idParts.join('-');
 
-    const scheduleToUpdate = monthlySchedules.find(s => s.date.getTime() === date.getTime());
-    if (!scheduleToUpdate) {
-        console.warn(`Schedule with date ${date} not found for playlist update.`);
+    if (!monthlyScheduleId) {
+        toast({ title: 'Erro ao salvar repertório', description: 'ID da escala inválido.', variant: 'destructive'});
         return;
     }
 
-    const previousSchedules = monthlySchedules;
     const fieldToUpdate = type === 'manha' ? 'playlist_manha' : 'playlist_noite';
-
-    setMonthlySchedules(prev => prev.map(s => 
-        s.id === scheduleToUpdate.id ? { ...s, [fieldToUpdate]: playlist } : s
-    ));
     
-    const { error } = await supabase.from('monthly_schedules').update({ [fieldToUpdate]: playlist }).eq('id', scheduleToUpdate.id);
+    const { error } = await supabase.from('monthly_schedules').update({ [fieldToUpdate]: playlist }).eq('id', monthlyScheduleId);
 
     if (error) {
       toast({ title: 'Erro ao atualizar repertório', description: error.message, variant: 'destructive'});
       console.error(error);
-      setMonthlySchedules(previousSchedules);
+    } else {
+      await fetchData();
     }
   };
 
@@ -261,25 +229,13 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       memberDataToSave.avatar = urlData.publicUrl ? `${urlData.publicUrl}?t=${new Date().getTime()}` : '';
     }
 
-    const { data, error } = await supabase.from('members').upsert(memberDataToSave).select().maybeSingle();
+    const { error } = await supabase.from('members').upsert(memberDataToSave);
     if(error){
         toast({ title: 'Erro ao salvar membro', description: error.message, variant: 'destructive'});
         console.error(error);
         return;
     }
-    if(data){
-        setMembers(prev => {
-            const existingIndex = prev.findIndex(m => m.id === data.id);
-            if (existingIndex > -1) {
-                const newMembers = [...prev];
-                newMembers[existingIndex] = data;
-                return newMembers;
-            }
-            return [...prev, data];
-        });
-    } else if (!error) {
-        toast({ title: 'Falha ao salvar membro', description: 'Não foi possível obter o registro atualizado do banco de dados.', variant: 'destructive'});
-    }
+    await fetchData();
   }
 
   const removeMember = async (memberId: string) => {
@@ -292,7 +248,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Erro ao remover membro', description: error.message, variant: 'destructive'});
         return;
      }
-     setMembers(prev => prev.filter(m => m.id !== memberId));
+     await fetchData();
   };
   
   const addSong = async (songData: Omit<Song, 'id'>) => {
@@ -301,17 +257,13 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
     const newSong = { ...songData, id: uuidv4() };
-    const { data, error } = await supabase.from('songs').insert(newSong).select().maybeSingle();
+    const { error } = await supabase.from('songs').insert(newSong);
     if (error) {
         toast({ title: 'Erro ao adicionar música', description: error.message, variant: 'destructive'});
         console.error(error);
         return;
     }
-    if(data){
-        setRawSongs(prev => [...prev, data]);
-    } else if (!error) {
-        toast({ title: 'Falha ao adicionar música', description: 'Não foi possível obter o novo registro do banco de dados.', variant: 'destructive'});
-    }
+    await fetchData();
   };
 
   const updateSong = async (songId: string, updates: Partial<Song>) => {
@@ -319,15 +271,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
-    const previousSongs = rawSongs;
-    setRawSongs(prev => prev.map(s => s.id === songId ? { ...s, ...updates } : s));
     
     const { error } = await supabase.from('songs').update(updates).eq('id', songId);
     
     if(error){
         toast({ title: 'Erro ao atualizar música', description: error.message, variant: 'destructive'});
-        setRawSongs(previousSongs);
         console.error(error);
+    } else {
+        await fetchData();
     }
   };
   
@@ -341,7 +292,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Erro ao remover músicas', description: error.message, variant: 'destructive'});
         return;
     }
-    setRawSongs(prev => prev.filter(s => !songIds.includes(s.id)));
+    await fetchData();
   };
 
   const removeSong = async (songId: string) => removeSongs([songId]);
@@ -356,8 +307,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       toast({ title: 'Erro ao atualizar músicas', description: error.message, variant: 'destructive'});
       return;
     }
-    const songsRes = await supabase.from('songs').select('*');
-    if (songsRes.data) setRawSongs(songsRes.data);
+    await fetchData();
   };
 
   const importSongsFromTxt = async (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
@@ -389,9 +339,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       } else {
           toast({ title: 'Importação de TXT concluída!'});
       }
-
-      const songsRes = await supabase.from('songs').select('*');
-      if (songsRes.data) setRawSongs(songsRes.data);
+      await fetchData();
   }
 
   const updateSongs = async (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => {
@@ -399,16 +347,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
-    const previousSongs = rawSongs;
-    setRawSongs(prev => prev.map(song => songIds.includes(song.id) ? { ...song, ...updates } : song));
-
+    
     const { error } = await supabase.from('songs').update(updates).in('id', songIds);
       if (error) {
           toast({ title: 'Erro ao atualizar músicas', description: error.message, variant: 'destructive'});
           console.error(error);
-          setRawSongs(previousSongs);
           return;
       }
+      await fetchData();
   };
 
  const exportData = async (): Promise<BackupData> => {
@@ -563,11 +509,12 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       clearAllData,
       isLoading,
     }}>
-      {isLoading ? (
+      {isLoading && (
           <div className="flex items-center justify-center h-screen bg-background">
               <p className="text-muted-foreground">Carregando dados...</p>
           </div>
-      ) : children}
+      )}
+      {!isLoading && children}
     </ScheduleContext.Provider>
   );
 };

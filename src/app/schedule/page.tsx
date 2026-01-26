@@ -35,7 +35,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
             dateManha.setHours(10, 0, 0, 0);
 
             schedules.push({
-                id: `s-manha-${scheduleDate.getTime()}`,
+                id: `s-manha-${ms.id}`,
                 name: ms.name_manha || `${getShortDay(dateManha)}. Manhã`,
                 date: dateManha,
                 leaderId: assignments.abertura_manha?.[0] || '',
@@ -50,7 +50,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
             dateNoite.setHours(19, 0, 0, 0);
             
             schedules.push({
-                id: `s-noite-${scheduleDate.getTime()}`,
+                id: `s-noite-${ms.id}`,
                 name: ms.name_noite || `${getShortDay(dateNoite)}. Noite`,
                 date: dateNoite,
                 leaderId: assignments.abertura_noite?.[0] || '',
@@ -66,7 +66,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
              const dateShell = new Date(scheduleDate);
              dateShell.setHours(10,0,0,0);
              schedules.push({
-                id: `s-manha-${scheduleDate.getTime()}`, 
+                id: `s-manha-${ms.id}`, 
                 name: ms.name_manha || `${getShortDay(dateShell)}. Manhã`,
                 date: dateShell,
                 leaderId: '',
@@ -77,7 +77,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
             const dateShellNoite = new Date(scheduleDate);
             dateShellNoite.setHours(19,0,0,0);
             schedules.push({
-                id: `s-noite-${scheduleDate.getTime()}`, 
+                id: `s-noite-${ms.id}`, 
                 name: ms.name_noite || `${getShortDay(dateShellNoite)}. Noite`,
                 date: dateShellNoite,
                 leaderId: '',
@@ -156,20 +156,10 @@ export default function SchedulePage() {
   }, [relevantSchedules]);
 
   const handleScheduleUpdate = (scheduleId: string, updates: Partial<Schedule>) => {
-    const [type, ...timestampParts] = scheduleId.replace('s-', '').split('-');
-    const timestampStr = timestampParts.join('-');
-    const timestamp = parseInt(timestampStr, 10);
+    const [type, ...idParts] = scheduleId.replace('s-', '').split('-');
+    const monthlyScheduleId = idParts.join('-');
     
-    // Create a new Date object ensuring it's treated as UTC then converted to local timezone correctly.
-    const dateObj = new Date(timestamp);
-    const date = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
-
-    const scheduleToUpdate = monthlySchedules.find(s => s.date.getTime() === date.getTime());
-
-    if (!scheduleToUpdate) {
-        console.warn(`Schedule with date ${date} not found for update.`);
-        return;
-    };
+    if (!monthlyScheduleId) return;
     
     let monthlyUpdate: Partial<Omit<MonthlySchedule, 'id'>> = {};
 
@@ -178,7 +168,7 @@ export default function SchedulePage() {
     }
     
     if (Object.keys(monthlyUpdate).length > 0) {
-        updateSchedule(scheduleToUpdate.id, monthlyUpdate);
+        updateSchedule(monthlyScheduleId, monthlyUpdate);
     }
   }
 
@@ -205,3 +195,4 @@ export default function SchedulePage() {
 
 
     
+
