@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
@@ -6,34 +5,8 @@ import type { MonthlySchedule, Member, Song, BackupData } from '@/types';
 import { subMonths } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { initialMembers, initialSongs, initialMonthlySchedules, scheduleColumns } from './initial-data';
-
-// Helper to get data from localStorage
-const getFromStorage = <T,>(key: string, defaultValue: T): T => {
-  if (typeof window === 'undefined') return defaultValue;
-  const storedValue = localStorage.getItem(key);
-  if (storedValue) {
-    try {
-      return JSON.parse(storedValue, (k, v) => {
-        // Reviver function to convert ISO strings back to Date objects
-        if (k === 'date' && typeof v === 'string' && v.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/)) {
-          return new Date(v);
-        }
-        return v;
-      });
-    } catch (e) {
-      console.error(`Error parsing localStorage key "${key}":`, e);
-      return defaultValue;
-    }
-  }
-  return defaultValue;
-};
-
-// Helper to set data to localStorage
-const setInStorage = <T,>(key: string, value: T) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
-};
+import { supabase } from '@/lib/supabase-client';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface ScheduleContextType {
@@ -41,43 +14,74 @@ interface ScheduleContextType {
   members: Member[];
   songs: Song[];
   scheduleColumns: typeof scheduleColumns;
-  addSchedule: (date: Date) => void;
-  removeSchedule: (date: Date) => void;
-  updateSchedule: (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => void;
-  updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => void;
-  saveMember: (member: Member) => void;
-  removeMember: (memberId: string) => void;
-  addSong: (songData: Omit<Song, 'id'>) => void;
-  updateSong: (songId: string, updates: Partial<Song>) => void;
-  removeSong: (songId: string) => void;
-  removeSongs: (songIds: string[]) => void;
-  addOrUpdateSongs: (songs: Song[]) => void;
-  importSongsFromTxt: (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => void;
-  updateSongs: (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => void;
+  addSchedule: (date: Date) => Promise<void>;
+  removeSchedule: (date: Date) => Promise<void>;
+  updateSchedule: (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => Promise<void>;
+  updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => Promise<void>;
+  saveMember: (member: Member) => Promise<void>;
+  removeMember: (memberId: string) => Promise<void>;
+  addSong: (songData: Omit<Song, 'id'>) => Promise<void>;
+  updateSong: (songId: string, updates: Partial<Song>) => Promise<void>;
+  removeSong: (songId: string) => Promise<void>;
+  removeSongs: (songIds: string[]) => Promise<void>;
+  addOrUpdateSongs: (songs: Song[]) => Promise<void>;
+  importSongsFromTxt: (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => Promise<void>;
+  updateSongs: (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => Promise<void>;
   exportData: () => BackupData;
   importData: (data: BackupData) => void;
-  clearAllData: () => void;
+  clearAllData: () => Promise<void>;
   isLoading: boolean;
 }
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
 export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
-  const [members, setMembers] = useState<Member[]>(() => getFromStorage('members', initialMembers));
-  const [rawSongs, setRawSongs] = useState<Song[]>(() => getFromStorage('songs', initialSongs));
-  const [monthlySchedules, setMonthlySchedules] = useState<MonthlySchedule[]>(() => getFromStorage('monthlySchedules', initialMonthlySchedules));
+  const [members, setMembers] = useState<Member[]>([]);
+  const [rawSongs, setRawSongs] = useState<Song[]>([]);
+  const [monthlySchedules, setMonthlySchedules] = useState<MonthlySchedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Persist to localStorage on change
-  useEffect(() => setInStorage('members', members), [members]);
-  useEffect(() => setInStorage('songs', rawSongs), [rawSongs]);
-  useEffect(() => setInStorage('monthlySchedules', monthlySchedules), [monthlySchedules]);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [membersRes, songsRes, schedulesRes] = await Promise.all([
+          supabase.from('members').select('*'),
+          supabase.from('songs').select('*'),
+          supabase.from('monthly_schedules').select('*'),
+        ]);
+
+        if (membersRes.error) throw membersRes.error;
+        if (songsRes.error) throw songsRes.error;
+        if (schedulesRes.error) throw schedulesRes.error;
+
+        setMembers(membersRes.data || []);
+        setRawSongs(songsRes.data || []);
+        
+        const parsedSchedules = (schedulesRes.data || []).map(s => ({
+            ...s,
+            date: new Date(s.date),
+        }));
+        setMonthlySchedules(parsedSchedules);
+
+      } catch (error: any) {
+        console.error("Error fetching data from Supabase:", error);
+        toast({
+          title: "Erro ao carregar dados",
+          description: "Não foi possível conectar ao banco de dados. Usando dados de exemplo.",
+          variant: "destructive"
+        });
+        setMembers(initialMembers);
+        setRawSongs(initialSongs);
+        setMonthlySchedules(initialMonthlySchedules);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [toast]);
 
   const songs = useMemo(() => {
     const today = new Date();
@@ -104,136 +108,191 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   }, [rawSongs, monthlySchedules]);
 
 
-  const addSchedule = (date: Date) => {
-    const newSchedule: MonthlySchedule = {
-      id: uuidv4(),
-      date,
+  const addSchedule = async (date: Date) => {
+    const newScheduleData = {
+      date: date.toISOString(),
       assignments: {},
     };
-    setMonthlySchedules(prev => [...prev, newSchedule]);
+    const { data, error } = await supabase.from('monthly_schedules').insert(newScheduleData).select().single();
+    if (error) {
+        toast({ title: 'Erro ao adicionar data', variant: 'destructive'});
+        console.error(error);
+        return;
+    }
+    if (data) {
+        const newSchedule = { ...data, date: new Date(data.date) };
+        setMonthlySchedules(prev => [...prev, newSchedule].sort((a,b) => a.date.getTime() - b.date.getTime()));
+    }
   };
 
-  const removeSchedule = (date: Date) => {
-    setMonthlySchedules(prev => prev.filter(s => s.date.getTime() !== date.getTime()));
+  const removeSchedule = async (date: Date) => {
+    const scheduleToRemove = monthlySchedules.find(s => s.date.getTime() === date.getTime());
+    if (!scheduleToRemove) return;
+
+    const { error } = await supabase.from('monthly_schedules').delete().eq('id', scheduleToRemove.id);
+    if (error) {
+        toast({ title: 'Erro ao remover data', variant: 'destructive'});
+        console.error(error);
+        return;
+    }
+    setMonthlySchedules(prev => prev.filter(s => s.id !== scheduleToRemove.id));
   };
 
-  const updateSchedule = (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => {
-     setMonthlySchedules(prev => prev.map(s => s.date.getTime() === date.getTime() ? { ...s, ...updates } : s));
+  const updateSchedule = async (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => {
+    const scheduleToUpdate = monthlySchedules.find(s => s.date.getTime() === date.getTime());
+    if (!scheduleToUpdate) return;
+    
+     const { error } = await supabase.from('monthly_schedules').update(updates).eq('id', scheduleToUpdate.id);
+     if (error) {
+        toast({ title: 'Erro ao atualizar escala', variant: 'destructive'});
+        console.error(error);
+        return;
+    }
+     setMonthlySchedules(prev => prev.map(s => s.id === scheduleToUpdate.id ? { ...s, ...updates } : s));
   };
   
-  const updateSchedulePlaylist = (scheduleId: string, playlist: string[]) => {
+  const updateSchedulePlaylist = async (scheduleId: string, playlist: string[]) => {
     const [type, ...timestampParts] = scheduleId.replace('s-', '').split('-');
     const timestampStr = timestampParts.join('-');
     const timestamp = parseInt(timestampStr, 10);
     
-    setMonthlySchedules(prev => prev.map(s => {
-        if (s.date.getTime() === timestamp) {
-            const fieldToUpdate = type === 'manha' ? 'playlist_manha' : 'playlist_noite';
-            return { ...s, [fieldToUpdate]: playlist };
-        }
-        return s;
-    }))
+    const dateObj = new Date(timestamp);
+    const date = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
+
+    const scheduleToUpdate = monthlySchedules.find(s => s.date.getTime() === date.getTime());
+    if (!scheduleToUpdate) return;
+
+    const fieldToUpdate = type === 'manha' ? 'playlist_manha' : 'playlist_noite';
+    const { error } = await supabase.from('monthly_schedules').update({ [fieldToUpdate]: playlist }).eq('id', scheduleToUpdate.id);
+
+    if (error) {
+      toast({ title: 'Erro ao atualizar repertório', variant: 'destructive'});
+      console.error(error);
+      return;
+    }
+
+    setMonthlySchedules(prev => prev.map(s => s.id === scheduleToUpdate.id ? { ...s, [fieldToUpdate]: playlist } : s));
   };
 
-  const saveMember = (member: Member) => {
-      setMembers(prev => {
-          const existingIndex = prev.findIndex(m => m.id === member.id);
-          if (existingIndex > -1) {
-              const newMembers = [...prev];
-              newMembers[existingIndex] = member;
-              return newMembers;
-          }
-          return [...prev, member];
-      });
-  }
-
-  const removeMember = (memberId: string) => {
-     setMembers(prev => prev.filter(m => m.id !== memberId));
-     // Also clear from assignments
-     setMonthlySchedules(prev => prev.map(schedule => {
-         const newAssignments = { ...schedule.assignments };
-         Object.keys(newAssignments).forEach(key => {
-             newAssignments[key] = (newAssignments[key] || []).map(id => id === memberId ? null : id);
-         });
-         return { ...schedule, assignments: newAssignments };
-     }))
-  };
-  
-  const addSong = (songData: Omit<Song, 'id'>) => {
-    const newSong: Song = { ...songData, id: uuidv4() };
-    setRawSongs(prev => [...prev, newSong]);
-  };
-
-  const updateSong = (songId: string, updates: Partial<Song>) => {
-    setRawSongs(prev => prev.map(s => s.id === songId ? { ...s, ...updates } : s));
-  };
-  
-  const removeSongs = (songIds: string[]) => {
-    setRawSongs(prev => prev.filter(s => !songIds.includes(s.id)));
-    // Also remove from playlists
-    setMonthlySchedules(prev => prev.map(schedule => ({
-        ...schedule,
-        playlist_manha: schedule.playlist_manha?.filter(id => !songIds.includes(id)),
-        playlist_noite: schedule.playlist_noite?.filter(id => !songIds.includes(id)),
-    })));
-  };
-
-  const removeSong = (songId: string) => removeSongs([songId]);
-
-  const addOrUpdateSongs = (songsToUpdate: Song[]) => {
-    setRawSongs(prevSongs => {
-        const updatedSongs = [...prevSongs];
-        songsToUpdate.forEach(songToUpdate => {
-            const index = updatedSongs.findIndex(s => s.id === songToUpdate.id);
-            if (index > -1) {
-                updatedSongs[index] = {
-                    ...updatedSongs[index],
-                    timesPlayedQuarterly: songToUpdate.timesPlayedQuarterly
-                };
+  const saveMember = async (member: Member) => {
+    const { data, error } = await supabase.from('members').upsert(member).select().single();
+    if(error){
+        toast({ title: 'Erro ao salvar membro', variant: 'destructive'});
+        console.error(error);
+        return;
+    }
+    if(data){
+        setMembers(prev => {
+            const existingIndex = prev.findIndex(m => m.id === data.id);
+            if (existingIndex > -1) {
+                const newMembers = [...prev];
+                newMembers[existingIndex] = data;
+                return newMembers;
             }
+            return [...prev, data];
         });
-        return updatedSongs;
-    });
-  };
-
-  const importSongsFromTxt = (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
-      setRawSongs(prev => {
-          const newSongs = songsToCreate.map(s => ({ ...s, id: uuidv4() }));
-          let updatedSongs = [...prev, ...newSongs];
-
-          songsToUpdate.forEach(songData => {
-              const index = updatedSongs.findIndex(s => s.title.toLowerCase() === songData.title.toLowerCase() && s.artist.toLowerCase() === songData.artist.toLowerCase());
-              if (index > -1) {
-                  updatedSongs[index].lyrics = songData.lyrics;
-              }
-          });
-          return updatedSongs;
-      })
+    }
   }
 
-  const updateSongs = (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => {
-    setRawSongs(prev => prev.map(song => songIds.includes(song.id) ? { ...song, ...updates } : song));
+  const removeMember = async (memberId: string) => {
+     const { error } = await supabase.from('members').delete().eq('id', memberId);
+     if(error){
+        toast({ title: 'Erro ao remover membro', variant: 'destructive'});
+        return;
+     }
+     setMembers(prev => prev.filter(m => m.id !== memberId));
+  };
+  
+  const addSong = async (songData: Omit<Song, 'id'>) => {
+    const { data, error } = await supabase.from('songs').insert(songData).select().single();
+    if (error) {
+        toast({ title: 'Erro ao adicionar música', variant: 'destructive'});
+        console.error(error);
+        return;
+    }
+    if(data){
+        setRawSongs(prev => [...prev, data]);
+    }
+  };
+
+  const updateSong = async (songId: string, updates: Partial<Song>) => {
+    const { data, error } = await supabase.from('songs').update(updates).eq('id', songId).select().single();
+    if(error){
+        toast({ title: 'Erro ao atualizar música', variant: 'destructive'});
+        console.error(error);
+        return;
+    }
+    if(data){
+        setRawSongs(prev => prev.map(s => s.id === songId ? data : s));
+    }
+  };
+  
+  const removeSongs = async (songIds: string[]) => {
+    const { error } = await supabase.from('songs').delete().in('id', songIds);
+    if(error){
+        toast({ title: 'Erro ao remover músicas', variant: 'destructive'});
+        return;
+    }
+    setRawSongs(prev => prev.filter(s => !songIds.includes(s.id)));
+  };
+
+  const removeSong = async (songId: string) => removeSongs([songId]);
+
+  const addOrUpdateSongs = async (songsToUpdate: Song[]) => {
+    toast({ title: 'Função não implementada', description: 'A importação de CSV precisa ser adaptada para o Supabase.' });
+  };
+
+  const importSongsFromTxt = async (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
+      const createPromises = supabase.from('songs').insert(songsToCreate);
+      const updatePromises = songsToUpdate.map(songData => 
+        supabase.from('songs').update({ lyrics: songData.lyrics }).match({ title: songData.title, artist: songData.artist })
+      );
+
+      const [createRes, ...updateRes] = await Promise.all([createPromises, ...updatePromises]);
+      
+      let hadError = false;
+      if(createRes.error) {
+          console.error("Error creating songs:", createRes.error);
+          hadError = true;
+      }
+      updateRes.forEach(res => {
+          if(res.error){
+              console.error("Error updating song:", res.error);
+              hadError = true;
+          }
+      });
+
+      if(hadError) {
+          toast({ title: 'Erro ao importar de TXT', description: 'Algumas músicas podem não ter sido importadas.', variant: 'destructive'});
+      } else {
+          toast({ title: 'Importação de TXT concluída!'});
+      }
+
+      const songsRes = await supabase.from('songs').select('*');
+      if (songsRes.data) setRawSongs(songsRes.data);
+  }
+
+  const updateSongs = async (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => {
+    const { error } = await supabase.from('songs').update(updates).in('id', songIds);
+      if (error) {
+          toast({ title: 'Erro ao atualizar músicas', variant: 'destructive'});
+          console.error(error);
+          return;
+      }
+      setRawSongs(prev => prev.map(song => songIds.includes(song.id) ? { ...song, ...updates } : song));
   };
 
   const exportData = (): BackupData => {
-    return {
-      members,
-      songs: rawSongs,
-      monthlySchedules: monthlySchedules.map(({ date, ...rest }) => ({ ...rest, date: date.toISOString() })),
-      exportDate: new Date().toISOString(),
-    };
+    toast({ title: 'Função desativada', description: 'A exportação deve ser feita pelo painel do Supabase.' });
+    return { members: [], songs: [], monthlySchedules: [], exportDate: ''};
   };
 
   const importData = (data: BackupData) => {
-      setMembers(data.members || []);
-      setRawSongs(data.songs || []);
-      setMonthlySchedules(data.monthlySchedules.map(s => ({...s, date: new Date(s.date) })) || []);
+     toast({ title: 'Função desativada', description: 'A importação deve ser feita pelo painel do Supabase.' });
   }
 
-  const clearAllData = () => {
-      setMembers([]);
-      setRawSongs([]);
-      setMonthlySchedules([]);
+  const clearAllData = async () => {
+    toast({ title: 'Função perigosa desativada', description: 'A limpeza de dados deve ser feita no painel do Supabase.' });
   }
 
   return (
