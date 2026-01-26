@@ -46,7 +46,6 @@ const renderTableForExport = (
                     isDesktop 
                     members={members}
                     columns={columns}
-                    getAssignedMemberIds={(date, columnId) => schedule.assignments[columnId] || []}
                     handleMemberChange={() => {}}
                     handleClearAssignment={() => {}}
                     handleDateChange={() => {}}
@@ -130,11 +129,6 @@ export function MonthlyScheduleView({
         updateSchedule(scheduleId, { isFeatured: !schedule.isFeatured });
     }
   }
-
-  const getAssignedMemberIds = (date: Date, columnId: string): (string | null)[] => {
-    const schedule = schedules.find(s => s.date.getTime() === date.getTime());
-    return schedule?.assignments[columnId] || [];
-  };
   
   const sortedSchedules = [...schedules].sort((a, b) => a.date.getTime() - b.date.getTime());
 
@@ -178,7 +172,6 @@ export function MonthlyScheduleView({
             schedule={schedule}
             members={members}
             columns={columns}
-            getAssignedMemberIds={getAssignedMemberIds}
             handleMemberChange={handleMemberChange}
             handleClearAssignment={handleClearAssignment}
             handleDateChange={handleDateChange}
@@ -218,7 +211,6 @@ export function MonthlyScheduleView({
                  isDesktop 
                  members={members}
                  columns={columns}
-                 getAssignedMemberIds={getAssignedMemberIds}
                  handleMemberChange={handleMemberChange}
                  handleClearAssignment={handleClearAssignment}
                  handleDateChange={handleDateChange}

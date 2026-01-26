@@ -104,7 +104,6 @@ export function ScheduleListItem({
   schedule,
   members,
   columns,
-  getAssignedMemberIds,
   handleMemberChange,
   handleClearAssignment,
   handleDateChange,
@@ -118,7 +117,6 @@ export function ScheduleListItem({
     schedule: MonthlySchedule;
     members: Member[];
     columns: ScheduleColumn[];
-    getAssignedMemberIds: (date: Date, columnId: string) => (string | null)[];
     handleMemberChange: (scheduleId: string, columnId: string, memberId: string, index: number) => void;
     handleClearAssignment: (scheduleId: string, columnId: string, index: number) => void;
     handleDateChange: (scheduleId: string, newDate: Date | undefined) => void;
@@ -155,7 +153,7 @@ export function ScheduleListItem({
   };
 
   const renderDesktopAssignment = (col: ScheduleColumn) => {
-    const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
+    const assignedMemberIds = schedule.assignments[col.id] || [];
     const slots = col.isMulti ? [0, 1] : [0];
     const filteredMembersForColumn = getFilteredMembersForColumn(col);
 
@@ -290,7 +288,7 @@ export function ScheduleListItem({
              {isExporting ? (
                  <div className="p-3 pt-2 space-y-4">
                      {columns.map(col => {
-                         const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
+                         const assignedMemberIds = schedule.assignments[col.id] || [];
                          const slots = col.isMulti ? [0, 1] : [0];
                          const filteredMembersForColumn = getFilteredMembersForColumn(col);
                          return (
@@ -341,7 +339,7 @@ export function ScheduleListItem({
                                         />
                                     </div>}
                                     {columns.filter(c => c.id.includes('manha')).map(col => {
-                                        const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
+                                        const assignedMemberIds = schedule.assignments[col.id] || [];
                                         const slots = col.isMulti ? [0, 1] : [0];
                                         const filteredMembersForColumn = getFilteredMembersForColumn(col);
                                         return (
@@ -383,7 +381,7 @@ export function ScheduleListItem({
                                         />
                                     </div>}
                                     {columns.filter(c => c.id.includes('noite')).map(col => {
-                                        const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
+                                        const assignedMemberIds = schedule.assignments[col.id] || [];
                                         const slots = col.isMulti ? [0, 1] : [0];
                                         const filteredMembersForColumn = getFilteredMembersForColumn(col);
                                         return (
@@ -411,7 +409,7 @@ export function ScheduleListItem({
                                 </div>
                                 <div className="space-y-4 rounded-lg border p-3">
                                     {columns.filter(c => !c.id.includes('manha') && !c.id.includes('noite')).map(col => {
-                                        const assignedMemberIds = getAssignedMemberIds(schedule.date, col.id);
+                                        const assignedMemberIds = schedule.assignments[col.id] || [];
                                         const slots = col.isMulti ? [0, 1] : [0];
                                         const filteredMembersForColumn = getFilteredMembersForColumn(col);
                                         return (
