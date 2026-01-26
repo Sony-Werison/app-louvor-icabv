@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
@@ -78,6 +76,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
       } catch (error: any) {
         console.error("Error fetching data from Supabase:", error);
+        toast({ title: 'Erro ao buscar dados', description: 'Usando dados locais como fallback.', variant: 'destructive'});
         setMembers(initialMembers);
         setRawSongs(initialSongs);
         setMonthlySchedules(initialMonthlySchedules);
@@ -87,7 +86,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     };
 
     fetchData();
-  }, [supabase]);
+  }, []);
 
   const songs = useMemo(() => {
     const today = new Date();
@@ -132,7 +131,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     };
     const { data, error } = await supabase.from('monthly_schedules').insert(newScheduleData).select().single();
     if (error) {
-        toast({ title: 'Erro ao adicionar data', variant: 'destructive'});
+        toast({ title: 'Erro ao adicionar data', description: error.message, variant: 'destructive'});
         console.error(error);
         return;
     }
@@ -150,7 +149,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     
     const { error } = await supabase.from('monthly_schedules').delete().eq('id', id);
     if (error) {
-        toast({ title: 'Erro ao remover data', variant: 'destructive'});
+        toast({ title: 'Erro ao remover data', description: error.message, variant: 'destructive'});
         console.error(error);
         return;
     }
@@ -176,13 +175,12 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       .single();
 
      if (error) {
-        toast({ title: 'Erro ao atualizar escala', variant: 'destructive'});
+        toast({ title: 'Erro ao atualizar escala', description: error.message, variant: 'destructive'});
         console.error(error);
         return;
     }
 
     if (updatedData) {
-      // Supabase returns an ISO string for dates, so convert it back to a Date object
       const newSchedule = { ...updatedData, date: new Date(updatedData.date) };
       setMonthlySchedules(prev => 
         prev
@@ -211,7 +209,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.from('monthly_schedules').update({ [fieldToUpdate]: playlist }).eq('id', scheduleToUpdate.id);
 
     if (error) {
-      toast({ title: 'Erro ao atualizar repertório', variant: 'destructive'});
+      toast({ title: 'Erro ao atualizar repertório', description: error.message, variant: 'destructive'});
       console.error(error);
       return;
     }
@@ -242,13 +240,12 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      // Add a timestamp to bust the cache
       memberDataToSave.avatar = urlData.publicUrl ? `${urlData.publicUrl}?t=${new Date().getTime()}` : '';
     }
 
     const { data, error } = await supabase.from('members').upsert(memberDataToSave).select().single();
     if(error){
-        toast({ title: 'Erro ao salvar membro', variant: 'destructive'});
+        toast({ title: 'Erro ao salvar membro', description: error.message, variant: 'destructive'});
         console.error(error);
         return;
     }
@@ -272,7 +269,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
      const { error } = await supabase.from('members').delete().eq('id', memberId);
      if(error){
-        toast({ title: 'Erro ao remover membro', variant: 'destructive'});
+        toast({ title: 'Erro ao remover membro', description: error.message, variant: 'destructive'});
         return;
      }
      setMembers(prev => prev.filter(m => m.id !== memberId));
@@ -286,7 +283,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const newSong = { ...songData, id: uuidv4() };
     const { data, error } = await supabase.from('songs').insert(newSong).select().single();
     if (error) {
-        toast({ title: 'Erro ao adicionar música', variant: 'destructive'});
+        toast({ title: 'Erro ao adicionar música', description: error.message, variant: 'destructive'});
         console.error(error);
         return;
     }
@@ -302,7 +299,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
     const { data, error } = await supabase.from('songs').update(updates).eq('id', songId).select().single();
     if(error){
-        toast({ title: 'Erro ao atualizar música', variant: 'destructive'});
+        toast({ title: 'Erro ao atualizar música', description: error.message, variant: 'destructive'});
         console.error(error);
         return;
     }
@@ -318,7 +315,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
     const { error } = await supabase.from('songs').delete().in('id', songIds);
     if(error){
-        toast({ title: 'Erro ao remover músicas', variant: 'destructive'});
+        toast({ title: 'Erro ao remover músicas', description: error.message, variant: 'destructive'});
         return;
     }
     setRawSongs(prev => prev.filter(s => !songIds.includes(s.id)));
@@ -333,7 +330,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
     const { error } = await supabase.from('songs').upsert(songsToUpdate, { onConflict: 'title' });
     if (error) {
-      toast({ title: 'Erro ao atualizar músicas', variant: 'destructive'});
+      toast({ title: 'Erro ao atualizar músicas', description: error.message, variant: 'destructive'});
       return;
     }
     const songsRes = await supabase.from('songs').select('*');
@@ -381,7 +378,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
     const { error } = await supabase.from('songs').update(updates).in('id', songIds);
       if (error) {
-          toast({ title: 'Erro ao atualizar músicas', variant: 'destructive'});
+          toast({ title: 'Erro ao atualizar músicas', description: error.message, variant: 'destructive'});
           console.error(error);
           return;
       }
