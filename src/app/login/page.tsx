@@ -17,7 +17,6 @@ import { cn } from '@/lib/utils';
 
 
 const formSchema = z.object({
-  email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
   password: z.string().min(1, { message: "A senha é obrigatória." }),
 });
 
@@ -29,7 +28,6 @@ export default function LoginPage() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            email: '',
             password: '',
         }
     });
@@ -40,13 +38,13 @@ export default function LoginPage() {
         }
     }, [user, router]);
 
-    const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    const onSubmit = async (values: z.infer<typeof formSchema>>) => {
         setIsSubmitting(true);
-        const { success } = await login(values.email, values.password);
+        const { success } = await login(values.password);
         if(success) {
             router.push('/');
         } else {
-            form.setError('root', { message: 'E-mail ou senha inválidos.' });
+            form.setError('root', { message: 'Senha inválida.' });
         }
         setIsSubmitting(false);
     }
@@ -59,29 +57,11 @@ export default function LoginPage() {
                         <AppLogo />
                     </div>
                     <CardTitle>Acesso ao Painel</CardTitle>
-                    <CardDescription>Use suas credenciais para entrar</CardDescription>
+                    <CardDescription>Use sua senha para entrar</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                             <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                          type="email"
-                                          placeholder="seu@email.com"
-                                          {...field}
-                                          className={cn(form.formState.errors.root && "border-destructive focus-visible:ring-destructive")}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
                              <FormField
                                 control={form.control}
                                 name="password"
