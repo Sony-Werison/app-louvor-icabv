@@ -423,7 +423,18 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       if (selections.monthlySchedules) {
         const { error } = await supabase.from('monthly_schedules').delete().neq('id', uuidv4());
         if (error) throw new Error(`Falha ao limpar escalas: ${error.message}`);
-        const schedulesToInsert = data.monthlySchedules.map(s => ({ ...s, date: new Date(s.date).toISOString() }));
+        
+        const schedulesToInsert = data.monthlySchedules.map(s => ({
+          id: s.id || uuidv4(),
+          date: new Date(s.date).toISOString(),
+          assignments: s.assignments || {},
+          playlist_manha: s.playlist_manha || [],
+          playlist_noite: s.playlist_noite || [],
+          isFeatured: s.isFeatured || false,
+          name_manha: s.name_manha || '',
+          name_noite: s.name_noite || '',
+        }));
+
         const { error: insertError } = await supabase.from('monthly_schedules').insert(schedulesToInsert);
         if (insertError) throw new Error(`Falha ao inserir escalas: ${insertError.message}`);
       }

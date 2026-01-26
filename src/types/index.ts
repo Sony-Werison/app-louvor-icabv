@@ -1,5 +1,6 @@
 
 
+
 export type Role = 'admin' | 'abertura' | 'viewer';
 
 export type MemberRole = 'Abertura' | 'Pregação' | 'Multimídia' | 'Convidado';
@@ -74,12 +75,25 @@ export type LiveState = {
   lastUpdate: number;
 };
 
-// Data format for backup files
-// We use string for date because JSON doesn't have a Date type
+// --- Data format for backup files ---
+
+// We use a separate type for the schedule in backup to handle older, minimal backup structures.
+export type BackupMonthlySchedule = {
+  id?: string;
+  date: string; // ISO string
+  assignments: Record<string, (string | null)[]>;
+  playlist_manha?: string[];
+  playlist_noite?: string[];
+  isFeatured?: boolean;
+  name_manha?: string;
+  name_noite?: string;
+};
+
+
 export type BackupData = {
   members: Member[];
   songs: Song[];
-  monthlySchedules: Omit<MonthlySchedule, 'date'> & { date: string }[];
+  monthlySchedules: BackupMonthlySchedule[];
   exportDate: string;
 };
 
