@@ -241,7 +241,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
         <TooltipProvider>
         {schedules.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground bg-card border rounded-lg p-8 sm:p-12 h-[calc(100vh-10rem)]">
-                <Users className="w-12 h-12 sm:w-16 sm:h-16 mb-4" />
+                <Users className="w-12 h-12 sm:w-16 sm:w-16 mb-4" />
                 <h2 className="text-xl sm:text-2xl font-bold mb-2">Nenhuma reunião esta semana</h2>
                 <p className="text-sm sm:text-base">Vá para a página "Escala Mensal" para planejar.</p>
             </div>
@@ -281,7 +281,6 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                         {leader && (
                         <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                            <AvatarImage src={leader.avatar} alt={leader.name} />
                             <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
                             </Avatar>
                             <div>
@@ -293,7 +292,6 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                         {preacher && (
                         <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                            <AvatarImage src={preacher.avatar} alt={preacher.name} />
                             <AvatarFallback>{getMemberInitial(preacher.name)}</AvatarFallback>
                             </Avatar>
                             <div>
@@ -313,7 +311,6 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                                 {teamMembers.map(member => (
                                     <div key={member.id} className="flex items-center gap-2 text-xs">
                                         <Avatar className="h-4 w-4">
-                                            <AvatarImage src={member.avatar} alt={member.name} />
                                             <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
                                         </Avatar>
                                         <span className="text-muted-foreground">{member.name}</span>

@@ -9,7 +9,6 @@ export type SongCategory = 'Hino' | 'Louvor' | 'Infantil';
 export type Member = {
   id: string;
   name: string;
-  avatar: string;
   roles: MemberRole[];
   email?: string;
   phone?: string;

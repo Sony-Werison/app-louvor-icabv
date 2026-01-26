@@ -107,7 +107,6 @@ export default function HistoryPage() {
                       {event.leader && (
                         <div className="flex items-center gap-2 text-sm">
                            <Avatar className="h-6 w-6">
-                            <AvatarImage src={event.leader.avatar} alt={event.leader.name} />
                             <AvatarFallback>{event.leader.name.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <span className="font-medium">{event.leader.name}</span>

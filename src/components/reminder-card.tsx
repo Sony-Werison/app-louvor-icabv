@@ -67,7 +67,6 @@ export function ReminderCard({ schedules, members }: ReminderCardProps) {
               <div key={schedule.id} className="flex items-center justify-between p-3 rounded-lg bg-background/50">
                 <div className="flex items-center gap-3">
                     <Avatar>
-                        <AvatarImage src={leader.avatar} alt={leader.name} />
                         <AvatarFallback>{leader.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
