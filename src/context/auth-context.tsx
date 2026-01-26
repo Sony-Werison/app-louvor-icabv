@@ -15,6 +15,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updatePasswords: (newPasswords: PasswordSet) => Promise<void>;
   shareMessage: string;
+  reminderMessage: string;
+  updateReminderMessage: (newMessage: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,12 +35,15 @@ const defaultPasswords: PasswordSet = {
   viewer: 'viewer123',
 };
 
+const defaultReminderMessage = 'Paz do Senhor, [NOME]! Tudo bem? Passando para lembrar que você ficou de montar o repertório para [PERIODO]. Assim que puder, acesse o app para definir as músicas. Deus abençoe!';
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<{ email: string } | null>(null);
   const [role, setRole] = useState<Role>('viewer');
   const [isLoading, setIsLoading] = useState(true);
   const [passwords, setPasswords] = useState<PasswordSet>(defaultPasswords);
+  const [reminderMessage, setReminderMessage] = useState(defaultReminderMessage);
   const { toast } = useToast();
 
   const shareMessage = "Paz do Senhor, segue o repertório para [PERIODO] ([DATA]). Deus abençoe!";
@@ -48,6 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const storedRole = localStorage.getItem('userRole') as Role;
         const storedUser = localStorage.getItem('user');
         const storedPasswords = localStorage.getItem('appPasswords');
+        const storedReminderMessage = localStorage.getItem('reminderMessage');
         
         if (storedRole && storedUser && ['admin', 'abertura', 'viewer'].includes(storedRole)) {
             setRole(storedRole);
@@ -56,6 +62,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (storedPasswords) {
             setPasswords(JSON.parse(storedPasswords));
+        }
+
+        if (storedReminderMessage) {
+            setReminderMessage(storedReminderMessage);
         }
     } catch (e) {
         // Could be running on server or localStorage is disabled
@@ -99,6 +109,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setPasswords(newPasswords);
     localStorage.setItem('appPasswords', JSON.stringify(newPasswords));
   };
+  
+  const updateReminderMessage = async (newMessage: string) => {
+    setReminderMessage(newMessage);
+    localStorage.setItem('reminderMessage', newMessage);
+  };
 
   const can = useCallback((permission: Permission) => {
     return rolePermissions[role].includes(permission);
@@ -115,6 +130,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       logout,
       updatePasswords,
       shareMessage,
+      reminderMessage,
+      updateReminderMessage,
   };
 
   return (

@@ -15,7 +15,7 @@ interface ReminderCardProps {
 }
 
 export function ReminderCard({ schedules, members }: ReminderCardProps) {
-  const { can } = useAuth();
+  const { can, reminderMessage } = useAuth();
   
   const getMemberById = (id: string) => members.find(m => m.id === id);
 
@@ -25,25 +25,12 @@ export function ReminderCard({ schedules, members }: ReminderCardProps) {
       return;
     }
     
-    // This functionality is simplified as hardcoding messages/passwords in frontend is not secure.
-    // In a real app, this would trigger a backend process (e.g., a Cloud Function)
-    // that sends a templated message.
-    
-    const scheduleNameLower = schedule.name.toLowerCase();
-    let dayDescription = "o culto";
-    if (scheduleNameLower.includes('dom')) {
-        if (scheduleNameLower.includes('manhã')) {
-            dayDescription = "*domingo, no período da manhã*";
-        } else if (scheduleNameLower.includes('noite')) {
-            dayDescription = "*domingo, no período da noite*";
-        }
-    }
-
-
     const phone = member.phone.replace(/\D/g, ''); // Remove non-numeric characters
     const firstName = member.name.split(' ')[0];
 
-    const message = `Paz do Senhor, ${firstName}! Tudo bem? Passando para lembrar que você ficou de montar o repertório para ${dayDescription}. Assim que puder, acesse o app para definir as músicas. Deus abençoe!`;
+    const message = reminderMessage
+        .replace(/\[NOME\]/g, firstName)
+        .replace(/\[PERIODO\]/g, schedule.name);
 
     const whatsappLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
