@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useAuth } from '@/context/auth-context';
@@ -18,17 +17,117 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
 import type { BackupData, ImportSelections } from '@/types';
 import { useSchedule } from '@/context/schedule-context';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+
+const passwordFormSchema = z.object({
+  admin: z.string().min(1, { message: 'A senha de admin é obrigatória.' }),
+  abertura: z.string().min(1, { message: 'A senha de abertura é obrigatória.' }),
+  viewer: z.string().min(1, { message: 'A senha de visualização é obrigatória.' }),
+});
+type PasswordFormData = z.infer<typeof passwordFormSchema>;
+
+
+function PasswordSettingsCard() {
+    const { passwords, updatePasswords } = useAuth();
+    const [isSaving, setIsSaving] = useState(false);
+    const { toast } = useToast();
+
+    const form = useForm<PasswordFormData>({
+        resolver: zodResolver(passwordFormSchema),
+        defaultValues: {
+            admin: passwords?.admin || '',
+            abertura: passwords?.abertura || '',
+            viewer: passwords?.viewer || '',
+        },
+    });
+
+    useEffect(() => {
+        if(passwords) {
+            form.reset(passwords);
+        }
+    }, [passwords, form]);
+
+    const onSubmit = async (values: PasswordFormData) => {
+        setIsSaving(true);
+        await updatePasswords(values);
+        setIsSaving(false);
+        toast({ title: 'Senhas atualizadas com sucesso!' });
+    };
+
+    return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Gerenciamento de Senhas</CardTitle>
+            <CardDescription>
+              Altere as senhas de acesso para os diferentes perfis de usuário.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="admin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha de Administrador</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="********" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="abertura"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha de Abertura</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="********" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="viewer"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha de Visualização</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="********" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" disabled={isSaving} className="w-full sm:w-auto">
+                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                   Salvar Novas Senhas
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+    )
+}
 
 
 export default function SettingsPage() {
-  const { can } = useAuth();
-  const { exportData, importData, clearAllData } = useSchedule();
+  const { can, exportData, importData, clearAllData } = useSchedule();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -129,6 +228,8 @@ export default function SettingsPage() {
     <div className="p-4 md:p-6">
       <div className="max-w-2xl mx-auto space-y-8">
         <h1 className="text-2xl font-headline font-bold">Configurações</h1>
+
+        {can('manage:settings') && <PasswordSettingsCard />}
         
         <Card>
           <CardHeader>

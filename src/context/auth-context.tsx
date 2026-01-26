@@ -2,16 +2,18 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Role } from '@/types';
+import type { Role, PasswordSet } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: { email: string } | null;
   role: Role;
   isLoading: boolean;
+  passwords: PasswordSet;
   can: (permission: Permission) => boolean;
   login: (password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  updatePasswords: (newPasswords: PasswordSet) => Promise<void>;
   shareMessage: string;
 }
 
@@ -25,8 +27,7 @@ const rolePermissions: Record<Role, Permission[]> = {
   viewer: [],
 };
 
-// Hardcoded passwords as requested by the user
-const passwords = {
+const defaultPasswords: PasswordSet = {
   admin: 'admin123',
   abertura: 'abertura123',
   viewer: 'viewer123',
@@ -37,6 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<{ email: string } | null>(null);
   const [role, setRole] = useState<Role>('viewer');
   const [isLoading, setIsLoading] = useState(true);
+  const [passwords, setPasswords] = useState<PasswordSet>(defaultPasswords);
   const { toast } = useToast();
 
   const shareMessage = "Paz do Senhor, segue o repertório para [PERIODO] ([DATA]). Deus abençoe!";
@@ -45,9 +47,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
         const storedRole = localStorage.getItem('userRole') as Role;
         const storedUser = localStorage.getItem('user');
+        const storedPasswords = localStorage.getItem('appPasswords');
+        
         if (storedRole && storedUser && ['admin', 'abertura', 'viewer'].includes(storedRole)) {
             setRole(storedRole);
             setUser(JSON.parse(storedUser));
+        }
+
+        if (storedPasswords) {
+            setPasswords(JSON.parse(storedPasswords));
         }
     } catch (e) {
         // Could be running on server or localStorage is disabled
@@ -87,6 +95,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('user');
   }
 
+  const updatePasswords = async (newPasswords: PasswordSet) => {
+    setPasswords(newPasswords);
+    localStorage.setItem('appPasswords', JSON.stringify(newPasswords));
+  };
+
   const can = useCallback((permission: Permission) => {
     return rolePermissions[role].includes(permission);
   }, [role]);
@@ -96,9 +109,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user,
       role,
       isLoading,
+      passwords,
       can,
       login,
       logout,
+      updatePasswords,
       shareMessage,
   };
 
