@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Role, PasswordSet } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase-client';
 
 interface AuthContextType {
   user: { email: string } | null;
@@ -55,35 +56,66 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const shareMessage = "Paz do Senhor, segue o repertório para [PERIODO] ([DATA]). Deus abençoe!";
 
+  const fetchSettings = useCallback(async () => {
+    if (!supabase) {
+      // Fallback to localStorage if Supabase is not configured
+      const storedPasswords = localStorage.getItem('appPasswords');
+      const storedReminderMessage = localStorage.getItem('reminderMessage');
+      if (storedPasswords) setPasswords(JSON.parse(storedPasswords));
+      if (storedReminderMessage) setReminderMessage(storedReminderMessage);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('*')
+      .eq('id', 'settings')
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "exact-single-row-not-found"
+      toast({ title: 'Erro ao carregar configurações', description: 'Não foi possível buscar as senhas e mensagens do banco de dados.', variant: 'destructive' });
+      console.error('Error fetching settings:', error);
+      return;
+    }
+
+    if (data) {
+      setPasswords(data.passwords);
+      setReminderMessage(data.reminder_message);
+    } else {
+      // No settings found, so let's insert the default ones.
+      const { error: insertError } = await supabase
+        .from('app_settings')
+        .insert({
+          id: 'settings',
+          passwords: defaultPasswords,
+          reminder_message: defaultReminderMessage,
+        });
+
+      if (insertError) {
+        toast({ title: 'Erro ao inicializar configurações', description: `Verifique se a tabela 'app_settings' existe e se as permissões (RLS) estão corretas. Erro: ${insertError.message}`, variant: 'destructive' });
+        console.error('Error inserting default settings:', insertError);
+      }
+    }
+  }, [toast]);
+
   useEffect(() => {
+    setIsLoading(true);
+    fetchSettings();
+
     try {
         const storedRole = localStorage.getItem('userRole') as Role;
         const storedUser = localStorage.getItem('user');
-        const storedPasswords = localStorage.getItem('appPasswords');
-        const storedReminderMessage = localStorage.getItem('reminderMessage');
         
         if (storedRole && storedUser && ['admin', 'abertura', 'viewer'].includes(storedRole)) {
             setRole(storedRole);
             setUser(JSON.parse(storedUser));
-        }
-
-        if (storedPasswords) {
-            setPasswords(JSON.parse(storedPasswords));
-        } else {
-            localStorage.setItem('appPasswords', JSON.stringify(defaultPasswords));
-        }
-
-        if (storedReminderMessage) {
-            setReminderMessage(storedReminderMessage);
-        } else {
-             localStorage.setItem('reminderMessage', defaultReminderMessage);
         }
     } catch (e) {
         // Could be running on server or localStorage is disabled
     } finally {
         setIsLoading(false);
     }
-  }, []);
+  }, [fetchSettings]);
 
 
   const login = async (password: string):Promise<{ success: boolean; error?: string }> => {
@@ -115,13 +147,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const updatePasswords = async (newPasswords: PasswordSet) => {
-    setPasswords(newPasswords);
-    localStorage.setItem('appPasswords', JSON.stringify(newPasswords));
+    if (!supabase) {
+      setPasswords(newPasswords);
+      localStorage.setItem('appPasswords', JSON.stringify(newPasswords));
+      toast({ title: 'Senhas salvas localmente (sem DB)!' });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('app_settings')
+      .update({ passwords: newPasswords })
+      .eq('id', 'settings')
+      .select()
+      .single();
+      
+    if (error || !data) {
+        toast({ title: 'Erro ao atualizar senhas', description: 'Verifique as permissões (RLS) da tabela `app_settings`.', variant: 'destructive' });
+        console.error('Error updating passwords:', error);
+    } else {
+        toast({ title: 'Senhas atualizadas com sucesso!' });
+        setPasswords(data.passwords);
+    }
   };
   
   const updateReminderMessage = async (newMessage: string) => {
-    setReminderMessage(newMessage);
-    localStorage.setItem('reminderMessage', newMessage);
+    if (!supabase) {
+      setReminderMessage(newMessage);
+      localStorage.setItem('reminderMessage', newMessage);
+      toast({ title: 'Mensagem salva localmente (sem DB)!' });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('app_settings')
+      .update({ reminder_message: newMessage })
+      .eq('id', 'settings')
+      .select()
+      .single();
+
+    if (error || !data) {
+        toast({ title: 'Erro ao atualizar mensagem', description: 'Verifique as permissões (RLS) da tabela `app_settings`.', variant: 'destructive' });
+        console.error('Error updating reminder message:', error);
+    } else {
+        toast({ title: 'Mensagem de lembrete atualizada!' });
+        setReminderMessage(data.reminder_message);
+    }
   };
 
   const can = useCallback((permission: Permission) => {
