@@ -130,6 +130,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       id: uuidv4(),
       date: date.toISOString(),
       assignments: {},
+      playlist_manha: [],
+      playlist_noite: [],
+      name_manha: '',
+      name_noite: '',
+      isFeatured: false,
     };
     const { error } = await supabase.from('monthly_schedules').insert(newScheduleData);
     if (error) {
@@ -146,12 +151,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
     
+    const oldSchedules = monthlySchedules;
+    setMonthlySchedules(schedules => schedules.filter(s => s.id !== id));
+
     const { error } = await supabase.from('monthly_schedules').delete().eq('id', id);
     if (error) {
         toast({ title: 'Erro ao remover data', description: error.message, variant: 'destructive'});
-        return;
+        setMonthlySchedules(oldSchedules);
     }
-    await fetchData();
   };
 
   const updateSchedule = async (id: string, updates: Partial<Omit<MonthlySchedule, 'id'>>) => {
@@ -159,6 +166,9 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
+
+    const oldSchedules = monthlySchedules;
+    setMonthlySchedules(schedules => schedules.map(s => s.id === id ? { ...s, ...updates, date: updates.date || s.date } : s));
         
     const updatePayload: { [key: string]: any } = { ...updates };
     if (updates.date) {
@@ -171,10 +181,9 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       .eq('id', id);
 
      if (error) {
-        toast({ title: 'Erro ao salvar escala', description: `Não foi possível salvar. (${error.message})`, variant: 'destructive'});
+        toast({ title: 'Erro ao salvar escala', description: `A alteração foi desfeita. (${error.message})`, variant: 'destructive'});
         console.error(error);
-    } else {
-        await fetchData();
+        setMonthlySchedules(oldSchedules);
     }
   };
   
@@ -193,13 +202,17 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
     const fieldToUpdate = type === 'manha' ? 'playlist_manha' : 'playlist_noite';
     
+    const oldSchedules = monthlySchedules;
+    setMonthlySchedules(schedules => schedules.map(s => 
+        s.id === monthlyScheduleId ? { ...s, [fieldToUpdate]: playlist } : s
+    ));
+
     const { error } = await supabase.from('monthly_schedules').update({ [fieldToUpdate]: playlist }).eq('id', monthlyScheduleId);
 
     if (error) {
       toast({ title: 'Erro ao atualizar repertório', description: error.message, variant: 'destructive'});
       console.error(error);
-    } else {
-      await fetchData();
+      setMonthlySchedules(oldSchedules);
     }
   };
 
@@ -243,12 +256,16 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
+
+    const oldMembers = members;
+    setMembers(m => m.filter(member => member.id !== memberId));
+
      const { error } = await supabase.from('members').delete().eq('id', memberId);
      if(error){
         toast({ title: 'Erro ao remover membro', description: error.message, variant: 'destructive'});
+        setMembers(oldMembers);
         return;
      }
-     await fetchData();
   };
   
   const addSong = async (songData: Omit<Song, 'id'>) => {
@@ -256,7 +273,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
-    const newSong = { ...songData, id: uuidv4() };
+    const newSong = { ...songData, id: uuidv4(), isNew: true };
     const { error } = await supabase.from('songs').insert(newSong);
     if (error) {
         toast({ title: 'Erro ao adicionar música', description: error.message, variant: 'destructive'});
@@ -272,13 +289,15 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
     
+    const oldSongs = rawSongs;
+    setRawSongs(songs => songs.map(s => s.id === songId ? { ...s, ...updates } : s));
+
     const { error } = await supabase.from('songs').update(updates).eq('id', songId);
     
     if(error){
         toast({ title: 'Erro ao atualizar música', description: error.message, variant: 'destructive'});
         console.error(error);
-    } else {
-        await fetchData();
+        setRawSongs(oldSongs);
     }
   };
   
@@ -287,12 +306,16 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
+
+    const oldSongs = rawSongs;
+    setRawSongs(s => s.filter(song => !songIds.includes(song.id)));
+
     const { error } = await supabase.from('songs').delete().in('id', songIds);
     if(error){
         toast({ title: 'Erro ao remover músicas', description: error.message, variant: 'destructive'});
+        setRawSongs(oldSongs);
         return;
     }
-    await fetchData();
   };
 
   const removeSong = async (songId: string) => removeSongs([songId]);
@@ -315,7 +338,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
-      const createPromises = supabase.from('songs').insert(songsToCreate);
+      const createPromises = supabase.from('songs').insert(songsToCreate.map(s => ({...s, isNew: true})));
       const updatePromises = songsToUpdate.map(songData => 
         supabase.from('songs').update({ lyrics: songData.lyrics }).match({ title: songData.title, artist: songData.artist })
       );
@@ -347,14 +370,17 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
+
+    const oldSongs = rawSongs;
+    setRawSongs(songs => songs.map(s => songIds.includes(s.id) ? { ...s, ...updates } : s));
     
     const { error } = await supabase.from('songs').update(updates).in('id', songIds);
       if (error) {
           toast({ title: 'Erro ao atualizar músicas', description: error.message, variant: 'destructive'});
           console.error(error);
+          setRawSongs(oldSongs);
           return;
       }
-      await fetchData();
   };
 
  const exportData = async (): Promise<BackupData> => {
