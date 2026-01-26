@@ -1,68 +1,122 @@
+-- supabase_schema.sql
+
+-- This script can be executed in the Supabase SQL editor.
+-- It's idempotent, so it can be run multiple times without causing errors.
+
+-- 1. Create Storage bucket for avatars if it doesn't exist
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- 2. Set up Row Level Security (RLS) for the avatars bucket
+-- Allow public read access
+DROP POLICY IF EXISTS "Allow public read access on avatars" ON storage.objects;
+CREATE POLICY "Allow public read access on avatars" ON storage.objects
+FOR SELECT TO public
+USING (bucket_id = 'avatars');
+
+-- Allow authenticated users to upload
+DROP POLICY IF EXISTS "Allow authenticated users to upload" ON storage.objects;
+CREATE POLICY "Allow authenticated users to upload" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'avatars');
+
+-- Allow authenticated users to update their own avatar
+DROP POLICY IF EXISTS "Allow authenticated users to update their own avatar" ON storage.objects;
+CREATE POLICY "Allow authenticated users to update their own avatar" ON storage.objects
+FOR UPDATE TO authenticated
+USING (auth.uid()::text = owner::text);
+
+-- Allow authenticated users to delete their own avatar
+DROP POLICY IF EXISTS "Allow authenticated users to delete their own avatar" ON storage.objects;
+CREATE POLICY "Allow authenticated users to delete their own avatar" ON storage.objects
+FOR DELETE TO authenticated
+USING (auth.uid()::text = owner::text);
+
+
+-- 3. Create tables
+
 -- Create members table
-create table if not exists public.members (
-    id text not null,
-    name text not null,
-    roles text[] not null,
-    email text null,
-    phone text null,
-    avatar text null,
-    constraint members_pkey primary key (id)
+CREATE TABLE IF NOT EXISTS members (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    roles TEXT[],
+    email TEXT,
+    phone TEXT,
+    avatar TEXT
 );
 
 -- Create songs table
-create table if not exists public.songs (
-    id text not null,
-    title text not null,
-    artist text null,
-    key text null,
-    category text null,
-    is_new boolean null default false,
-    youtube_url text null,
-    lyrics text null,
-    chords text null,
-    bpm int null,
-    constraint songs_pkey primary key (id),
-    constraint songs_title_artist_key unique (title, artist)
+CREATE TABLE IF NOT EXISTS songs (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    artist TEXT,
+    key TEXT,
+    category TEXT,
+    isNew BOOLEAN DEFAULT false,
+    youtubeUrl TEXT,
+    lyrics TEXT,
+    chords TEXT,
+    timesPlayedQuarterly INT DEFAULT 0,
+    timesPlayedTotal INT DEFAULT 0
 );
 
 -- Create monthly_schedules table
-create table if not exists public.monthly_schedules (
-    id text not null,
-    date date not null,
-    assignments jsonb null,
-    playlist_manha _text null,
-    playlist_noite _text null,
-    is_featured boolean null,
-    name_manha text null,
-    name_noite text null,
-    constraint monthly_schedules_pkey primary key (id)
+CREATE TABLE IF NOT EXISTS monthly_schedules (
+    id TEXT PRIMARY KEY,
+    date TIMESTAMP WITH TIME ZONE NOT NULL,
+    assignments JSONB,
+    playlist_manha TEXT[],
+    playlist_noite TEXT[],
+    isFeatured BOOLEAN DEFAULT false,
+    name_manha TEXT,
+    name_noite TEXT
 );
 
+-- 4. Enable Row Level Security (RLS) for the tables
+ALTER TABLE members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE songs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE monthly_schedules ENABLE ROW LEVEL SECURITY;
 
--- Create avatars storage bucket
-insert into storage.buckets (id, name, public)
-values ('avatars', 'avatars', true)
-on conflict (id) do nothing;
+-- 5. Create RLS policies for the tables (allow all access to authenticated users)
 
--- Policies for avatars bucket
+-- Members policies
+DROP POLICY IF EXISTS "Allow all access to authenticated users on members" ON public.members;
+CREATE POLICY "Allow all access to authenticated users on members" ON public.members
+FOR ALL TO authenticated
+USING (true)
+WITH CHECK (true);
 
--- Allow public read access to everyone
-drop policy if exists "Public read access" on storage.objects;
-create policy "Public read access" on storage.objects
-  for select using (bucket_id = 'avatars');
+-- Songs policies
+DROP POLICY IF EXISTS "Allow all access to authenticated users on songs" ON public.songs;
+CREATE POLICY "Allow all access to authenticated users on songs" ON public.songs
+FOR ALL TO authenticated
+USING (true)
+WITH CHECK (true);
 
--- Allow authenticated users to upload files
-drop policy if exists "Authenticated user can upload" on storage.objects;
-create policy "Authenticated user can upload" on storage.objects
-  for insert with check (bucket_id = 'avatars' and auth.role() = 'authenticated');
+-- Monthly schedules policies
+DROP POLICY IF EXISTS "Allow all access to authenticated users on monthly_schedules" ON public.monthly_schedules;
+CREATE POLICY "Allow all access to authenticated users on monthly_schedules" ON public.monthly_schedules
+FOR ALL TO authenticated
+USING (true)
+WITH CHECK (true);
 
--- Allow owner to update their own files
-drop policy if exists "Owner can update" on storage.objects;
-create policy "Owner can update" on storage.objects
-  for update using (bucket_id = 'avatars' and auth.uid()::text = owner::text)
-  with check (auth.uid()::text = owner::text);
+-- Public read access policies
 
--- Allow owner to delete their own files
-drop policy if exists "Owner can delete" on storage.objects;
-create policy "Owner can delete" on storage.objects
-  for delete using (bucket_id = 'avatars' and auth.uid()::text = owner::text);
+-- Members policies
+DROP POLICY IF EXISTS "Allow public read access on members" ON public.members;
+CREATE POLICY "Allow public read access on members" ON public.members
+FOR SELECT TO public
+USING (true);
+
+-- Songs policies
+DROP POLICY IF EXISTS "Allow public read access on songs" ON public.songs;
+CREATE POLICY "Allow public read access on songs" ON public.songs
+FOR SELECT TO public
+USING (true);
+
+-- Monthly schedules policies
+DROP POLICY IF EXISTS "Allow public read access on monthly_schedules" ON public.monthly_schedules;
+CREATE POLICY "Allow public read access on monthly_schedules" ON public.monthly_schedules
+FOR SELECT TO public
+USING (true);

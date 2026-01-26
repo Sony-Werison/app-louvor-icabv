@@ -92,8 +92,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const songs = useMemo(() => {
     const today = new Date();
     const threeMonthsAgo = subMonths(today, 3);
-    const quarterlyPlayCounts = new Map<string, number>();
-    const totalPlayCounts = new Map<string, number>();
+    const scheduleQuarterlyCounts = new Map<string, number>();
+    const scheduleTotalCounts = new Map<string, number>();
 
     monthlySchedules.forEach(schedule => {
         const scheduleDate = new Date(schedule.date);
@@ -101,12 +101,12 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
         playlists.forEach(playlist => {
             playlist.forEach(songId => {
-                // Total count
-                totalPlayCounts.set(songId, (totalPlayCounts.get(songId) || 0) + 1);
+                // Total count from schedules
+                scheduleTotalCounts.set(songId, (scheduleTotalCounts.get(songId) || 0) + 1);
 
-                // Quarterly count
+                // Quarterly count from schedules
                 if (scheduleDate >= threeMonthsAgo) {
-                    quarterlyPlayCounts.set(songId, (quarterlyPlayCounts.get(songId) || 0) + 1);
+                    scheduleQuarterlyCounts.set(songId, (scheduleQuarterlyCounts.get(songId) || 0) + 1);
                 }
             });
         });
@@ -114,8 +114,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     
     return rawSongs.map(song => ({
         ...song,
-        timesPlayedQuarterly: quarterlyPlayCounts.get(song.id) || 0,
-        timesPlayedTotal: totalPlayCounts.get(song.id) || 0,
+        timesPlayedQuarterly: (song.timesPlayedQuarterly || 0) + (scheduleQuarterlyCounts.get(song.id) || 0),
+        timesPlayedTotal: (song.timesPlayedTotal || 0) + (scheduleTotalCounts.get(song.id) || 0),
     }));
   }, [rawSongs, monthlySchedules]);
 
@@ -442,8 +442,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       if (selections.songs) {
         const { error } = await supabase.from('songs').delete().neq('id', uuidv4());
         if (error) throw new Error(`Falha ao limpar músicas: ${error.message}`);
-        const songsToInsert = data.songs.map(({ timesPlayedQuarterly, timesPlayedTotal, ...rest }) => rest);
-        const { error: insertError } = await supabase.from('songs').insert(songsToInsert);
+        const { error: insertError } = await supabase.from('songs').insert(data.songs);
         if (insertError) throw new Error(`Falha ao inserir músicas: ${insertError.message}`);
       }
       
