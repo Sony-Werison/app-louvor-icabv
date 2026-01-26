@@ -53,16 +53,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [passwords, setPasswords] = useState<PasswordSet>(defaultPasswords);
   const [reminderMessage, setReminderMessage] = useState(defaultReminderMessage);
   const { toast } = useToast();
+  const [isSyncEnabled, setIsSyncEnabled] = useState(true);
 
   const shareMessage = "Paz do Senhor, segue o repertório para [PERIODO] ([DATA]). Deus abençoe!";
 
+  const fallbackToLocal = useCallback((operation: 'read' | 'write' = 'read') => {
+    if (isSyncEnabled) {
+      toast({
+          title: 'Sincronização de Configurações Falhou',
+          description: 'Não foi possível buscar senhas/mensagens do banco. As configurações serão salvas apenas neste dispositivo.',
+          variant: 'destructive',
+      });
+      setIsSyncEnabled(false);
+    }
+
+    if (operation === 'read') {
+        const storedPasswords = localStorage.getItem('appPasswords');
+        const storedReminderMessage = localStorage.getItem('reminderMessage');
+        setPasswords(storedPasswords ? JSON.parse(storedPasswords) : defaultPasswords);
+        setReminderMessage(storedReminderMessage || defaultReminderMessage);
+    }
+  }, [isSyncEnabled, toast]);
+
+
   const fetchSettings = useCallback(async () => {
     if (!supabase) {
-      // Fallback to localStorage if Supabase is not configured
+      setIsSyncEnabled(false);
       const storedPasswords = localStorage.getItem('appPasswords');
       const storedReminderMessage = localStorage.getItem('reminderMessage');
-      if (storedPasswords) setPasswords(JSON.parse(storedPasswords));
-      if (storedReminderMessage) setReminderMessage(storedReminderMessage);
+      setPasswords(storedPasswords ? JSON.parse(storedPasswords) : defaultPasswords);
+      setReminderMessage(storedReminderMessage || defaultReminderMessage);
       return;
     }
 
@@ -72,31 +92,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .eq('id', 'settings')
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "exact-single-row-not-found"
-      toast({ title: 'Erro ao carregar configurações', description: 'Não foi possível buscar as senhas e mensagens do banco de dados.', variant: 'destructive' });
+    if (error && error.code !== 'PGRST116') {
       console.error('Error fetching settings:', error);
+      fallbackToLocal('read');
       return;
     }
 
     if (data) {
       setPasswords(data.passwords);
       setReminderMessage(data.reminder_message);
+      setIsSyncEnabled(true);
     } else {
-      // No settings found, so let's insert the default ones.
       const { error: insertError } = await supabase
         .from('app_settings')
         .insert({
           id: 'settings',
           passwords: defaultPasswords,
           reminder_message: defaultReminderMessage,
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) {
-        toast({ title: 'Erro ao inicializar configurações', description: `Verifique se a tabela 'app_settings' existe e se as permissões (RLS) estão corretas. Erro: ${insertError.message}`, variant: 'destructive' });
         console.error('Error inserting default settings:', insertError);
+        fallbackToLocal('read');
+      } else {
+        setPasswords(defaultPasswords);
+        setReminderMessage(defaultReminderMessage);
+        setIsSyncEnabled(true);
       }
     }
-  }, [toast]);
+  }, [fallbackToLocal]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -147,10 +173,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const updatePasswords = async (newPasswords: PasswordSet) => {
-    if (!supabase) {
-      setPasswords(newPasswords);
+    setPasswords(newPasswords);
+
+    if (!supabase || !isSyncEnabled) {
       localStorage.setItem('appPasswords', JSON.stringify(newPasswords));
-      toast({ title: 'Senhas salvas localmente (sem DB)!' });
+      toast({ title: 'Senhas salvas localmente!' });
       return;
     }
 
@@ -162,8 +189,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .single();
       
     if (error || !data) {
-        toast({ title: 'Erro ao atualizar senhas', description: 'Verifique as permissões (RLS) da tabela `app_settings`.', variant: 'destructive' });
         console.error('Error updating passwords:', error);
+        localStorage.setItem('appPasswords', JSON.stringify(newPasswords));
+        fallbackToLocal('write');
     } else {
         toast({ title: 'Senhas atualizadas com sucesso!' });
         setPasswords(data.passwords);
@@ -171,10 +199,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const updateReminderMessage = async (newMessage: string) => {
-    if (!supabase) {
-      setReminderMessage(newMessage);
+    setReminderMessage(newMessage);
+
+    if (!supabase || !isSyncEnabled) {
       localStorage.setItem('reminderMessage', newMessage);
-      toast({ title: 'Mensagem salva localmente (sem DB)!' });
+      toast({ title: 'Mensagem salva localmente!' });
       return;
     }
 
@@ -186,8 +215,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .single();
 
     if (error || !data) {
-        toast({ title: 'Erro ao atualizar mensagem', description: 'Verifique as permissões (RLS) da tabela `app_settings`.', variant: 'destructive' });
         console.error('Error updating reminder message:', error);
+        localStorage.setItem('reminderMessage', newMessage);
+        fallbackToLocal('write');
     } else {
         toast({ title: 'Mensagem de lembrete atualizada!' });
         setReminderMessage(data.reminder_message);
