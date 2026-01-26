@@ -194,6 +194,7 @@ export default function MembersPage() {
               <div key={member.id} className="p-4 rounded-lg border border-border bg-card break-inside-avoid-column">
                   <div className="flex items-center gap-3 mb-4">
                       <Avatar className="w-10 h-10">
+                          <AvatarImage src={member.avatarUrl} alt={member.name} />
                           <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <h3 className="font-bold text-lg">{member.name}</h3>
@@ -256,6 +257,7 @@ export default function MembersPage() {
                 <div key={member.id} className="relative group">
                   <div className="flex flex-col items-center cursor-pointer" onClick={() => handleViewSchedule(member)}>
                     <Avatar className="w-14 h-14 sm:w-16 sm:h-16 mb-2">
+                      <AvatarImage src={member.avatarUrl} alt={member.name} />
                       <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <p className="font-medium text-xs sm:text-sm text-center w-full break-words">{member.name}</p>
@@ -371,11 +373,3 @@ export default function MembersPage() {
     </>
   );
 }
-
-    
-
-    
-
-
-
-

@@ -11,6 +11,7 @@ export type Member = {
   roles: MemberRole[];
   email?: string;
   phone?: string;
+  avatarUrl?: string;
 };
 
 export type Song = {
@@ -24,6 +25,7 @@ export type Song = {
   lyrics?: string;
   chords?: string;
   timesPlayedQuarterly?: number;
+  timesPlayedTotal?: number;
   bpm?: number;
 };
 
@@ -80,3 +82,4 @@ export type BackupData = {
   monthlySchedules: Omit<MonthlySchedule, 'date'> & { date: string }[];
   exportDate: string;
 };
+

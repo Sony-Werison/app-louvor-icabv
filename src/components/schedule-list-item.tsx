@@ -42,6 +42,7 @@ const MemberSelector: React.FC<{
         return (
             <div className="flex items-center gap-2 h-9 text-xs sm:text-sm px-3 py-2 rounded-md border border-input bg-card text-card-foreground">
                 <Avatar className="w-5 h-5">
+                    <AvatarImage src={selectedMember.avatarUrl} alt={selectedMember.name} />
                     <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <span className="truncate">{selectedMember.name}</span>
@@ -65,6 +66,7 @@ const MemberSelector: React.FC<{
                          {selectedMember ? (
                             <>
                                 <Avatar className="w-5 h-5">
+                                    <AvatarImage src={selectedMember.avatarUrl} alt={selectedMember.name} />
                                     <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <span className="truncate">{selectedMember.name}</span>
@@ -79,6 +81,7 @@ const MemberSelector: React.FC<{
                         <SelectItem key={member.id} value={member.id}>
                            <div className="flex items-center gap-2">
                                 <Avatar className="w-5 h-5">
+                                    <AvatarImage src={member.avatarUrl} alt={member.name} />
                                     <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <span>{member.name}</span>

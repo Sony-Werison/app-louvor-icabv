@@ -24,10 +24,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from './ui/checkbox';
 import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSchedule } from '@/context/schedule-context';
 import { v4 as uuidv4 } from 'uuid';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Label } from './ui/label';
 
 interface MemberFormDialogProps {
   isOpen: boolean;
@@ -50,6 +52,8 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
   const { saveMember } = useSchedule();
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(member?.avatarUrl || null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -70,6 +74,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
           phone: member.phone || '',
           roles: member.roles || [],
         });
+        setAvatarPreview(member.avatarUrl || null);
       } else {
         form.reset({
           name: '',
@@ -77,9 +82,23 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
           phone: '',
           roles: [],
         });
+        setAvatarPreview(null);
       }
+      setAvatarFile(null);
     }
   }, [isOpen, member, form]);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSaving(true);
@@ -91,9 +110,10 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
         email: values.email || '',
         phone: values.phone || '',
         roles: values.roles as MemberRole[],
+        avatarUrl: member?.avatarUrl,
       };
 
-      saveMember(memberData);
+      await saveMember(memberData, avatarFile);
 
       toast({
         title: 'Sucesso!',
@@ -124,6 +144,19 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className='flex items-center gap-4'>
+              <Avatar className="w-20 h-20">
+                <AvatarImage src={avatarPreview || undefined} alt={form.getValues('name')} />
+                <AvatarFallback className="text-3xl">
+                  {form.getValues('name') ? form.getValues('name').charAt(0) : <User />}
+                </AvatarFallback>
+              </Avatar>
+              <div className="grid w-full max-w-sm items-center gap-1.5">
+                <Label htmlFor="avatar">Foto de Perfil</Label>
+                <Input id="avatar" type="file" accept="image/*" onChange={handleAvatarChange} />
+              </div>
+            </div>
+
             <FormField
               control={form.control}
               name="name"

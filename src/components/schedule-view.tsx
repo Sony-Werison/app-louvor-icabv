@@ -281,7 +281,8 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                         {leader && (
                         <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                            <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
+                              <AvatarImage src={leader.avatarUrl} alt={leader.name} />
+                              <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
                             </Avatar>
                             <div>
                             <p className="font-semibold text-xs leading-none">{leader.name}</p>
@@ -292,7 +293,8 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                         {preacher && (
                         <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                            <AvatarFallback>{getMemberInitial(preacher.name)}</AvatarFallback>
+                              <AvatarImage src={preacher.avatarUrl} alt={preacher.name} />
+                              <AvatarFallback>{getMemberInitial(preacher.name)}</AvatarFallback>
                             </Avatar>
                             <div>
                             <p className="font-semibold text-xs leading-none">{preacher.name}</p>
@@ -311,6 +313,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                                 {teamMembers.map(member => (
                                     <div key={member.id} className="flex items-center gap-2 text-xs">
                                         <Avatar className="h-4 w-4">
+                                            <AvatarImage src={member.avatarUrl} alt={member.name} />
                                             <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
                                         </Avatar>
                                         <span className="text-muted-foreground">{member.name}</span>

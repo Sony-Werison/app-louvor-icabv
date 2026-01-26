@@ -19,7 +19,7 @@ interface ScheduleContextType {
   removeSchedule: (date: Date) => Promise<void>;
   updateSchedule: (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => Promise<void>;
   updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => Promise<void>;
-  saveMember: (member: Member) => Promise<void>;
+  saveMember: (member: Member, avatarFile?: File | null) => Promise<void>;
   removeMember: (memberId: string) => Promise<void>;
   addSong: (songData: Omit<Song, 'id'>) => Promise<void>;
   updateSong: (songId: string, updates: Partial<Song>) => Promise<void>;
@@ -102,6 +102,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const today = new Date();
     const threeMonthsAgo = subMonths(today, 3);
     const quarterlyPlayCounts = new Map<string, number>();
+    const totalPlayCounts = new Map<string, number>();
 
     monthlySchedules.forEach(schedule => {
         const scheduleDate = new Date(schedule.date);
@@ -109,6 +110,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
         playlists.forEach(playlist => {
             playlist.forEach(songId => {
+                // Total count
+                totalPlayCounts.set(songId, (totalPlayCounts.get(songId) || 0) + 1);
+
+                // Quarterly count
                 if (scheduleDate >= threeMonthsAgo) {
                     quarterlyPlayCounts.set(songId, (quarterlyPlayCounts.get(songId) || 0) + 1);
                 }
@@ -119,6 +124,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     return rawSongs.map(song => ({
         ...song,
         timesPlayedQuarterly: quarterlyPlayCounts.get(song.id) || 0,
+        timesPlayedTotal: totalPlayCounts.get(song.id) || 0,
     }));
   }, [rawSongs, monthlySchedules]);
 
@@ -205,12 +211,34 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     setMonthlySchedules(prev => prev.map(s => s.id === scheduleToUpdate.id ? { ...s, [fieldToUpdate]: playlist } : s));
   };
 
-  const saveMember = async (member: Member) => {
+  const saveMember = async (member: Member, avatarFile?: File | null) => {
     if (!supabase) {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
-    const { data, error } = await supabase.from('members').upsert(member).select().single();
+
+    let memberDataToSave = { ...member };
+
+    if (avatarFile) {
+      const fileExt = avatarFile.name.split('.').pop();
+      const filePath = `public/${member.id}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, avatarFile, { upsert: true });
+
+      if (uploadError) {
+        toast({ title: 'Erro no upload da imagem', description: uploadError.message, variant: 'destructive' });
+        console.error(uploadError);
+        return;
+      }
+      
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      // Add a timestamp to bust the cache
+      memberDataToSave.avatarUrl = urlData.publicUrl ? `${urlData.publicUrl}?t=${new Date().getTime()}` : '';
+    }
+
+    const { data, error } = await supabase.from('members').upsert(memberDataToSave).select().single();
     if(error){
         toast({ title: 'Erro ao salvar membro', variant: 'destructive'});
         console.error(error);
@@ -294,7 +322,13 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
-    toast({ title: 'Função não implementada', description: 'A importação de CSV precisa ser adaptada para o Supabase.' });
+    const { error } = await supabase.from('songs').upsert(songsToUpdate, { onConflict: 'title' });
+    if (error) {
+      toast({ title: 'Erro ao atualizar músicas', variant: 'destructive'});
+      return;
+    }
+    const songsRes = await supabase.from('songs').select('*');
+    if (songsRes.data) setRawSongs(songsRes.data);
   };
 
   const importSongsFromTxt = async (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
@@ -409,7 +443,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       const { error: membersError } = await supabase.from('members').insert(data.members);
       if (membersError) throw membersError;
 
-      const songsToInsert = data.songs.map(({ timesPlayedQuarterly, ...rest }) => rest);
+      const songsToInsert = data.songs.map(({ timesPlayedQuarterly, timesPlayedTotal, ...rest }) => rest);
       const { error: songsError } = await supabase.from('songs').insert(songsToInsert);
       if (songsError) throw songsError;
 

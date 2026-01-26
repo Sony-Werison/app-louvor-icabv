@@ -50,7 +50,7 @@ const quickFilterLabels: Record<QuickFilter, string> = {
 };
 
 
-type SortKey = 'title' | 'artist' | 'category' | 'key' | 'timesPlayedQuarterly';
+type SortKey = 'title' | 'artist' | 'category' | 'key' | 'timesPlayedQuarterly' | 'timesPlayedTotal';
 type SortDirection = 'asc' | 'desc';
 
 const getQuarterlyColorClass = (count: number = 0) => {
@@ -71,7 +71,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
   const isMobile = useIsMobile();
 
   const handleSort = (key: SortKey) => {
-    const isNumeric = key === 'timesPlayedQuarterly';
+    const isNumeric = key === 'timesPlayedQuarterly' || key === 'timesPlayedTotal';
     let newDirection: SortDirection = 'asc';
 
     if (sortConfig.key === key) {
@@ -120,7 +120,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
             const dir = direction === 'asc' ? 1 : -1;
             const aVal = a[key] ?? (typeof a[key] === 'number' ? 0 : '');
             const bVal = b[key] ?? (typeof b[key] === 'number' ? 0 : '');
-            if (key === 'timesPlayedQuarterly') {
+            if (key === 'timesPlayedQuarterly' || key === 'timesPlayedTotal') {
                 return ((aVal as number) - (bVal as number)) * dir;
             }
             return (aVal as string).localeCompare(bVal as string) * dir;
@@ -151,7 +151,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
         const aVal = a.song[key] ?? (typeof a.song[key] === 'number' ? 0 : '');
         const bVal = b.song[key] ?? (typeof b.song[key] === 'number' ? 0 : '');
 
-        if (key === 'timesPlayedQuarterly') {
+        if (key === 'timesPlayedQuarterly' || key === 'timesPlayedTotal') {
             return ((aVal as number) - (bVal as number)) * dir;
         }
         return (aVal as string).localeCompare(bVal as string) * dir;
@@ -297,6 +297,9 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
               <TableHead className="w-24 text-center">
                  <SortableHeader sortKey="timesPlayedQuarterly" label="Trimestre" />
               </TableHead>
+              <TableHead className="w-24 text-center">
+                 <SortableHeader sortKey="timesPlayedTotal" label="Total" />
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -336,11 +339,14 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                   <TableCell className={cn("text-center font-medium p-1 text-xs", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
                       {song.timesPlayedQuarterly ?? 0}
                   </TableCell>
+                  <TableCell className="text-center font-medium p-1 text-xs">
+                      {song.timesPlayedTotal ?? 0}
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={isReadOnly ? 5 : 6} className="h-24 text-center">
+                <TableCell colSpan={isReadOnly ? 6 : 7} className="h-24 text-center">
                   Nenhuma música encontrada.
                 </TableCell>
               </TableRow>
