@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
@@ -129,7 +130,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       date: date.toISOString(),
       assignments: {},
     };
-    const { data, error } = await supabase.from('monthly_schedules').insert(newScheduleData).select().single();
+    const { data, error } = await supabase.from('monthly_schedules').insert(newScheduleData).select().maybeSingle();
     if (error) {
         toast({ title: 'Erro ao adicionar data', description: error.message, variant: 'destructive'});
         console.error(error);
@@ -138,6 +139,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     if (data) {
         const newSchedule = { ...data, date: new Date(data.date) };
         setMonthlySchedules(prev => [...prev, newSchedule].sort((a,b) => a.date.getTime() - b.date.getTime()));
+    } else if (!error) {
+      toast({ title: 'Falha ao adicionar data', description: 'Não foi possível obter o novo registro do banco de dados.', variant: 'destructive'});
     }
   };
 
@@ -172,7 +175,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       .update(updatePayload)
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
 
      if (error) {
         toast({ title: 'Erro ao atualizar escala', description: error.message, variant: 'destructive'});
@@ -187,6 +190,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
           .map(s => s.id === id ? newSchedule : s)
           .sort((a,b) => a.date.getTime() - b.date.getTime())
       );
+    } else {
+        toast({ title: 'Falha ao atualizar', description: 'O registro da escala não foi encontrado no banco de dados. Tente recarregar a página.', variant: 'destructive'});
     }
   };
   
@@ -243,7 +248,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       memberDataToSave.avatar = urlData.publicUrl ? `${urlData.publicUrl}?t=${new Date().getTime()}` : '';
     }
 
-    const { data, error } = await supabase.from('members').upsert(memberDataToSave).select().single();
+    const { data, error } = await supabase.from('members').upsert(memberDataToSave).select().maybeSingle();
     if(error){
         toast({ title: 'Erro ao salvar membro', description: error.message, variant: 'destructive'});
         console.error(error);
@@ -259,6 +264,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             }
             return [...prev, data];
         });
+    } else if (!error) {
+        toast({ title: 'Falha ao salvar membro', description: 'Não foi possível obter o registro atualizado do banco de dados.', variant: 'destructive'});
     }
   }
 
@@ -281,7 +288,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
     const newSong = { ...songData, id: uuidv4() };
-    const { data, error } = await supabase.from('songs').insert(newSong).select().single();
+    const { data, error } = await supabase.from('songs').insert(newSong).select().maybeSingle();
     if (error) {
         toast({ title: 'Erro ao adicionar música', description: error.message, variant: 'destructive'});
         console.error(error);
@@ -289,6 +296,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
     if(data){
         setRawSongs(prev => [...prev, data]);
+    } else if (!error) {
+        toast({ title: 'Falha ao adicionar música', description: 'Não foi possível obter o novo registro do banco de dados.', variant: 'destructive'});
     }
   };
 
@@ -297,7 +306,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
-    const { data, error } = await supabase.from('songs').update(updates).eq('id', songId).select().single();
+    const { data, error } = await supabase.from('songs').update(updates).eq('id', songId).select().maybeSingle();
     if(error){
         toast({ title: 'Erro ao atualizar música', description: error.message, variant: 'destructive'});
         console.error(error);
@@ -305,6 +314,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
     if(data){
         setRawSongs(prev => prev.map(s => s.id === songId ? data : s));
+    } else if (!error) {
+        toast({ title: 'Falha ao atualizar música', description: 'O registro não foi encontrado no banco de dados.', variant: 'destructive'});
     }
   };
   
