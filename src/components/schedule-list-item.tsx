@@ -109,7 +109,7 @@ export function ScheduleListItem({
   handleClearAssignment,
   handleDateChange,
   handleNameChange,
-  handleRemoveDate,
+  handleRemoveSchedule,
   handleFeatureToggle,
   isDesktop = false,
   isReadOnly = false,
@@ -123,7 +123,7 @@ export function ScheduleListItem({
     handleClearAssignment: (scheduleId: string, columnId: string, index: number) => void;
     handleDateChange: (scheduleId: string, newDate: Date | undefined) => void;
     handleNameChange: (scheduleId: string, service: 'manha' | 'noite', newName: string) => void;
-    handleRemoveDate: (date: Date) => void;
+    handleRemoveSchedule: (scheduleId: string) => void;
     handleFeatureToggle: (scheduleId: string) => void;
     isDesktop?: boolean;
     isReadOnly?: boolean;
@@ -242,7 +242,7 @@ export function ScheduleListItem({
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleRemoveDate(schedule.date)}>Excluir</AlertDialogAction>
+                                <AlertDialogAction onClick={() => handleRemoveSchedule(schedule.id)}>Excluir</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
@@ -280,7 +280,7 @@ export function ScheduleListItem({
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleRemoveDate(schedule.date)}>Excluir</AlertDialogAction>
+                            <AlertDialogAction onClick={() => handleRemoveSchedule(schedule.id)}>Excluir</AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>

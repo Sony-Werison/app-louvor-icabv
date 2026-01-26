@@ -17,7 +17,7 @@ interface ScheduleContextType {
   songs: Song[];
   scheduleColumns: typeof scheduleColumns;
   addSchedule: (date: Date) => Promise<void>;
-  removeSchedule: (date: Date) => Promise<void>;
+  removeSchedule: (id: string) => Promise<void>;
   updateSchedule: (id: string, updates: Partial<Omit<MonthlySchedule, 'id'>>) => Promise<void>;
   updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => Promise<void>;
   saveMember: (member: Member, avatarFile?: File | null) => Promise<void>;
@@ -87,7 +87,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     };
 
     fetchData();
-  }, []);
+  }, [supabase]);
 
   const songs = useMemo(() => {
     const today = new Date();
@@ -142,21 +142,19 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const removeSchedule = async (date: Date) => {
+  const removeSchedule = async (id: string) => {
     if (!supabase) {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
-    const scheduleToRemove = monthlySchedules.find(s => s.date.getTime() === date.getTime());
-    if (!scheduleToRemove) return;
-
-    const { error } = await supabase.from('monthly_schedules').delete().eq('id', scheduleToRemove.id);
+    
+    const { error } = await supabase.from('monthly_schedules').delete().eq('id', id);
     if (error) {
         toast({ title: 'Erro ao remover data', variant: 'destructive'});
         console.error(error);
         return;
     }
-    setMonthlySchedules(prev => prev.filter(s => s.id !== scheduleToRemove.id));
+    setMonthlySchedules(prev => prev.filter(s => s.id !== id));
   };
 
   const updateSchedule = async (id: string, updates: Partial<Omit<MonthlySchedule, 'id'>>) => {
@@ -165,9 +163,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
     
+    const updatePayload: { [key: string]: any } = { ...updates };
+    if (updates.date) {
+      updatePayload.date = updates.date.toISOString();
+    }
+    
     const { data: updatedData, error } = await supabase
       .from('monthly_schedules')
-      .update(updates)
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single();

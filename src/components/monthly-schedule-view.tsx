@@ -51,7 +51,7 @@ const renderTableForExport = (
                     handleClearAssignment={() => {}}
                     handleDateChange={() => {}}
                     handleNameChange={() => {}}
-                    handleRemoveDate={() => {}}
+                    handleRemoveSchedule={() => {}}
                     handleFeatureToggle={() => {}}
                     isReadOnly={true}
                     isExporting={true}
@@ -106,9 +106,9 @@ export function MonthlyScheduleView({
     updateSchedule(scheduleId, { assignments: newAssignments });
   };
 
-  const handleRemoveDate = (date: Date) => {
+  const handleRemoveSchedule = (scheduleId: string) => {
     if (isReadOnly) return;
-    removeSchedule(date);
+    removeSchedule(scheduleId);
   };
 
   const handleDateChange = (scheduleId: string, newDate: Date | undefined) => {
@@ -183,7 +183,7 @@ export function MonthlyScheduleView({
             handleClearAssignment={handleClearAssignment}
             handleDateChange={handleDateChange}
             handleNameChange={handleNameChange}
-            handleRemoveDate={handleRemoveDate}
+            handleRemoveSchedule={handleRemoveSchedule}
             handleFeatureToggle={handleFeatureToggle}
             isReadOnly={isReadOnly}
             isExporting={isExporting}
@@ -223,7 +223,7 @@ export function MonthlyScheduleView({
                  handleClearAssignment={handleClearAssignment}
                  handleDateChange={handleDateChange}
                  handleNameChange={handleNameChange}
-                 handleRemoveDate={handleRemoveDate}
+                 handleRemoveSchedule={handleRemoveSchedule}
                  handleFeatureToggle={handleFeatureToggle}
                  isReadOnly={isReadOnly}
                  isExporting={isExporting}
