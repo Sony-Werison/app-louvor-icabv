@@ -1,72 +1,140 @@
+-- Drop existing tables (optional, for clean setup)
+-- drop table if exists public.monthly_schedules;
+-- drop table if exists public.songs;
+-- drop table if exists public.members;
+
 -- Create members table
-CREATE TABLE members (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  roles TEXT[] NOT NULL,
-  email TEXT,
-  phone TEXT,
-  avatar_url TEXT
+create table public.members (
+  id uuid not null default gen_random_uuid(),
+  name text not null,
+  roles text[] not null,
+  email text,
+  phone text,
+  avatar_url text,
+  primary key (id)
 );
 
 -- Create songs table
-CREATE TABLE songs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  artist TEXT,
-  key TEXT,
-  category TEXT,
-  isNew BOOLEAN DEFAULT false,
-  youtubeUrl TEXT,
-  lyrics TEXT,
-  chords TEXT,
-  bpm INT
+create table public.songs (
+  id uuid not null default gen_random_uuid(),
+  title text not null,
+  artist text,
+  key text,
+  category text,
+  is_new boolean default false,
+  youtube_url text,
+  lyrics text,
+  chords text,
+  primary key (id),
+  unique(title, artist)
 );
 
 -- Create monthly_schedules table
-CREATE TABLE monthly_schedules (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  date DATE NOT NULL UNIQUE,
-  assignments JSONB,
-  playlist_manha UUID[],
-  playlist_noite UUID[],
-  isFeatured BOOLEAN DEFAULT false,
-  name_manha TEXT,
-  name_noite TEXT
+create table public.monthly_schedules (
+  id uuid not null default gen_random_uuid(),
+  date timestamp with time zone not null,
+  assignments jsonb,
+  playlist_manha text[],
+  playlist_noite text[],
+  is_featured boolean default false,
+  name_manha text,
+  name_noite text,
+  primary key (id),
+  unique(date)
 );
 
+-- RLS policies for members
+alter table public.members enable row level security;
 
--- Enable Row Level Security for all tables
-ALTER TABLE members ENABLE ROW LEVEL SECURITY;
-ALTER TABLE songs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE monthly_schedules ENABLE ROW LEVEL SECURITY;
+create policy "Enable read access for all users" on "public"."members"
+as permissive for select
+to public
+using (true);
 
--- Policies for public access (or authenticated access)
--- WARNING: This allows any user to read data. Adjust as needed.
-CREATE POLICY "Allow public read access" ON members FOR SELECT USING (true);
-CREATE POLICY "Allow public read access" ON songs FOR SELECT USING (true);
-CREATE POLICY "Allow public read access" ON monthly_schedules FOR SELECT USING (true);
+create policy "Enable insert for authenticated users" on "public"."members"
+as permissive for insert
+to authenticated
+with check (true);
 
--- Policies for authenticated users to modify data
--- This allows any logged-in user to insert, update, or delete.
-CREATE POLICY "Allow authenticated users to modify" ON members FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated users to modify" ON songs FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated users to modify" ON monthly_schedules FOR ALL USING (auth.role() = 'authenticated');
+create policy "Enable update for authenticated users" on "public"."members"
+as permissive for update
+to authenticated
+using (true)
+with check (true);
 
--- Storage policies for avatars
--- 1. Create a bucket called "avatars" in your Supabase dashboard.
--- 2. Make the bucket public.
--- 3. Add these policies in the Supabase SQL editor.
+create policy "Enable delete for authenticated users" on "public"."members"
+as permissive for delete
+to authenticated
+using (true);
 
-CREATE POLICY "Allow public read access to avatars"
-ON storage.objects FOR SELECT
-USING ( bucket_id = 'avatars' );
 
-CREATE POLICY "Allow authenticated users to upload avatars"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK ( bucket_id = 'avatars' );
+-- RLS policies for songs
+alter table public.songs enable row level security;
 
-CREATE POLICY "Allow authenticated users to update their own avatars"
-ON storage.objects FOR UPDATE
-TO authenticated
-USING ( auth.uid() = owner_id );
+create policy "Enable read access for all users" on "public"."songs"
+as permissive for select
+to public
+using (true);
+
+create policy "Enable insert for authenticated users" on "public"."songs"
+as permissive for insert
+to authenticated
+with check (true);
+
+create policy "Enable update for authenticated users" on "public"."songs"
+as permissive for update
+to authenticated
+using (true)
+with check (true);
+
+create policy "Enable delete for authenticated users" on "public"."songs"
+as permissive for delete
+to authenticated
+using (true);
+
+
+-- RLS policies for monthly_schedules
+alter table public.monthly_schedules enable row level security;
+
+create policy "Enable read access for all users" on "public"."monthly_schedules"
+as permissive for select
+to public
+using (true);
+
+create policy "Enable insert for authenticated users" on "public"."monthly_schedules"
+as permissive for insert
+to authenticated
+with check (true);
+
+create policy "Enable update for authenticated users" on "public"."monthly_schedules"
+as permissive for update
+to authenticated
+using (true)
+with check (true);
+
+create policy "Enable delete for authenticated users" on "public"."monthly_schedules"
+as permissive for delete
+to authenticated
+using (true);
+
+
+-- Storage policies
+-- Create a bucket for avatars (this must be done in the Supabase UI)
+-- and apply these policies in the Supabase SQL Editor.
+
+create policy "Avatar images are publicly accessible."
+  on storage.objects for select
+  using ( bucket_id = 'avatars' );
+
+create policy "Anyone can upload an avatar."
+  on storage.objects for insert
+  with check ( bucket_id = 'avatars' );
+
+create policy "Anyone can update their own avatar."
+  on storage.objects for update
+  using ( auth.uid()::text = owner::text )
+  with check ( bucket_id = 'avatars' );
+
+create policy "Allow authenticated users to delete their own avatar"
+  on storage.objects for delete
+  using ( auth.uid()::text = owner::text and bucket_id = 'avatars' );
