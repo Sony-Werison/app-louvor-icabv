@@ -20,12 +20,14 @@ const formSchema = z.object({
   password: z.string().min(1, { message: "A senha é obrigatória." }),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 export default function LoginPage() {
     const { login, user } = useAuth();
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             password: '',
@@ -38,7 +40,7 @@ export default function LoginPage() {
         }
     }, [user, router]);
 
-    const onSubmit = async (values: z.infer<typeof formSchema>>) => {
+    const onSubmit = async (values: FormValues) => {
         setIsSubmitting(true);
         const { success } = await login(values.password);
         if(success) {
