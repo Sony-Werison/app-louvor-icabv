@@ -50,7 +50,7 @@ const passwordFormSchema = z.object({
 
 
 export default function SettingsPage() {
-  const { can, login } = useAuth();
+  const { can, login, setPassword } = useAuth();
   const { exportData, importData, clearAllData } = useSchedule();
   const router = useRouter();
   const { toast } = useToast();
@@ -84,28 +84,34 @@ export default function SettingsPage() {
   const onPasswordSubmit = (values: z.infer<typeof passwordFormSchema>) => {
     let changed = false;
     if (values.currentAdminPassword && values.newAdminPassword) {
-        if (login('admin', values.currentAdminPassword)) {
-            // In a real app, this would be a secure backend call
-            // For now, we just show a toast and can't actually change it
-             toast({title: "Função não implementada", description: "A alteração de senha de admin requer um backend seguro."});
-             changed = true;
+        if (login('admin', values.currentAdminPassword, true)) {
+            setPassword('admin', values.newAdminPassword);
+            toast({title: "Senha de Admin alterada com sucesso!"});
+            changed = true;
+        } else {
+             toast({title: "Senha de Admin atual incorreta.", variant: 'destructive'});
         }
     }
     if (values.currentAberturaPassword && values.newAberturaPassword) {
-        if(login('abertura', values.currentAberturaPassword)) {
-            toast({title: "Função não implementada", description: "A alteração de senha de abertura requer um backend seguro."});
+        if(login('abertura', values.currentAberturaPassword, true)) {
+            setPassword('abertura', values.newAberturaPassword);
+            toast({title: "Senha de Abertura alterada com sucesso!"});
             changed = true;
+        } else {
+             toast({title: "Senha de Abertura atual incorreta.", variant: 'destructive'});
         }
     }
     if(!changed) {
         passwordForm.setError('root', { message: 'Nenhuma alteração foi feita.'})
+    } else {
+        passwordForm.reset();
     }
   };
   
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const data = await exportData();
+      const data = exportData();
       const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
         JSON.stringify(data, null, 2)
       )}`;
@@ -138,7 +144,7 @@ export default function SettingsPage() {
         const fileContent = await backupFileToImport.text();
         const backupData = JSON.parse(fileContent) as BackupData;
         
-        await importData(backupData);
+        importData(backupData);
 
         toast({ title: 'Importação Concluída!', description: 'Os dados foram restaurados com sucesso. A página será recarregada.'});
         
@@ -159,7 +165,7 @@ export default function SettingsPage() {
     setIsClearAlertOpen(false);
     setIsClearing(true);
     try {
-        await clearAllData();
+        clearAllData();
         toast({ title: 'Dados Apagados!', description: 'Todos os dados foram removidos com sucesso. A página será recarregada.'});
         setTimeout(() => {
             window.location.reload();
@@ -185,7 +191,7 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle>Gerenciamento de Senhas</CardTitle>
             <CardDescription>
-             Altere as senhas para os perfis de Admin e Abertura. Esta função está desativada na versão Firebase.
+             Altere as senhas para os perfis de Admin e Abertura.
             </CardDescription>
           </CardHeader>
           <CardContent>

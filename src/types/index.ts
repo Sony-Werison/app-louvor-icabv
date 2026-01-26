@@ -1,4 +1,3 @@
-import { Timestamp } from 'firebase/firestore';
 
 
 export type Role = 'admin' | 'abertura' | 'viewer';
@@ -50,8 +49,6 @@ export type MonthlySchedule = {
   id: string;
   date: Date;
   assignments: Record<string, (string | null)[]>; // columnId -> memberId[]
-  participantIds?: string[];
-  members?: Record<string, 'admin' | 'participant'>;
   playlist_manha?: string[];
   playlist_noite?: string[];
   isFeatured?: boolean;
@@ -78,8 +75,8 @@ export type LiveState = {
 // Data format for backup files
 // We use string for date because JSON doesn't have a Date type
 export type BackupData = {
-  members: Omit<Member, 'id'>[];
-  songs: Omit<Song, 'id'>[];
-  monthlySchedules: Omit<MonthlySchedule, 'id' | 'date' | 'members' | 'participantIds'> & { date: string }[];
+  members: Member[];
+  songs: Song[];
+  monthlySchedules: Omit<MonthlySchedule, 'date'> & { date: string }[];
   exportDate: string;
 };

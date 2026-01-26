@@ -2,22 +2,50 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
-import type { MonthlySchedule, Member, Song, ScheduleColumn, SongCategory, BackupData } from '@/types';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, writeBatch, Timestamp, where, query, getDocs, setDoc } from 'firebase/firestore';
-import { setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { useAuth } from './auth-context';
+import type { MonthlySchedule, Member, Song, BackupData } from '@/types';
 import { subMonths } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
+import { initialMembers, initialSongs, initialMonthlySchedules, scheduleColumns } from './initial-data';
+
+// Helper to get data from localStorage
+const getFromStorage = <T,>(key: string, defaultValue: T): T => {
+  if (typeof window === 'undefined') return defaultValue;
+  const storedValue = localStorage.getItem(key);
+  if (storedValue) {
+    try {
+      return JSON.parse(storedValue, (k, v) => {
+        // Reviver function to convert ISO strings back to Date objects
+        if (k === 'date' && typeof v === 'string' && v.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/)) {
+          return new Date(v);
+        }
+        return v;
+      });
+    } catch (e) {
+      console.error(`Error parsing localStorage key "${key}":`, e);
+      return defaultValue;
+    }
+  }
+  return defaultValue;
+};
+
+// Helper to set data to localStorage
+const setInStorage = <T,>(key: string, value: T) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+};
+
 
 interface ScheduleContextType {
   monthlySchedules: MonthlySchedule[];
   members: Member[];
   songs: Song[];
-  scheduleColumns: ScheduleColumn[];
+  scheduleColumns: typeof scheduleColumns;
   addSchedule: (date: Date) => void;
   removeSchedule: (date: Date) => void;
   updateSchedule: (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => void;
   updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => void;
+  saveMember: (member: Member) => void;
   removeMember: (memberId: string) => void;
   addSong: (songData: Omit<Song, 'id'>) => void;
   updateSong: (songId: string, updates: Partial<Song>) => void;
@@ -26,50 +54,30 @@ interface ScheduleContextType {
   addOrUpdateSongs: (songs: Song[]) => void;
   importSongsFromTxt: (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => void;
   updateSongs: (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => void;
-  exportData: () => Promise<BackupData>;
-  importData: (data: BackupData) => Promise<void>;
-  clearAllData: () => Promise<void>;
+  exportData: () => BackupData;
+  importData: (data: BackupData) => void;
+  clearAllData: () => void;
   isLoading: boolean;
 }
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
-// Hardcoded for now, would be in a DB in a real app
-const initialScheduleColumns: ScheduleColumn[] = [
-    { id: 'abertura_manha', label: 'Abertura Manhã', role: 'Abertura' },
-    { id: 'pregacao_manha', label: 'Pregação Manhã', role: 'Pregação' },
-    { id: 'abertura_noite', label: 'Abertura Noite', role: 'Abertura' },
-    { id: 'pregacao_noite', label: 'Pregação Noite', role: 'Pregação' },
-    { id: 'multimedia', label: 'Multimídia', isMulti: true, role: 'Multimídia' },
-];
-
 export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
-  const firestore = useFirestore();
-  const { user, userId } = useAuth();
+  const [members, setMembers] = useState<Member[]>(() => getFromStorage('members', initialMembers));
+  const [rawSongs, setRawSongs] = useState<Song[]>(() => getFromStorage('songs', initialSongs));
+  const [monthlySchedules, setMonthlySchedules] = useState<MonthlySchedule[]>(() => getFromStorage('monthlySchedules', initialMonthlySchedules));
+  const [isLoading, setIsLoading] = useState(true);
 
-  const membersCollection = useMemoFirebase(() => collection(firestore, 'members'), [firestore]);
-  const songsCollection = useMemoFirebase(() => collection(firestore, 'songs'), [firestore]);
+  // Persist to localStorage on change
+  useEffect(() => setInStorage('members', members), [members]);
+  useEffect(() => setInStorage('songs', rawSongs), [rawSongs]);
+  useEffect(() => setInStorage('monthlySchedules', monthlySchedules), [monthlySchedules]);
 
-  const schedulesQuery = useMemoFirebase(() => {
-    if (!firestore || !userId) return null;
-    return query(collection(firestore, 'schedules'), where('participantIds', 'array-contains', userId));
-  }, [firestore, userId]);
-  
-
-  const { data: membersData, isLoading: loadingMembers } = useCollection<Member>(membersCollection);
-  const { data: songsData, isLoading: loadingSongs } = useCollection<Song>(songsCollection);
-  const { data: schedulesData, isLoading: loadingSchedules } = useCollection<Omit<MonthlySchedule, 'date'> & {date: Timestamp}>(schedulesQuery);
-
-  const monthlySchedules = useMemo(() => {
-    if (!schedulesData) return [];
-    return schedulesData.map(s => ({
-      ...s,
-      date: s.date.toDate(),
-    }));
-  }, [schedulesData]);
-
-  const members = useMemo(() => membersData || [], [membersData]);
-  const rawSongs = useMemo(() => songsData || [], [songsData]);
+  useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => setIsLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const songs = useMemo(() => {
     const today = new Date();
@@ -95,252 +103,150 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [rawSongs, monthlySchedules]);
 
-  const isLoading = loadingMembers || loadingSongs || loadingSchedules;
 
   const addSchedule = (date: Date) => {
-    if (!user) return;
-    const newSchedule: Omit<MonthlySchedule, 'id'> = {
-      date: Timestamp.fromDate(date),
+    const newSchedule: MonthlySchedule = {
+      id: uuidv4(),
+      date,
       assignments: {},
-      participantIds: [user.uid],
-      members: {
-        [user.uid]: 'admin'
-      }
     };
-    addDocumentNonBlocking(collection(firestore, 'schedules'), newSchedule);
+    setMonthlySchedules(prev => [...prev, newSchedule]);
   };
 
   const removeSchedule = (date: Date) => {
-    const schedule = monthlySchedules.find(s => s.date.getTime() === date.getTime());
-    if (schedule) {
-      deleteDocumentNonBlocking(doc(firestore, 'schedules', schedule.id));
-    }
+    setMonthlySchedules(prev => prev.filter(s => s.date.getTime() !== date.getTime()));
   };
 
   const updateSchedule = (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => {
-    const schedule = monthlySchedules.find(s => s.date.getTime() === date.getTime());
-    if (schedule) {
-      const finalUpdates = { ...updates };
-
-      if (updates.assignments) {
-        const currentAdmins = Object.entries(schedule.members || {})
-          .filter(([, role]) => role === 'admin')
-          .map(([uid]) => uid);
-        
-        const allAssignedIds = Object.values(updates.assignments).flat().filter(id => id !== null) as string[];
-        
-        const newMembersMap: Record<string, 'admin' | 'participant'> = {};
-        currentAdmins.forEach(uid => { newMembersMap[uid] = 'admin'; });
-        allAssignedIds.forEach(uid => {
-          if (!newMembersMap[uid]) {
-            newMembersMap[uid] = 'participant';
-          }
-        });
-
-        finalUpdates.members = newMembersMap;
-        finalUpdates.participantIds = Object.keys(newMembersMap);
-      }
-
-      const scheduleRef = doc(firestore, 'schedules', schedule.id);
-      updateDocumentNonBlocking(scheduleRef, finalUpdates);
-    }
+     setMonthlySchedules(prev => prev.map(s => s.date.getTime() === date.getTime() ? { ...s, ...updates } : s));
   };
   
   const updateSchedulePlaylist = (scheduleId: string, playlist: string[]) => {
     const [type, ...timestampParts] = scheduleId.replace('s-', '').split('-');
-    const timestamp = parseInt(timestampParts.join('-'), 10);
+    const timestampStr = timestampParts.join('-');
+    const timestamp = parseInt(timestampStr, 10);
     
-    const schedule = monthlySchedules.find(s => s.date.getTime() === timestamp);
-    if(schedule) {
-        const fieldToUpdate = type === 'manha' ? 'playlist_manha' : 'playlist_noite';
-        updateDocumentNonBlocking(doc(firestore, 'schedules', schedule.id), { [fieldToUpdate]: playlist });
-    }
+    setMonthlySchedules(prev => prev.map(s => {
+        if (s.date.getTime() === timestamp) {
+            const fieldToUpdate = type === 'manha' ? 'playlist_manha' : 'playlist_noite';
+            return { ...s, [fieldToUpdate]: playlist };
+        }
+        return s;
+    }))
   };
 
+  const saveMember = (member: Member) => {
+      setMembers(prev => {
+          const existingIndex = prev.findIndex(m => m.id === member.id);
+          if (existingIndex > -1) {
+              const newMembers = [...prev];
+              newMembers[existingIndex] = member;
+              return newMembers;
+          }
+          return [...prev, member];
+      });
+  }
+
   const removeMember = (memberId: string) => {
-     deleteDocumentNonBlocking(doc(firestore, 'members', memberId));
-     // This part is more complex with Firestore and might need a batch write or cloud function
-     // For now, we leave assigned members as stale references that won't resolve.
+     setMembers(prev => prev.filter(m => m.id !== memberId));
+     // Also clear from assignments
+     setMonthlySchedules(prev => prev.map(schedule => {
+         const newAssignments = { ...schedule.assignments };
+         Object.keys(newAssignments).forEach(key => {
+             newAssignments[key] = (newAssignments[key] || []).map(id => id === memberId ? null : id);
+         });
+         return { ...schedule, assignments: newAssignments };
+     }))
   };
   
   const addSong = (songData: Omit<Song, 'id'>) => {
-    addDocumentNonBlocking(collection(firestore, 'songs'), songData);
+    const newSong: Song = { ...songData, id: uuidv4() };
+    setRawSongs(prev => [...prev, newSong]);
   };
 
   const updateSong = (songId: string, updates: Partial<Song>) => {
-    updateDocumentNonBlocking(doc(firestore, 'songs', songId), updates);
-  };
-
-  const removeSong = (songId: string) => {
-    removeSongs([songId]);
+    setRawSongs(prev => prev.map(s => s.id === songId ? { ...s, ...updates } : s));
   };
   
-  const removeSongs = async (songIds: string[]) => {
-    if (!firestore) return;
-    const batch = writeBatch(firestore);
-    songIds.forEach(id => {
-      batch.delete(doc(firestore, 'songs', id));
-    });
-    
-    // Also remove from playlists (this is a client-side heavy operation)
-    // A cloud function would be better for this at scale.
-    monthlySchedules.forEach(schedule => {
-        let changed = false;
-        const newPlaylistManha = schedule.playlist_manha?.filter(id => !songIds.includes(id));
-        const newPlaylistNoite = schedule.playlist_noite?.filter(id => !songIds.includes(id));
-        
-        if (newPlaylistManha && newPlaylistManha.length !== (schedule.playlist_manha?.length || 0)) {
-            changed = true;
-        }
-        if (newPlaylistNoite && newPlaylistNoite.length !== (schedule.playlist_noite?.length || 0)) {
-            changed = true;
-        }
-        if (changed) {
-            batch.update(doc(firestore, 'schedules', schedule.id), {
-                playlist_manha: newPlaylistManha,
-                playlist_noite: newPlaylistNoite,
-            });
-        }
-    });
-
-    await batch.commit();
+  const removeSongs = (songIds: string[]) => {
+    setRawSongs(prev => prev.filter(s => !songIds.includes(s.id)));
+    // Also remove from playlists
+    setMonthlySchedules(prev => prev.map(schedule => ({
+        ...schedule,
+        playlist_manha: schedule.playlist_manha?.filter(id => !songIds.includes(id)),
+        playlist_noite: schedule.playlist_noite?.filter(id => !songIds.includes(id)),
+    })));
   };
 
-  const addOrUpdateSongs = async (songsToUpdate: Song[]) => {
-    if (!firestore) return;
-    const batch = writeBatch(firestore);
-    songsToUpdate.forEach(song => {
-        const docRef = doc(firestore, 'songs', song.id);
-        batch.update(docRef, { 
-            timesPlayedQuarterly: song.timesPlayedQuarterly, 
+  const removeSong = (songId: string) => removeSongs([songId]);
+
+  const addOrUpdateSongs = (songsToUpdate: Song[]) => {
+    setRawSongs(prevSongs => {
+        const updatedSongs = [...prevSongs];
+        songsToUpdate.forEach(songToUpdate => {
+            const index = updatedSongs.findIndex(s => s.id === songToUpdate.id);
+            if (index > -1) {
+                updatedSongs[index] = {
+                    ...updatedSongs[index],
+                    timesPlayedQuarterly: songToUpdate.timesPlayedQuarterly
+                };
+            }
         });
+        return updatedSongs;
     });
-    await batch.commit();
   };
 
-  const importSongsFromTxt = async (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
-      if (!firestore) return;
-      const batch = writeBatch(firestore);
-      
-      songsToCreate.forEach(songData => {
-          const newDocRef = doc(collection(firestore, 'songs'));
-          batch.set(newDocRef, songData);
-      });
+  const importSongsFromTxt = (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
+      setRawSongs(prev => {
+          const newSongs = songsToCreate.map(s => ({ ...s, id: uuidv4() }));
+          let updatedSongs = [...prev, ...newSongs];
 
-      songsToUpdate.forEach(songData => {
-          const existing = rawSongs.find(s => s.title.toLowerCase() === songData.title.toLowerCase() && s.artist.toLowerCase() === songData.artist.toLowerCase());
-          if (existing) {
-              batch.update(doc(firestore, 'songs', existing.id), { lyrics: songData.lyrics });
-          }
-      });
-
-      await batch.commit();
+          songsToUpdate.forEach(songData => {
+              const index = updatedSongs.findIndex(s => s.title.toLowerCase() === songData.title.toLowerCase() && s.artist.toLowerCase() === songData.artist.toLowerCase());
+              if (index > -1) {
+                  updatedSongs[index].lyrics = songData.lyrics;
+              }
+          });
+          return updatedSongs;
+      })
   }
 
-  const updateSongs = async (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => {
-    if (!firestore) return;
-    const batch = writeBatch(firestore);
-    songIds.forEach(id => {
-        batch.update(doc(firestore, 'songs', id), updates);
-    });
-    await batch.commit();
+  const updateSongs = (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => {
+    setRawSongs(prev => prev.map(song => songIds.includes(song.id) ? { ...song, ...updates } : song));
   };
 
-  const exportData = async (): Promise<BackupData> => {
-    if (!firestore) throw new Error("Firestore not initialized");
-
-    const [membersSnap, songsSnap, schedulesSnap] = await Promise.all([
-      getDocs(collection(firestore, 'members')),
-      getDocs(collection(firestore, 'songs')),
-      getDocs(collection(firestore, 'schedules')),
-    ]);
-
-    const membersData = membersSnap.docs.map(d => ({ ...d.data() as Omit<Member, 'id'> }));
-    const songsData = songsSnap.docs.map(d => ({ ...d.data() as Omit<Song, 'id'> }));
-    const schedulesData = schedulesSnap.docs.map(d => {
-        const data = d.data() as Omit<MonthlySchedule, 'id' | 'date'> & { date: Timestamp };
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { members, participantIds, ...rest } = data;
-        return {
-            ...rest,
-            date: data.date.toDate().toISOString(),
-        }
-    });
-
+  const exportData = (): BackupData => {
     return {
-      members: membersData,
-      songs: songsData,
-      monthlySchedules: schedulesData,
+      members,
+      songs: rawSongs,
+      monthlySchedules: monthlySchedules.map(({ date, ...rest }) => ({ ...rest, date: date.toISOString() })),
       exportDate: new Date().toISOString(),
     };
   };
 
-  const importData = async (data: BackupData): Promise<void> => {
-      if (!firestore) throw new Error("Firestore not initialized");
-      
-      const batch = writeBatch(firestore);
-
-      // 1. Delete all existing data
-      const [membersSnap, songsSnap, schedulesSnap] = await Promise.all([
-          getDocs(collection(firestore, 'members')),
-          getDocs(collection(firestore, 'songs')),
-          getDocs(collection(firestore, 'schedules')),
-      ]);
-      membersSnap.docs.forEach(d => batch.delete(d.ref));
-      songsSnap.docs.forEach(d => batch.delete(d.ref));
-      schedulesSnap.docs.forEach(d => batch.delete(d.ref));
-      
-      // 2. Add all new data
-      data.members.forEach(member => {
-        const newDoc = doc(collection(firestore, 'members'));
-        batch.set(newDoc, member);
-      });
-      data.songs.forEach(song => {
-        const newDoc = doc(collection(firestore, 'songs'));
-        batch.set(newDoc, song);
-      });
-      data.monthlySchedules.forEach(schedule => {
-        const newDoc = doc(collection(firestore, 'schedules'));
-        const { date, ...rest } = schedule;
-        batch.set(newDoc, {
-          ...rest,
-          date: Timestamp.fromDate(new Date(date)),
-          participantIds: userId ? [userId] : [],
-          members: userId ? { [userId]: 'admin' } : {}
-        });
-      });
-
-      await batch.commit();
+  const importData = (data: BackupData) => {
+      setMembers(data.members || []);
+      setRawSongs(data.songs || []);
+      setMonthlySchedules(data.monthlySchedules.map(s => ({...s, date: new Date(s.date) })) || []);
   }
 
-  const clearAllData = async (): Promise<void> => {
-      if (!firestore) throw new Error("Firestore not initialized");
-      
-      const batch = writeBatch(firestore);
-
-      const [membersSnap, songsSnap, schedulesSnap] = await Promise.all([
-          getDocs(collection(firestore, 'members')),
-          getDocs(collection(firestore, 'songs')),
-          getDocs(collection(firestore, 'schedules')),
-      ]);
-      membersSnap.docs.forEach(d => batch.delete(d.ref));
-      songsSnap.docs.forEach(d => batch.delete(d.ref));
-      schedulesSnap.docs.forEach(d => batch.delete(d.ref));
-      
-      await batch.commit();
+  const clearAllData = () => {
+      setMembers([]);
+      setRawSongs([]);
+      setMonthlySchedules([]);
   }
-
 
   return (
     <ScheduleContext.Provider value={{ 
       monthlySchedules, 
       members, 
       songs, 
-      scheduleColumns: initialScheduleColumns,
+      scheduleColumns,
       addSchedule,
       removeSchedule,
       updateSchedule,
       updateSchedulePlaylist,
+      saveMember,
       removeMember,
       addSong,
       updateSong,
@@ -356,9 +262,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }}>
       {isLoading ? (
           <div className="flex items-center justify-center h-screen bg-background">
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-muted-foreground">Carregando dados...</p>
-              </div>
+              <p className="text-muted-foreground">Carregando dados...</p>
           </div>
       ) : children}
     </ScheduleContext.Provider>

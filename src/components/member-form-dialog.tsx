@@ -23,11 +23,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from './ui/checkbox';
-import { useFirebase } from '@/firebase';
-import { doc, collection, setDoc } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSchedule } from '@/context/schedule-context';
+import { v4 as uuidv4 } from 'uuid';
 
 interface MemberFormDialogProps {
   isOpen: boolean;
@@ -47,7 +47,7 @@ const formSchema = z.object({
 });
 
 export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDialogProps) {
-  const { firestore } = useFirebase();
+  const { saveMember } = useSchedule();
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
@@ -82,27 +82,18 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
   }, [isOpen, member, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!firestore) {
-      toast({
-        title: 'Erro de Inicialização',
-        description: 'O Firebase não foi inicializado corretamente.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setIsSaving(true);
     try {
-      const memberId = member?.id ?? doc(collection(firestore, 'members')).id;
-
-      const memberData = {
+      const memberId = member?.id ?? uuidv4();
+      const memberData: Member = {
+        id: memberId,
         name: values.name,
         email: values.email || '',
         phone: values.phone || '',
         roles: values.roles as MemberRole[],
       };
 
-      await setDoc(doc(firestore, 'members', memberId), memberData);
+      saveMember(memberData);
 
       toast({
         title: 'Sucesso!',
@@ -114,7 +105,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
       toast({
         title: 'Erro ao Salvar',
         description:
-          'Não foi possível salvar o membro. Verifique sua conexão e as permissões do Firebase.',
+          'Não foi possível salvar o membro. Tente novamente.',
         variant: 'destructive',
       });
     } finally {

@@ -3,25 +3,17 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Role } from '@/types';
-import {
-  getAuth,
-  onAuthStateChanged,
-  signInAnonymously,
-  User,
-} from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase';
 
 interface AuthContextType {
   role: Role | null;
-  user: User | null;
   isAuthenticated: boolean;
-  login: (role: Role, password?: string) => boolean;
+  login: (role: Role, password?: string, silent?: boolean) => boolean;
   logout: () => void;
   switchRole: (role: Role) => void;
   can: (permission: Permission) => boolean;
   isLoading: boolean;
-  userId: string | null;
+  setPassword: (role: Role, newPassword: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,22 +26,28 @@ const rolePermissions: Record<Role, Permission[]> = {
   viewer: [],
 };
 
+const getInitialPasswords = (): Record<Role, string> => {
+    if (typeof window === 'undefined') {
+        return { admin: 'admin123', abertura: 'abertura', viewer: '' };
+    }
+    const storedPasswords = localStorage.getItem('app_passwords');
+    if (storedPasswords) {
+        return JSON.parse(storedPasswords);
+    }
+    return { admin: 'admin123', abertura: 'abertura', viewer: '' };
+};
+
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { auth, firestore } = useFirebase();
   const [role, setRole] = useState<Role | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [passwords, setPasswords] = useState<Record<Role, string>>(getInitialPasswords());
   const { toast } = useToast();
 
-  const isAuthenticated = !!user && !!role;
-  const userId = user?.uid || null;
+  const isAuthenticated = !!role;
 
   useEffect(() => {
-    if (!auth) return;
-
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
+    try {
         const savedRole = sessionStorage.getItem('userRole') as Role;
         if (savedRole && rolePermissions[savedRole]) {
           setRole(savedRole);
@@ -57,36 +55,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setRole('viewer');
           sessionStorage.setItem('userRole', 'viewer');
         }
-      } else {
-        await signInAnonymously(auth);
+    } catch (e) {
+        setRole('viewer');
+    } finally {
+        setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('app_passwords', JSON.stringify(passwords));
       }
-      setIsLoading(false);
-    });
+  }, [passwords])
 
-    return () => unsubscribe();
-  }, [auth]);
-
-  const login = (roleToSet: Role, password?: string): boolean => {
-    // This is a mock login for the prototype.
-    // In a real app, this logic would be handled by a secure backend.
-    const passwords: Partial<Record<Role, string>> = {
-        admin: 'admin123',
-        abertura: 'abertura',
-    };
-
+  const login = (roleToSet: Role, password?: string, silent = false): boolean => {
     if (passwords[roleToSet] && password !== passwords[roleToSet]) {
-        toast({ title: 'Senha Incorreta', variant: 'destructive' });
+        if (!silent) {
+            toast({ title: 'Senha Incorreta', variant: 'destructive' });
+        }
         return false;
     }
 
     setRole(roleToSet);
     sessionStorage.setItem('userRole', roleToSet);
-    toast({ title: `Perfil alterado para ${roleToSet}` });
+    if (!silent) {
+        toast({ title: `Perfil alterado para ${roleToSet}` });
+    }
     return true;
   };
   
   const switchRole = (newRole: Role) => {
-    // Directly switch for viewer, otherwise let the login dialog handle it.
     if (newRole === 'viewer') {
         setRole(newRole);
         sessionStorage.setItem('userRole', newRole);
@@ -105,25 +103,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return rolePermissions[role].includes(permission);
   }, [isAuthenticated, role]);
 
+  const setPassword = (roleToUpdate: Role, newPassword: string) => {
+      setPasswords(prev => ({
+          ...prev,
+          [roleToUpdate]: newPassword,
+      }))
+  }
+
   const value: AuthContextType = {
       role, 
-      user,
       isAuthenticated, 
       login, 
       logout, 
       switchRole, 
       can,
       isLoading: isLoading,
-      userId,
+      setPassword,
   };
 
   return (
     <AuthContext.Provider value={value}>
       {isLoading ? (
           <div className="flex items-center justify-center h-screen bg-background">
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-muted-foreground">Autenticando...</p>
-              </div>
+              <p className="text-muted-foreground">Carregando...</p>
           </div>
       ) : children}
     </AuthContext.Provider>
