@@ -72,7 +72,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-        toast({ title: 'Falha no Login', description: error.message, variant: 'destructive' });
         return { success: false, error: error.message };
     }
     

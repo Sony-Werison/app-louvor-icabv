@@ -77,11 +77,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
       } catch (error: any) {
         console.error("Error fetching data from Supabase:", error);
-        toast({
-          title: "Erro ao carregar dados",
-          description: "Não foi possível conectar ao banco de dados. Usando dados de exemplo.",
-          variant: "destructive"
-        });
         setMembers(initialMembers);
         setRawSongs(initialSongs);
         setMonthlySchedules(initialMonthlySchedules);

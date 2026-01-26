@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { AppLogo } from '@/components/app-logo';
+import { cn } from '@/lib/utils';
 
 
 const formSchema = z.object({
@@ -70,7 +71,12 @@ export default function LoginPage() {
                                     <FormItem>
                                     <FormLabel>Email</FormLabel>
                                     <FormControl>
-                                        <Input type="email" placeholder="seu@email.com" {...field} />
+                                        <Input
+                                          type="email"
+                                          placeholder="seu@email.com"
+                                          {...field}
+                                          className={cn(form.formState.errors.root && "border-destructive focus-visible:ring-destructive")}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                     </FormItem>
@@ -83,7 +89,12 @@ export default function LoginPage() {
                                     <FormItem>
                                     <FormLabel>Senha</FormLabel>
                                     <FormControl>
-                                        <Input type="password" placeholder="********" {...field} />
+                                        <Input
+                                          type="password"
+                                          placeholder="********"
+                                          {...field}
+                                          className={cn(form.formState.errors.root && "border-destructive focus-visible:ring-destructive")}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                     </FormItem>
@@ -94,7 +105,12 @@ export default function LoginPage() {
                                 <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
                             )}
 
-                            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                            <Button
+                                type="submit"
+                                className="w-full"
+                                variant={form.formState.errors.root ? 'destructive' : 'default'}
+                                disabled={isSubmitting}
+                            >
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Entrar
                             </Button>
