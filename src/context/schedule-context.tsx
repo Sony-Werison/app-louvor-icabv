@@ -48,11 +48,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
 
       if (!supabase) {
-        toast({
-          title: "Supabase não conectado",
-          description: "Verifique suas variáveis de ambiente. Usando dados de exemplo.",
-          variant: "destructive",
-        });
         setMembers(initialMembers);
         setRawSongs(initialSongs);
         setMonthlySchedules(initialMonthlySchedules);
