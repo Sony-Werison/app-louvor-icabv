@@ -1,12 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
-// As variáveis de ambiente devem ser configuradas no seu ambiente de desenvolvimento ou de produção.
-// Por exemplo, em um arquivo .env.local
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase URL and anon key are required.')
-}
+// This will be null if the env vars are not set.
+export const supabase = (supabaseUrl && supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+if (!supabase && typeof window !== 'undefined') {
+    console.warn('Supabase client could not be initialized. Check your environment variables. The app will fall back to local data.');
+}

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
@@ -45,6 +46,20 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
+
+      if (!supabase) {
+        toast({
+          title: "Supabase não conectado",
+          description: "Verifique suas variáveis de ambiente. Usando dados de exemplo.",
+          variant: "destructive",
+        });
+        setMembers(initialMembers);
+        setRawSongs(initialSongs);
+        setMonthlySchedules(initialMonthlySchedules);
+        setIsLoading(false);
+        return;
+      }
+      
       try {
         const [membersRes, songsRes, schedulesRes] = await Promise.all([
           supabase.from('members').select('*'),
@@ -109,6 +124,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   const addSchedule = async (date: Date) => {
+    if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
     const newScheduleData = {
       date: date.toISOString(),
       assignments: {},
@@ -126,6 +145,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeSchedule = async (date: Date) => {
+    if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
     const scheduleToRemove = monthlySchedules.find(s => s.date.getTime() === date.getTime());
     if (!scheduleToRemove) return;
 
@@ -139,6 +162,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateSchedule = async (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => {
+    if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
     const scheduleToUpdate = monthlySchedules.find(s => s.date.getTime() === date.getTime());
     if (!scheduleToUpdate) return;
     
@@ -152,6 +179,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const updateSchedulePlaylist = async (scheduleId: string, playlist: string[]) => {
+    if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
     const [type, ...timestampParts] = scheduleId.replace('s-', '').split('-');
     const timestampStr = timestampParts.join('-');
     const timestamp = parseInt(timestampStr, 10);
@@ -175,6 +206,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const saveMember = async (member: Member) => {
+    if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
     const { data, error } = await supabase.from('members').upsert(member).select().single();
     if(error){
         toast({ title: 'Erro ao salvar membro', variant: 'destructive'});
@@ -195,6 +230,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const removeMember = async (memberId: string) => {
+     if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
      const { error } = await supabase.from('members').delete().eq('id', memberId);
      if(error){
         toast({ title: 'Erro ao remover membro', variant: 'destructive'});
@@ -204,6 +243,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addSong = async (songData: Omit<Song, 'id'>) => {
+    if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
     const { data, error } = await supabase.from('songs').insert(songData).select().single();
     if (error) {
         toast({ title: 'Erro ao adicionar música', variant: 'destructive'});
@@ -216,6 +259,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateSong = async (songId: string, updates: Partial<Song>) => {
+    if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
     const { data, error } = await supabase.from('songs').update(updates).eq('id', songId).select().single();
     if(error){
         toast({ title: 'Erro ao atualizar música', variant: 'destructive'});
@@ -228,6 +275,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const removeSongs = async (songIds: string[]) => {
+    if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
     const { error } = await supabase.from('songs').delete().in('id', songIds);
     if(error){
         toast({ title: 'Erro ao remover músicas', variant: 'destructive'});
@@ -239,10 +290,18 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const removeSong = async (songId: string) => removeSongs([songId]);
 
   const addOrUpdateSongs = async (songsToUpdate: Song[]) => {
+    if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
     toast({ title: 'Função não implementada', description: 'A importação de CSV precisa ser adaptada para o Supabase.' });
   };
 
   const importSongsFromTxt = async (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
+      if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
       const createPromises = supabase.from('songs').insert(songsToCreate);
       const updatePromises = songsToUpdate.map(songData => 
         supabase.from('songs').update({ lyrics: songData.lyrics }).match({ title: songData.title, artist: songData.artist })
@@ -273,6 +332,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const updateSongs = async (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => {
+    if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
     const { error } = await supabase.from('songs').update(updates).in('id', songIds);
       if (error) {
           toast({ title: 'Erro ao atualizar músicas', variant: 'destructive'});
@@ -283,6 +346,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
 
  const exportData = async (): Promise<BackupData> => {
+    if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        throw new Error("Supabase not configured");
+    }
     setIsLoading(true);
     try {
         const [membersRes, songsRes, schedulesRes] = await Promise.all([
@@ -318,6 +385,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   const importData = async (data: BackupData) => {
+    if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
     setIsLoading(true);
     toast({ title: 'Iniciando importação...', description: 'Limpando dados antigos...' });
 
@@ -365,6 +436,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   const clearAllData = async () => {
+    if (!supabase) {
+        toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
+        return;
+    }
     setIsLoading(true);
     toast({ title: 'Limpando todos os dados...', description: 'Isso pode levar um momento.' });
 
