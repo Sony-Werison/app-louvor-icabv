@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '@/context/auth-context';
 import {
   DropdownMenu,
@@ -12,75 +12,58 @@ import {
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import type { Role } from '@/types';
-import { Shield, Users, Eye, Check, ChevronDown, UserCheck } from 'lucide-react';
-import { LoginDialog } from './login-dialog';
+import { LogOut, User as UserIcon, ChevronDown, LogIn } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Avatar, AvatarFallback } from './ui/avatar';
 
-
-const roleIcons: Record<Role, React.ElementType> = {
-    admin: Shield,
-    abertura: UserCheck,
-    viewer: Eye,
-};
-
-const roleLabels: Record<Role, string> = {
-    admin: 'Admin',
-    abertura: 'Abertura',
-    viewer: 'Visualização',
-};
 
 export function ProfileSwitcher() {
-  const { role, switchRole } = useAuth();
-  const [loginRole, setLoginRole] = useState<Role | null>(null);
+  const { user, logout, isLoading } = useAuth();
+  const router = useRouter();
   
-  if (!role) return null;
-
-  const Icon = roleIcons[role];
-  const label = roleLabels[role];
-
-  const handleRoleSelect = (selectedRole: Role) => {
-    if (selectedRole === 'viewer') {
-        switchRole('viewer');
-    } else {
-        setLoginRole(selectedRole);
-    }
+  if (isLoading) {
+    return <div className="w-48 h-9 bg-muted rounded-md animate-pulse" />;
   }
 
+  if (!user) {
+    return (
+        <Button variant="outline" onClick={() => router.push('/login')}>
+            <LogIn className="mr-2"/>
+            Fazer Login
+        </Button>
+    )
+  }
+
+  const getInitials = (email: string) => {
+    const parts = email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').split(' ');
+    if (parts.length > 1) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return email.substring(0, 2).toUpperCase();
+  }
+
+
   return (
-    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="w-48 justify-between">
-          <div className="flex items-center gap-2">
-            <Icon className="h-4 w-4 text-muted-foreground" />
-            <span>{label}</span>
+          <div className="flex items-center gap-2 truncate">
+            <Avatar className="h-5 w-5 text-xs">
+                <AvatarFallback>{getInitials(user.email || '')}</AvatarFallback>
+            </Avatar>
+            <span className="truncate">{user.email}</span>
           </div>
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-48">
-        <DropdownMenuLabel>Trocar Perfil</DropdownMenuLabel>
+        <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {(Object.keys(roleLabels) as Role[]).map((r) => {
-            const RoleIcon = roleIcons[r];
-            return (
-                 <DropdownMenuItem key={r} onClick={() => handleRoleSelect(r)}>
-                    <RoleIcon className="mr-2 h-4 w-4" />
-                    <span>{roleLabels[r]}</span>
-                    {role === r && <Check className="ml-auto h-4 w-4" />}
-                </DropdownMenuItem>
-            )
-        })}
+        <DropdownMenuItem onClick={logout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Sair</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-
-    {loginRole && (
-        <LoginDialog
-            isOpen={!!loginRole}
-            onOpenChange={() => setLoginRole(null)}
-            roleToLogin={loginRole}
-        />
-    )}
-    </>
   );
 }

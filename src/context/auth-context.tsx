@@ -4,16 +4,17 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Role } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase-client';
+import type { Session, User } from '@supabase/supabase-js';
 
 interface AuthContextType {
-  role: Role | null;
-  isAuthenticated: boolean;
-  login: (role: Role, password?: string, silent?: boolean) => boolean;
-  logout: () => void;
-  switchRole: (role: Role) => void;
-  can: (permission: Permission) => boolean;
+  user: User | null;
+  role: Role;
   isLoading: boolean;
-  setPassword: (role: Role, newPassword: string) => void;
+  can: (permission: Permission) => boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  shareMessage: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,103 +23,81 @@ type Permission = 'edit:schedule' | 'edit:members' | 'edit:songs' | 'manage:play
 
 const rolePermissions: Record<Role, Permission[]> = {
   admin: ['edit:schedule', 'edit:members', 'edit:songs', 'manage:playlists', 'manage:settings'],
-  abertura: ['manage:playlists'],
+  abertura: [], // Not used with Supabase basic auth
   viewer: [],
-};
-
-const getInitialPasswords = (): Record<Role, string> => {
-    if (typeof window === 'undefined') {
-        return { admin: 'admin123', abertura: 'abertura', viewer: '' };
-    }
-    const storedPasswords = localStorage.getItem('app_passwords');
-    if (storedPasswords) {
-        return JSON.parse(storedPasswords);
-    }
-    return { admin: 'admin123', abertura: 'abertura', viewer: '' };
 };
 
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [role, setRole] = useState<Role | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [role, setRole] = useState<Role>('viewer');
   const [isLoading, setIsLoading] = useState(true);
-  const [passwords, setPasswords] = useState<Record<Role, string>>(getInitialPasswords());
   const { toast } = useToast();
 
-  const isAuthenticated = !!role;
+  const shareMessage = "Paz do Senhor, segue o repertório para [PERIODO] ([DATA]). Deus abençoe!";
 
   useEffect(() => {
-    try {
-        const savedRole = sessionStorage.getItem('userRole') as Role;
-        if (savedRole && rolePermissions[savedRole]) {
-          setRole(savedRole);
-        } else {
-          setRole('viewer');
-          sessionStorage.setItem('userRole', 'viewer');
-        }
-    } catch (e) {
-        setRole('viewer');
-    } finally {
-        setIsLoading(false);
+    if (!supabase) {
+      setIsLoading(false);
+      setRole('admin'); // Fallback to admin if no supabase
+      return;
     }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setRole(session?.user ? 'admin' : 'viewer');
+      setIsLoading(false);
+    });
+
+    // Check initial session
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setUser(data.session?.user ?? null);
+      setRole(data.session?.user ? 'admin' : 'viewer');
+      setIsLoading(false);
+    }
+    checkSession();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  useEffect(() => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('app_passwords', JSON.stringify(passwords));
-      }
-  }, [passwords])
 
-  const login = (roleToSet: Role, password?: string, silent = false): boolean => {
-    if (passwords[roleToSet] && password !== passwords[roleToSet]) {
-        if (!silent) {
-            toast({ title: 'Senha Incorreta', variant: 'destructive' });
-        }
-        return false;
+  const login = async (email: string, password: string):Promise<{ success: boolean; error?: string }> => {
+    if (!supabase) {
+      toast({ title: 'Erro de Configuração', description: 'Supabase não está configurado.', variant: 'destructive'});
+      return { success: false, error: 'Supabase not configured' };
     }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-    setRole(roleToSet);
-    sessionStorage.setItem('userRole', roleToSet);
-    if (!silent) {
-        toast({ title: `Perfil alterado para ${roleToSet}` });
+    if (error) {
+        toast({ title: 'Falha no Login', description: error.message, variant: 'destructive' });
+        return { success: false, error: error.message };
     }
-    return true;
+    
+    toast({ title: 'Login bem-sucedido!'});
+    return { success: true };
   };
   
-  const switchRole = (newRole: Role) => {
-    if (newRole === 'viewer') {
-        setRole(newRole);
-        sessionStorage.setItem('userRole', newRole);
-    }
+  const logout = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
   }
 
-  const logout = () => {
-    setRole('viewer');
-    sessionStorage.setItem('userRole', 'viewer');
-  };
-  
   const can = useCallback((permission: Permission) => {
-    if (!isAuthenticated || !role) {
-        return false;
-    }
     return rolePermissions[role].includes(permission);
-  }, [isAuthenticated, role]);
+  }, [role]);
 
-  const setPassword = (roleToUpdate: Role, newPassword: string) => {
-      setPasswords(prev => ({
-          ...prev,
-          [roleToUpdate]: newPassword,
-      }))
-  }
 
   const value: AuthContextType = {
-      role, 
-      isAuthenticated, 
-      login, 
-      logout, 
-      switchRole, 
+      user,
+      role,
+      isLoading,
       can,
-      isLoading: isLoading,
-      setPassword,
+      login,
+      logout,
+      shareMessage,
   };
 
   return (
