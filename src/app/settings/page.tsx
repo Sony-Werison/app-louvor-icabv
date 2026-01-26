@@ -111,7 +111,7 @@ export default function SettingsPage() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const data = exportData();
+      const data = await exportData();
       const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
         JSON.stringify(data, null, 2)
       )}`;
@@ -122,7 +122,6 @@ export default function SettingsPage() {
       toast({ title: 'Backup exportado com sucesso!' });
     } catch (error) {
       console.error(error);
-      toast({ title: 'Erro ao exportar', description: 'Não foi possível gerar o arquivo de backup.', variant: 'destructive'});
     }
     setIsExporting(false);
   };
@@ -143,20 +142,12 @@ export default function SettingsPage() {
     try {
         const fileContent = await backupFileToImport.text();
         const backupData = JSON.parse(fileContent) as BackupData;
-        
-        importData(backupData);
-
-        toast({ title: 'Importação Concluída!', description: 'Os dados foram restaurados com sucesso. A página será recarregada.'});
-        
-        setTimeout(() => {
-            window.location.reload();
-        }, 2000);
-
+        await importData(backupData);
     } catch (error) {
         console.error(error);
         toast({ title: 'Erro na Importação', description: 'O arquivo de backup é inválido ou está corrompido.', variant: 'destructive'});
-        setIsImporting(false);
     } finally {
+        setIsImporting(false);
         setBackupFileToImport(null);
     }
   };
@@ -165,14 +156,9 @@ export default function SettingsPage() {
     setIsClearAlertOpen(false);
     setIsClearing(true);
     try {
-        clearAllData();
-        toast({ title: 'Dados Apagados!', description: 'Todos os dados foram removidos com sucesso. A página será recarregada.'});
-        setTimeout(() => {
-            window.location.reload();
-        }, 2000);
+        await clearAllData();
     } catch (error) {
         console.error(error);
-        toast({ title: 'Erro ao Limpar Dados', description: 'Não foi possível apagar os dados.', variant: 'destructive'});
     } finally {
         setIsClearing(false);
     }

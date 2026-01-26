@@ -27,8 +27,8 @@ interface ScheduleContextType {
   addOrUpdateSongs: (songs: Song[]) => Promise<void>;
   importSongsFromTxt: (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => Promise<void>;
   updateSongs: (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => Promise<void>;
-  exportData: () => BackupData;
-  importData: (data: BackupData) => void;
+  exportData: () => Promise<BackupData>;
+  importData: (data: BackupData) => Promise<void>;
   clearAllData: () => Promise<void>;
   isLoading: boolean;
 }
@@ -282,18 +282,115 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       setRawSongs(prev => prev.map(song => songIds.includes(song.id) ? { ...song, ...updates } : song));
   };
 
-  const exportData = (): BackupData => {
-    toast({ title: 'Função desativada', description: 'A exportação deve ser feita pelo painel do Supabase.' });
-    return { members: [], songs: [], monthlySchedules: [], exportDate: ''};
+ const exportData = async (): Promise<BackupData> => {
+    setIsLoading(true);
+    try {
+        const [membersRes, songsRes, schedulesRes] = await Promise.all([
+            supabase.from('members').select('*'),
+            supabase.from('songs').select('*'),
+            supabase.from('monthly_schedules').select('*'),
+        ]);
+
+        if (membersRes.error) throw membersRes.error;
+        if (songsRes.error) throw songsRes.error;
+        if (schedulesRes.error) throw schedulesRes.error;
+
+        const backupData: BackupData = {
+            members: membersRes.data || [],
+            songs: songsRes.data || [],
+            monthlySchedules: (schedulesRes.data || []).map(s => ({
+                ...s,
+                date: new Date(s.date).toISOString(),
+            })),
+            exportDate: new Date().toISOString(),
+        };
+
+        return backupData;
+
+    } catch (error: any) {
+        console.error("Export error:", error);
+        toast({ title: 'Erro ao Exportar', description: 'Não foi possível gerar o backup.', variant: 'destructive'});
+        throw error;
+    } finally {
+        setIsLoading(false);
+    }
   };
 
-  const importData = (data: BackupData) => {
-     toast({ title: 'Função desativada', description: 'A importação deve ser feita pelo painel do Supabase.' });
-  }
+
+  const importData = async (data: BackupData) => {
+    setIsLoading(true);
+    toast({ title: 'Iniciando importação...', description: 'Limpando dados antigos...' });
+
+    try {
+      // 1. Clear existing data
+      const { error: clearSchedulesError } = await supabase.from('monthly_schedules').delete().neq('id', uuidv4());
+      if (clearSchedulesError) throw clearSchedulesError;
+
+      const { error: clearSongsError } = await supabase.from('songs').delete().neq('id', uuidv4());
+      if (clearSongsError) throw clearSongsError;
+      
+      const { error: clearMembersError } = await supabase.from('members').delete().neq('id', uuidv4());
+      if (clearMembersError) throw clearMembersError;
+
+      toast({ title: 'Iniciando importação...', description: 'Inserindo novos dados...' });
+
+      // 2. Insert new data
+      const { error: membersError } = await supabase.from('members').insert(data.members);
+      if (membersError) throw membersError;
+
+      const songsToInsert = data.songs.map(({ timesPlayedQuarterly, ...rest }) => rest);
+      const { error: songsError } = await supabase.from('songs').insert(songsToInsert);
+      if (songsError) throw songsError;
+
+      const schedulesToInsert = data.monthlySchedules.map(s => ({
+        ...s,
+        date: new Date(s.date).toISOString()
+      }));
+      const { error: schedulesError } = await supabase.from('monthly_schedules').insert(schedulesToInsert);
+      if (schedulesError) throw schedulesError;
+
+      toast({ title: 'Importação Concluída!', description: 'Os dados foram restaurados com sucesso. A página será recarregada.'});
+      
+      setTimeout(() => {
+          window.location.reload();
+      }, 2000);
+
+    } catch (error: any) {
+        console.error("Import error:", error);
+        toast({ title: 'Erro na Importação', description: `Falha ao restaurar backup: ${error.message}`, variant: 'destructive'});
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
 
   const clearAllData = async () => {
-    toast({ title: 'Função perigosa desativada', description: 'A limpeza de dados deve ser feita no painel do Supabase.' });
-  }
+    setIsLoading(true);
+    toast({ title: 'Limpando todos os dados...', description: 'Isso pode levar um momento.' });
+
+    try {
+        const { error: clearSchedulesError } = await supabase.from('monthly_schedules').delete().neq('id', uuidv4());
+        if (clearSchedulesError) throw clearSchedulesError;
+
+        const { error: clearSongsError } = await supabase.from('songs').delete().neq('id', uuidv4());
+        if (clearSongsError) throw clearSongsError;
+        
+        const { error: clearMembersError } = await supabase.from('members').delete().neq('id', uuidv4());
+        if (clearMembersError) throw clearMembersError;
+
+        toast({ title: 'Dados Apagados!', description: 'Todos os dados foram removidos com sucesso. A página será recarregada.'});
+        
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    } catch (error: any) {
+        console.error("Clear data error:", error);
+        toast({ title: 'Erro ao Limpar Dados', description: `Não foi possível apagar os dados: ${error.message}`, variant: 'destructive'});
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
 
   return (
     <ScheduleContext.Provider value={{ 
