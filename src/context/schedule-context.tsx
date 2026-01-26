@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
-import type { MonthlySchedule, Member, Song, BackupData } from '@/types';
+import type { MonthlySchedule, Member, Song, BackupData, ImportSelections } from '@/types';
 import { subMonths } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { initialMembers, initialSongs, initialMonthlySchedules, scheduleColumns } from './initial-data';
@@ -29,7 +30,7 @@ interface ScheduleContextType {
   importSongsFromTxt: (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => Promise<void>;
   updateSongs: (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => Promise<void>;
   exportData: () => Promise<BackupData>;
-  importData: (data: BackupData) => Promise<void>;
+  importData: (data: BackupData, selections: ImportSelections) => Promise<void>;
   clearAllData: () => Promise<void>;
   isLoading: boolean;
 }
@@ -86,7 +87,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     };
 
     fetchData();
-  }, [toast]);
+  }, []);
 
   const songs = useMemo(() => {
     const today = new Date();
@@ -225,7 +226,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
       // Add a timestamp to bust the cache
-      memberDataToSave.avatarUrl = urlData.publicUrl ? `${urlData.publicUrl}?t=${new Date().getTime()}` : '';
+      memberDataToSave.avatar = urlData.publicUrl ? `${urlData.publicUrl}?t=${new Date().getTime()}` : '';
     }
 
     const { data, error } = await supabase.from('members').upsert(memberDataToSave).select().single();
@@ -408,42 +409,38 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
 
 
-  const importData = async (data: BackupData) => {
+  const importData = async (data: BackupData, selections: ImportSelections) => {
     if (!supabase) {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
     setIsLoading(true);
-    toast({ title: 'Iniciando importação...', description: 'Limpando dados antigos...' });
+    toast({ title: 'Iniciando importação...', description: 'Processando dados selecionados...' });
 
     try {
-      // 1. Clear existing data
-      const { error: clearSchedulesError } = await supabase.from('monthly_schedules').delete().neq('id', uuidv4());
-      if (clearSchedulesError) throw clearSchedulesError;
+      if (selections.monthlySchedules) {
+        const { error } = await supabase.from('monthly_schedules').delete().neq('id', uuidv4());
+        if (error) throw new Error(`Falha ao limpar escalas: ${error.message}`);
+        const schedulesToInsert = data.monthlySchedules.map(s => ({ ...s, date: new Date(s.date).toISOString() }));
+        const { error: insertError } = await supabase.from('monthly_schedules').insert(schedulesToInsert);
+        if (insertError) throw new Error(`Falha ao inserir escalas: ${insertError.message}`);
+      }
 
-      const { error: clearSongsError } = await supabase.from('songs').delete().neq('id', uuidv4());
-      if (clearSongsError) throw clearSongsError;
+      if (selections.songs) {
+        const { error } = await supabase.from('songs').delete().neq('id', uuidv4());
+        if (error) throw new Error(`Falha ao limpar músicas: ${error.message}`);
+        const songsToInsert = data.songs.map(({ timesPlayedQuarterly, timesPlayedTotal, ...rest }) => rest);
+        const { error: insertError } = await supabase.from('songs').insert(songsToInsert);
+        if (insertError) throw new Error(`Falha ao inserir músicas: ${insertError.message}`);
+      }
       
-      const { error: clearMembersError } = await supabase.from('members').delete().neq('id', uuidv4());
-      if (clearMembersError) throw clearMembersError;
-
-      toast({ title: 'Iniciando importação...', description: 'Inserindo novos dados...' });
-
-      // 2. Insert new data
-      const { error: membersError } = await supabase.from('members').insert(data.members);
-      if (membersError) throw membersError;
-
-      const songsToInsert = data.songs.map(({ timesPlayedQuarterly, timesPlayedTotal, ...rest }) => rest);
-      const { error: songsError } = await supabase.from('songs').insert(songsToInsert);
-      if (songsError) throw songsError;
-
-      const schedulesToInsert = data.monthlySchedules.map(s => ({
-        ...s,
-        date: new Date(s.date).toISOString()
-      }));
-      const { error: schedulesError } = await supabase.from('monthly_schedules').insert(schedulesToInsert);
-      if (schedulesError) throw schedulesError;
-
+      if (selections.members) {
+        const { error } = await supabase.from('members').delete().neq('id', uuidv4());
+        if (error) throw new Error(`Falha ao limpar membros: ${error.message}`);
+        const { error: insertError } = await supabase.from('members').insert(data.members);
+        if (insertError) throw new Error(`Falha ao inserir membros: ${insertError.message}`);
+      }
+      
       toast({ title: 'Importação Concluída!', description: 'Os dados foram restaurados com sucesso. A página será recarregada.'});
       
       setTimeout(() => {
@@ -452,7 +449,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
     } catch (error: any) {
         console.error("Import error:", error);
-        toast({ title: 'Erro na Importação', description: `Falha ao restaurar backup: ${error.message}`, variant: 'destructive'});
+        toast({ title: 'Erro na Importação', description: error.message, variant: 'destructive'});
     } finally {
         setIsLoading(false);
     }

@@ -11,7 +11,7 @@ export type Member = {
   roles: MemberRole[];
   email?: string;
   phone?: string;
-  avatarUrl?: string;
+  avatar?: string;
 };
 
 export type Song = {
@@ -83,3 +83,8 @@ export type BackupData = {
   exportDate: string;
 };
 
+export type ImportSelections = {
+    members: boolean;
+    songs: boolean;
+    monthlySchedules: boolean;
+}

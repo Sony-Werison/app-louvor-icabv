@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Member, MemberRole } from '@/types';
@@ -53,7 +54,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(member?.avatarUrl || null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(member?.avatar || null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -74,7 +75,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
           phone: member.phone || '',
           roles: member.roles || [],
         });
-        setAvatarPreview(member.avatarUrl || null);
+        setAvatarPreview(member.avatar || null);
       } else {
         form.reset({
           name: '',
@@ -100,7 +101,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
     }
   }
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>>) => {
     setIsSaving(true);
     try {
       const memberId = member?.id ?? uuidv4();
@@ -110,7 +111,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
         email: values.email || '',
         phone: values.phone || '',
         roles: values.roles as MemberRole[],
-        avatarUrl: member?.avatarUrl,
+        avatar: member?.avatar,
       };
 
       await saveMember(memberData, avatarFile);
