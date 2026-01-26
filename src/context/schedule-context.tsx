@@ -154,10 +154,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const oldSchedules = monthlySchedules;
     setMonthlySchedules(schedules => schedules.filter(s => s.id !== id));
 
-    const { error } = await supabase.from('monthly_schedules').delete().eq('id', id);
-    if (error) {
-        toast({ title: 'Erro ao remover data', description: error.message, variant: 'destructive'});
+    const { data, error } = await supabase.from('monthly_schedules').delete().eq('id', id).select();
+    if (error || !data || data.length === 0) {
+        toast({ title: 'Erro ao remover data', description: error?.message || 'O registro não foi encontrado.', variant: 'destructive'});
         setMonthlySchedules(oldSchedules);
+        if(error) console.error(error);
     }
   };
 
@@ -175,14 +176,15 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       updatePayload.date = updates.date.toISOString();
     }
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('monthly_schedules')
       .update(updatePayload)
-      .eq('id', id);
+      .eq('id', id)
+      .select();
 
-     if (error) {
-        toast({ title: 'Erro ao salvar escala', description: `A alteração foi desfeita. (${error.message})`, variant: 'destructive'});
-        console.error(error);
+     if (error || !data || data.length === 0) {
+        toast({ title: 'Erro ao salvar escala', description: `A alteração foi desfeita. (${error?.message || 'Registro não encontrado.'})`, variant: 'destructive'});
+        console.error(error || 'Update failed: record not found');
         setMonthlySchedules(oldSchedules);
     }
   };
@@ -207,11 +209,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         s.id === monthlyScheduleId ? { ...s, [fieldToUpdate]: playlist } : s
     ));
 
-    const { error } = await supabase.from('monthly_schedules').update({ [fieldToUpdate]: playlist }).eq('id', monthlyScheduleId);
+    const { data, error } = await supabase.from('monthly_schedules').update({ [fieldToUpdate]: playlist }).eq('id', monthlyScheduleId).select();
 
-    if (error) {
-      toast({ title: 'Erro ao atualizar repertório', description: error.message, variant: 'destructive'});
-      console.error(error);
+    if (error || !data || data.length === 0) {
+      toast({ title: 'Erro ao atualizar repertório', description: error?.message || 'Registro não encontrado.', variant: 'destructive'});
+      console.error(error || 'Update failed: record not found');
       setMonthlySchedules(oldSchedules);
     }
   };
@@ -242,10 +244,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       memberDataToSave.avatar = urlData.publicUrl ? `${urlData.publicUrl}?t=${new Date().getTime()}` : '';
     }
 
-    const { error } = await supabase.from('members').upsert(memberDataToSave);
-    if(error){
-        toast({ title: 'Erro ao salvar membro', description: error.message, variant: 'destructive'});
-        console.error(error);
+    const { data, error } = await supabase.from('members').upsert(memberDataToSave).select();
+    if(error || !data || data.length === 0){
+        toast({ title: 'Erro ao salvar membro', description: error?.message || 'Não foi possível salvar o membro.', variant: 'destructive'});
+        console.error(error || 'Upsert member failed');
+        await fetchData();
         return;
     }
     await fetchData();
@@ -260,11 +263,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const oldMembers = members;
     setMembers(m => m.filter(member => member.id !== memberId));
 
-     const { error } = await supabase.from('members').delete().eq('id', memberId);
-     if(error){
-        toast({ title: 'Erro ao remover membro', description: error.message, variant: 'destructive'});
+     const { data, error } = await supabase.from('members').delete().eq('id', memberId).select();
+     if(error || !data || data.length === 0){
+        toast({ title: 'Erro ao remover membro', description: error?.message || 'Membro não encontrado.', variant: 'destructive'});
         setMembers(oldMembers);
-        return;
      }
   };
   
@@ -292,11 +294,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const oldSongs = rawSongs;
     setRawSongs(songs => songs.map(s => s.id === songId ? { ...s, ...updates } : s));
 
-    const { error } = await supabase.from('songs').update(updates).eq('id', songId);
+    const { data, error } = await supabase.from('songs').update(updates).eq('id', songId).select();
     
-    if(error){
-        toast({ title: 'Erro ao atualizar música', description: error.message, variant: 'destructive'});
-        console.error(error);
+    if(error || !data || data.length === 0){
+        toast({ title: 'Erro ao atualizar música', description: error?.message || 'Música não encontrada.', variant: 'destructive'});
+        console.error(error || 'Update song failed');
         setRawSongs(oldSongs);
     }
   };
@@ -310,11 +312,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const oldSongs = rawSongs;
     setRawSongs(s => s.filter(song => !songIds.includes(song.id)));
 
-    const { error } = await supabase.from('songs').delete().in('id', songIds);
-    if(error){
-        toast({ title: 'Erro ao remover músicas', description: error.message, variant: 'destructive'});
+    const { data, error } = await supabase.from('songs').delete().in('id', songIds).select();
+    if(error || !data || data.length === 0){
+        toast({ title: 'Erro ao remover músicas', description: error?.message || 'Nenhuma música foi removida.', variant: 'destructive'});
         setRawSongs(oldSongs);
-        return;
     }
   };
 
@@ -374,12 +375,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const oldSongs = rawSongs;
     setRawSongs(songs => songs.map(s => songIds.includes(s.id) ? { ...s, ...updates } : s));
     
-    const { error } = await supabase.from('songs').update(updates).in('id', songIds);
-      if (error) {
-          toast({ title: 'Erro ao atualizar músicas', description: error.message, variant: 'destructive'});
-          console.error(error);
+    const { data, error } = await supabase.from('songs').update(updates).in('id', songIds).select();
+      if (error || !data || data.length === 0) {
+          toast({ title: 'Erro ao atualizar músicas', description: error?.message || 'Nenhuma música foi atualizada.', variant: 'destructive'});
+          console.error(error || 'Bulk update songs failed');
           setRawSongs(oldSongs);
-          return;
       }
   };
 
