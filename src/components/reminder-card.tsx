@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { BellRing, MessageSquare } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useAuth } from '@/context/auth-context';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface ReminderCardProps {
   schedules: Schedule[];
@@ -27,10 +29,14 @@ export function ReminderCard({ schedules, members }: ReminderCardProps) {
     
     const phone = member.phone.replace(/\D/g, ''); // Remove non-numeric characters
     const firstName = member.name.split(' ')[0];
+    
+    const dayName = format(schedule.date, 'EEEE', { locale: ptBR }).toLowerCase();
+    const period = schedule.id.includes('manha') ? 'de manhã' : 'da noite';
+    const fullPeriod = `${dayName} ${period}`;
 
     const message = reminderMessage
         .replace(/\[NOME\]/g, firstName)
-        .replace(/\[PERIODO\]/g, schedule.name)
+        .replace(/\[PERIODO\]/g, fullPeriod)
         .replace(/\[SENHA\]/g, passwords.abertura);
 
     const whatsappLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
