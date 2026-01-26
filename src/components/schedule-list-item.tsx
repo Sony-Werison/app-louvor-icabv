@@ -119,12 +119,12 @@ export function ScheduleListItem({
     members: Member[];
     columns: ScheduleColumn[];
     getAssignedMemberIds: (date: Date, columnId: string) => (string | null)[];
-    handleMemberChange: (date: Date, columnId: string, memberId: string, index: number) => void;
-    handleClearAssignment: (date: Date, columnId: string, index: number) => void;
-    handleDateChange: (oldDate: Date, newDate: Date | undefined) => void;
-    handleNameChange: (date: Date, service: 'manha' | 'noite', newName: string) => void;
+    handleMemberChange: (scheduleId: string, columnId: string, memberId: string, index: number) => void;
+    handleClearAssignment: (scheduleId: string, columnId: string, index: number) => void;
+    handleDateChange: (scheduleId: string, newDate: Date | undefined) => void;
+    handleNameChange: (scheduleId: string, service: 'manha' | 'noite', newName: string) => void;
     handleRemoveDate: (date: Date) => void;
-    handleFeatureToggle: (date: Date) => void;
+    handleFeatureToggle: (scheduleId: string) => void;
     isDesktop?: boolean;
     isReadOnly?: boolean;
     isExporting?: boolean;
@@ -137,7 +137,7 @@ export function ScheduleListItem({
     const newName = service === 'manha' ? nameManha : nameNoite;
     const oldName = service === 'manha' ? schedule.name_manha : schedule.name_noite;
     if (newName !== (oldName || '')) {
-      handleNameChange(schedule.date, service, newName);
+      handleNameChange(schedule.id, service, newName);
     }
   }
 
@@ -167,8 +167,8 @@ export function ScheduleListItem({
                     assignedMemberId={assignedMemberIds[index]}
                     allMembers={members}
                     filteredMembers={filteredMembersForColumn}
-                    onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
-                    onClear={() => handleClearAssignment(schedule.date, col.id, index)}
+                    onValueChange={(memberId) => handleMemberChange(schedule.id, col.id, memberId, index)}
+                    onClear={() => handleClearAssignment(schedule.id, col.id, index)}
                     isReadOnly={isReadOnly}
                     isExporting={isExporting}
                 />
@@ -183,7 +183,7 @@ export function ScheduleListItem({
             <TableCell className={cn("font-medium p-2 sticky left-0 z-10", isExporting ? 'bg-card text-card-foreground' : 'bg-background group-hover:bg-muted/50', schedule.isFeatured && 'bg-amber-500/10')}>
              <div className="flex items-center gap-1">
                 {!isReadOnly && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleFeatureToggle(schedule.date)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleFeatureToggle(schedule.id)}>
                         <Pin className={cn("h-4 w-4", schedule.isFeatured ? "text-amber-500 fill-amber-500" : "text-muted-foreground")}/>
                     </Button>
                 )}
@@ -202,7 +202,7 @@ export function ScheduleListItem({
                             <Calendar
                                 mode="single"
                                 selected={schedule.date}
-                                onSelect={(newDate) => handleDateChange(schedule.date, newDate)}
+                                onSelect={(newDate) => handleDateChange(schedule.id, newDate)}
                                 locale={ptBR}
                                 initialFocus
                             />
@@ -258,7 +258,7 @@ export function ScheduleListItem({
         <CardHeader className="flex flex-row items-center justify-between p-3 border-b">
              <div className={cn("font-semibold capitalize text-base flex items-center gap-2 flex-grow justify-start", isExporting ? 'text-card-foreground' : '')}>
                  {!isReadOnly && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2" onClick={() => handleFeatureToggle(schedule.date)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2" onClick={() => handleFeatureToggle(schedule.id)}>
                         <Pin className={cn("h-4 w-4", schedule.isFeatured ? "text-amber-500 fill-amber-500" : "text-muted-foreground")}/>
                     </Button>
                 )}
@@ -357,8 +357,8 @@ export function ScheduleListItem({
                                                             assignedMemberId={assignedMemberIds[index]}
                                                             allMembers={members}
                                                             filteredMembers={filteredMembersForColumn}
-                                                            onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
-                                                            onClear={() => handleClearAssignment(schedule.date, col.id, index)}
+                                                            onValueChange={(memberId) => handleMemberChange(schedule.id, col.id, memberId, index)}
+                                                            onClear={() => handleClearAssignment(schedule.id, col.id, index)}
                                                             isReadOnly={isReadOnly}
                                                         />
                                                     ))}
@@ -399,8 +399,8 @@ export function ScheduleListItem({
                                                             assignedMemberId={assignedMemberIds[index]}
                                                             allMembers={members}
                                                             filteredMembers={filteredMembersForColumn}
-                                                            onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
-                                                            onClear={() => handleClearAssignment(schedule.date, col.id, index)}
+                                                            onValueChange={(memberId) => handleMemberChange(schedule.id, col.id, memberId, index)}
+                                                            onClear={() => handleClearAssignment(schedule.id, col.id, index)}
                                                             isReadOnly={isReadOnly}
                                                         />
                                                     ))}
@@ -427,8 +427,8 @@ export function ScheduleListItem({
                                                             assignedMemberId={assignedMemberIds[index]}
                                                             allMembers={members}
                                                             filteredMembers={filteredMembersForColumn}
-                                                            onValueChange={(memberId) => handleMemberChange(schedule.date, col.id, memberId, index)}
-                                                            onClear={() => handleClearAssignment(schedule.date, col.id, index)}
+                                                            onValueChange={(memberId) => handleMemberChange(schedule.id, col.id, memberId, index)}
+                                                            onClear={() => handleClearAssignment(schedule.id, col.id, index)}
                                                             isReadOnly={isReadOnly}
                                                         />
                                                     ))}

@@ -171,14 +171,14 @@ export default function SchedulePage() {
         return;
     };
     
-    let monthlyUpdate: Partial<Omit<MonthlySchedule, 'date'>> = {};
+    let monthlyUpdate: Partial<Omit<MonthlySchedule, 'id'>> = {};
 
     if (updates.name !== undefined) {
         monthlyUpdate = type === 'manha' ? { name_manha: updates.name } : { name_noite: updates.name };
     }
     
     if (Object.keys(monthlyUpdate).length > 0) {
-        updateSchedule(date, monthlyUpdate);
+        updateSchedule(scheduleToUpdate.id, monthlyUpdate);
     }
   }
 

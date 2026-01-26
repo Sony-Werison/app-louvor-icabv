@@ -18,7 +18,7 @@ interface ScheduleContextType {
   scheduleColumns: typeof scheduleColumns;
   addSchedule: (date: Date) => Promise<void>;
   removeSchedule: (date: Date) => Promise<void>;
-  updateSchedule: (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => Promise<void>;
+  updateSchedule: (id: string, updates: Partial<Omit<MonthlySchedule, 'id'>>) => Promise<void>;
   updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => Promise<void>;
   saveMember: (member: Member, avatarFile?: File | null) => Promise<void>;
   removeMember: (memberId: string) => Promise<void>;
@@ -159,21 +159,34 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     setMonthlySchedules(prev => prev.filter(s => s.id !== scheduleToRemove.id));
   };
 
-  const updateSchedule = async (date: Date, updates: Partial<Omit<MonthlySchedule, 'date'>>) => {
+  const updateSchedule = async (id: string, updates: Partial<Omit<MonthlySchedule, 'id'>>) => {
     if (!supabase) {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
-    const scheduleToUpdate = monthlySchedules.find(s => s.date.getTime() === date.getTime());
-    if (!scheduleToUpdate) return;
     
-     const { error } = await supabase.from('monthly_schedules').update(updates).eq('id', scheduleToUpdate.id);
+    const { data: updatedData, error } = await supabase
+      .from('monthly_schedules')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
      if (error) {
         toast({ title: 'Erro ao atualizar escala', variant: 'destructive'});
         console.error(error);
         return;
     }
-     setMonthlySchedules(prev => prev.map(s => s.id === scheduleToUpdate.id ? { ...s, ...updates } : s));
+
+    if (updatedData) {
+      // Supabase returns an ISO string for dates, so convert it back to a Date object
+      const newSchedule = { ...updatedData, date: new Date(updatedData.date) };
+      setMonthlySchedules(prev => 
+        prev
+          .map(s => s.id === id ? newSchedule : s)
+          .sort((a,b) => a.date.getTime() - b.date.getTime())
+      );
+    }
   };
   
   const updateSchedulePlaylist = async (scheduleId: string, playlist: string[]) => {

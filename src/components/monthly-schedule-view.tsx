@@ -81,9 +81,9 @@ export function MonthlyScheduleView({
   const { can } = useAuth();
   const isReadOnly = !can('edit:schedule') || isExporting;
 
-  const handleMemberChange = (date: Date, columnId: string, memberId: string, index: number) => {
+  const handleMemberChange = (scheduleId: string, columnId: string, memberId: string, index: number) => {
     if (isReadOnly) return;
-    const schedule = schedules.find((s) => s.date.getTime() === date.getTime());
+    const schedule = schedules.find((s) => s.id === scheduleId);
     if (!schedule) return;
 
     const newAssignments = { ...schedule.assignments };
@@ -91,19 +91,19 @@ export function MonthlyScheduleView({
     currentAssignment[index] = memberId;
     newAssignments[columnId] = currentAssignment;
 
-    updateSchedule(date, { assignments: newAssignments });
+    updateSchedule(scheduleId, { assignments: newAssignments });
   };
 
-  const handleClearAssignment = (date: Date, columnId: string, index: number) => {
+  const handleClearAssignment = (scheduleId: string, columnId: string, index: number) => {
     if (isReadOnly) return;
-    const schedule = schedules.find((s) => s.date.getTime() === date.getTime());
+    const schedule = schedules.find((s) => s.id === scheduleId);
     if (!schedule) return;
     
     const newAssignments = { ...schedule.assignments };
     const currentAssignment = newAssignments[columnId] ? [...newAssignments[columnId]] : [];
     currentAssignment[index] = null;
     newAssignments[columnId] = currentAssignment;
-    updateSchedule(date, { assignments: newAssignments });
+    updateSchedule(scheduleId, { assignments: newAssignments });
   };
 
   const handleRemoveDate = (date: Date) => {
@@ -111,23 +111,23 @@ export function MonthlyScheduleView({
     removeSchedule(date);
   };
 
-  const handleDateChange = (oldDate: Date, newDate: Date | undefined) => {
+  const handleDateChange = (scheduleId: string, newDate: Date | undefined) => {
     if (isReadOnly) return;
      if (newDate) {
-        updateSchedule(oldDate, { date: newDate });
+        updateSchedule(scheduleId, { date: newDate });
      }
   }
 
-  const handleNameChange = (date: Date, service: 'manha' | 'noite', newName: string) => {
+  const handleNameChange = (scheduleId: string, service: 'manha' | 'noite', newName: string) => {
     if (isReadOnly) return;
-    updateSchedule(date, { [`name_${service}`]: newName });
+    updateSchedule(scheduleId, { [`name_${service}`]: newName });
   };
 
-  const handleFeatureToggle = (date: Date) => {
+  const handleFeatureToggle = (scheduleId: string) => {
     if (isReadOnly) return;
-    const schedule = schedules.find((s) => s.date.getTime() === date.getTime());
+    const schedule = schedules.find((s) => s.id === scheduleId);
     if (schedule) {
-        updateSchedule(date, { isFeatured: !schedule.isFeatured });
+        updateSchedule(scheduleId, { isFeatured: !schedule.isFeatured });
     }
   }
 
