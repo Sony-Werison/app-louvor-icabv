@@ -49,6 +49,8 @@ const formSchema = z.object({
   }),
 });
 
+type MemberFormData = z.infer<typeof formSchema>;
+
 export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDialogProps) {
   const { saveMember } = useSchedule();
   const [isSaving, setIsSaving] = useState(false);
@@ -56,7 +58,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(member?.avatar || null);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<MemberFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
@@ -101,7 +103,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
     }
   }
 
-  const onSubmit = async (values: z.infer<typeof formSchema>>) => {
+  const onSubmit = async (values: MemberFormData) => {
     setIsSaving(true);
     try {
       const memberId = member?.id ?? uuidv4();
