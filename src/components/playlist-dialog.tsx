@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Schedule, Song, SongCategory } from '@/types';
@@ -9,12 +8,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { X, Music, Search, ArrowDownUp, ArrowUp, ArrowDown, AlertTriangle, Sparkles } from 'lucide-react';
+import { X, Music, Search, ArrowDownUp, ArrowUp, ArrowDown, AlertTriangle, Sparkles, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Badge } from './ui/badge';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 
 
 interface PlaylistDialogProps {
@@ -69,6 +69,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'title', direction: 'asc' });
   const [duplicatedInCurrent, setDuplicatedInCurrent] = useState<Set<string>>(new Set());
+  const [songToPreview, setSongToPreview] = useState<Song | null>(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -235,7 +236,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                         </div>
                     )}
                 </div>
-                 <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground shrink-0">
+                 <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground shrink-0">
                     <button onClick={() => handleSort('title')} className="flex items-center gap-1 text-left">
                         Música 
                         {sortConfig.key === 'title' && <ArrowDownUp className="h-3 w-3" />}
@@ -244,6 +245,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                         Trimestre
                         {sortConfig.key === 'quarterly' && <ArrowDownUp className="h-3 w-3" />}
                     </button>
+                    <div className="w-8" />
                 </div>
                 <ScrollArea className="flex-grow">
                     <TooltipProvider>
@@ -259,7 +261,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                             <Label 
                                                 htmlFor={`song-${song.id}`} 
                                                 key={song.id} 
-                                                className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 p-4 pl-3 cursor-pointer hover:bg-accent/50"
+                                                className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-3 p-4 pl-3 cursor-pointer hover:bg-accent/50"
                                             >
                                                 <Checkbox 
                                                     id={`song-${song.id}`} 
@@ -287,6 +289,24 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                                 <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-20", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
                                                     {song.timesPlayedQuarterly ?? 0}
                                                 </div>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                setSongToPreview(song);
+                                                            }}
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>Pré-visualizar Letra</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
                                             </Label>
                                         ))}
                                     </div>
@@ -388,6 +408,21 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
           <Button onClick={handleSave} className="w-full">Salvar</Button>
         </DialogFooter>
 
+        {songToPreview && (
+            <Dialog open={!!songToPreview} onOpenChange={(isOpen) => !isOpen && setSongToPreview(null)}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>{songToPreview.title}</DialogTitle>
+                        <DialogDescription>{songToPreview.artist}</DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-[60vh]">
+                        <pre className="whitespace-pre-wrap font-body text-sm py-4">
+                            {songToPreview.lyrics || 'Nenhuma letra disponível.'}
+                        </pre>
+                    </ScrollArea>
+                </DialogContent>
+            </Dialog>
+        )}
       </DialogContent>
     </Dialog>
   );
