@@ -193,7 +193,8 @@ function ReminderMessageCard() {
 
 
 export default function SettingsPage() {
-  const { can, exportData, importData, clearAllData } = useSchedule();
+  const { exportData, importData, clearAllData } = useSchedule();
+  const { can } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
