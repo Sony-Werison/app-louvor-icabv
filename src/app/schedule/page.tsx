@@ -156,10 +156,12 @@ export default function SchedulePage() {
   }, [relevantSchedules]);
 
   const handleScheduleUpdate = (scheduleId: string, updates: Partial<Schedule>) => {
-    const [type, ...idParts] = scheduleId.replace('s-', '').split('-');
-    const monthlyScheduleId = idParts.join('-');
+    const idWithoutPrefix = scheduleId.replace('s-', '');
+    const firstHyphenIndex = idWithoutPrefix.indexOf('-');
+    const type = idWithoutPrefix.substring(0, firstHyphenIndex);
+    const monthlyScheduleId = idWithoutPrefix.substring(firstHyphenIndex + 1);
     
-    if (!monthlyScheduleId) return;
+    if (!monthlyScheduleId || (type !== 'manha' && type !== 'noite')) return;
     
     let monthlyUpdate: Partial<Omit<MonthlySchedule, 'id'>> = {};
 
@@ -191,8 +193,3 @@ export default function SchedulePage() {
     </div>
   );
 }
-
-
-
-    
-
