@@ -77,17 +77,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
       } catch (error: any) {
         console.error("Error fetching data from Supabase:", error);
-        toast({ title: 'Erro ao buscar dados', description: 'Usando dados locais como fallback.', variant: 'destructive'});
-        setMembers(initialMembers);
-        setRawSongs(initialSongs);
-        setMonthlySchedules(initialMonthlySchedules);
+        toast({ title: 'Erro ao buscar dados', description: `Não foi possível carregar os dados. Verifique a conexão e as configurações do banco de dados. Detalhes: ${error.message}`, variant: 'destructive'});
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [toast]);
 
   const songs = useMemo(() => {
     const today = new Date();
