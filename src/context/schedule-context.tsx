@@ -126,6 +126,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
     const newScheduleData = {
+      id: uuidv4(),
       date: date.toISOString(),
       assignments: {},
     };
@@ -266,7 +267,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
-    const { data, error } = await supabase.from('songs').insert(songData).select().single();
+    const newSong = { ...songData, id: uuidv4() };
+    const { data, error } = await supabase.from('songs').insert(newSong).select().single();
     if (error) {
         toast({ title: 'Erro ao adicionar música', variant: 'destructive'});
         console.error(error);

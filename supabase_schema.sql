@@ -1,91 +1,68 @@
-
--- Create Members Table
-CREATE TABLE IF NOT EXISTS public.members (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    name text NOT NULL,
-    roles text[] NOT NULL,
-    email text,
-    phone text,
-    avatar text
+-- Create members table
+create table if not exists public.members (
+    id text not null,
+    name text not null,
+    roles text[] not null,
+    email text null,
+    phone text null,
+    avatar text null,
+    constraint members_pkey primary key (id)
 );
 
--- Create Songs Table
-CREATE TABLE IF NOT EXISTS public.songs (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    title text NOT NULL,
-    artist text,
-    key text,
-    category text,
-    "isNew" boolean DEFAULT false,
-    "youtubeUrl" text,
-    lyrics text,
-    chords text,
-    "timesPlayedQuarterly" integer,
-    "timesPlayedTotal" integer,
-    bpm integer,
-    UNIQUE(title, artist)
+-- Create songs table
+create table if not exists public.songs (
+    id text not null,
+    title text not null,
+    artist text null,
+    key text null,
+    category text null,
+    is_new boolean null default false,
+    youtube_url text null,
+    lyrics text null,
+    chords text null,
+    bpm int null,
+    constraint songs_pkey primary key (id),
+    constraint songs_title_artist_key unique (title, artist)
 );
 
--- Create Monthly Schedules Table
-CREATE TABLE IF NOT EXISTS public.monthly_schedules (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    date timestamp with time zone NOT NULL UNIQUE,
-    assignments jsonb,
-    playlist_manha text[],
-    playlist_noite text[],
-    "isFeatured" boolean DEFAULT false,
-    name_manha text,
-    name_noite text
+-- Create monthly_schedules table
+create table if not exists public.monthly_schedules (
+    id text not null,
+    date date not null,
+    assignments jsonb null,
+    playlist_manha _text null,
+    playlist_noite _text null,
+    is_featured boolean null,
+    name_manha text null,
+    name_noite text null,
+    constraint monthly_schedules_pkey primary key (id)
 );
 
 
--- Create Storage Bucket for Avatars
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('avatars', 'avatars', true, 5242880, ARRAY['image/png', 'image/jpeg', 'image/jpg', 'image/webp'])
-ON CONFLICT (id) DO NOTHING;
+-- Create avatars storage bucket
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do nothing;
 
+-- Policies for avatars bucket
 
--- RLS Policies for tables (assuming you want authenticated users to be able to do everything for now)
-ALTER TABLE public.members ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.songs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.monthly_schedules ENABLE ROW LEVEL SECURITY;
+-- Allow public read access to everyone
+drop policy if exists "Public read access" on storage.objects;
+create policy "Public read access" on storage.objects
+  for select using (bucket_id = 'avatars');
 
-DROP POLICY IF EXISTS "Allow public read-only access" ON public.members;
-CREATE POLICY "Allow public read-only access" ON public.members FOR SELECT USING (true);
-DROP POLICY IF EXISTS "Allow authenticated users to manage members" ON public.members;
-CREATE POLICY "Allow authenticated users to manage members" ON public.members FOR ALL USING (auth.role() = 'authenticated');
+-- Allow authenticated users to upload files
+drop policy if exists "Authenticated user can upload" on storage.objects;
+create policy "Authenticated user can upload" on storage.objects
+  for insert with check (bucket_id = 'avatars' and auth.role() = 'authenticated');
 
-DROP POLICY IF EXISTS "Allow public read-only access" ON public.songs;
-CREATE POLICY "Allow public read-only access" ON public.songs FOR SELECT USING (true);
-DROP POLICY IF EXISTS "Allow authenticated users to manage songs" ON public.songs;
-CREATE POLICY "Allow authenticated users to manage songs" ON public.songs FOR ALL USING (auth.role() = 'authenticated');
+-- Allow owner to update their own files
+drop policy if exists "Owner can update" on storage.objects;
+create policy "Owner can update" on storage.objects
+  for update using (bucket_id = 'avatars' and auth.uid()::text = owner::text)
+  with check (auth.uid()::text = owner::text);
 
-DROP POLICY IF EXISTS "Allow public read-only access" ON public.monthly_schedules;
-CREATE POLICY "Allow public read-only access" ON public.monthly_schedules FOR SELECT USING (true);
-DROP POLICY IF EXISTS "Allow authenticated users to manage schedules" ON public.monthly_schedules;
-CREATE POLICY "Allow authenticated users to manage schedules" ON public.monthly_schedules FOR ALL USING (auth.role() = 'authenticated');
-
--- RLS Policies for 'avatars' bucket in storage
-DROP POLICY IF EXISTS "Avatar images are publicly accessible." ON storage.objects;
-CREATE POLICY "Avatar images are publicly accessible."
-ON storage.objects FOR SELECT
-TO public
-USING (bucket_id = 'avatars');
-
-DROP POLICY IF EXISTS "Anyone can upload an avatar." ON storage.objects;
-CREATE POLICY "Anyone can upload an avatar."
-ON storage.objects FOR INSERT
-TO public
-WITH CHECK (bucket_id = 'avatars');
-
-DROP POLICY IF EXISTS "Anyone can update their own avatar." ON storage.objects;
-CREATE POLICY "Anyone can update their own avatar."
-ON storage.objects FOR UPDATE
-TO public
-USING ( (select auth.uid()::text) = owner_id::text );
-
-DROP POLICY IF EXISTS "Anyone can delete their own avatar." ON storage.objects;
-CREATE POLICY "Anyone can delete their own avatar."
-ON storage.objects FOR DELETE
-TO public
-USING ( (select auth.uid()::text) = owner_id::text );
+-- Allow owner to delete their own files
+drop policy if exists "Owner can delete" on storage.objects;
+create policy "Owner can delete" on storage.objects
+  for delete using (bucket_id = 'avatars' and auth.uid()::text = owner::text);
