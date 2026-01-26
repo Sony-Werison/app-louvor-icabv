@@ -281,7 +281,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                         {leader && (
                         <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                              <AvatarImage src={leader.avatarUrl} alt={leader.name} />
+                              <AvatarImage src={leader.avatar} alt={leader.name} />
                               <AvatarFallback>{getMemberInitial(leader.name)}</AvatarFallback>
                             </Avatar>
                             <div>
@@ -293,7 +293,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                         {preacher && (
                         <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                              <AvatarImage src={preacher.avatarUrl} alt={preacher.name} />
+                              <AvatarImage src={preacher.avatar} alt={preacher.name} />
                               <AvatarFallback>{getMemberInitial(preacher.name)}</AvatarFallback>
                             </Avatar>
                             <div>
@@ -313,7 +313,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                                 {teamMembers.map(member => (
                                     <div key={member.id} className="flex items-center gap-2 text-xs">
                                         <Avatar className="h-4 w-4">
-                                            <AvatarImage src={member.avatarUrl} alt={member.name} />
+                                            <AvatarImage src={member.avatar} alt={member.name} />
                                             <AvatarFallback>{getMemberInitial(member.name)}</AvatarFallback>
                                         </Avatar>
                                         <span className="text-muted-foreground">{member.name}</span>
