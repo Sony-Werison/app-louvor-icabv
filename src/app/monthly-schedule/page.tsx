@@ -260,6 +260,9 @@ export default function MonthlySchedulePage() {
           <DialogContent className="max-w-6xl">
               <DialogHeader>
                   <DialogTitle>Visualização da Escala</DialogTitle>
+                  <DialogDescription>
+                    Visualização da escala completa para os meses selecionados.
+                  </DialogDescription>
               </DialogHeader>
               <ScrollArea className="max-h-[70vh] p-1">
                   <div className="p-4 bg-background text-foreground">

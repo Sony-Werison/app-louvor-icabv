@@ -27,7 +27,7 @@ import {
 import { useSchedule } from '@/context/schedule-context';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/auth-context';
 import * as htmlToImage from 'html-to-image';
@@ -305,6 +305,9 @@ export default function MembersPage() {
               <DialogContent>
                   <DialogHeader>
                       <DialogTitle>Próximas Escalas de {memberToView.name}</DialogTitle>
+                      <DialogDescription>
+                        Visualize as próximas escalas para este membro.
+                      </DialogDescription>
                   </DialogHeader>
                   <ScrollArea className="max-h-80 pr-4">
                   {memberUpcomingSchedules.length > 0 ? (
@@ -335,6 +338,9 @@ export default function MembersPage() {
           <DialogContent className="max-w-6xl">
               <DialogHeader>
                   <DialogTitle>Agenda Geral de Membros</DialogTitle>
+                   <DialogDescription>
+                    Veja a agenda completa de todos os membros com escalas futuras.
+                  </DialogDescription>
               </DialogHeader>
               <ScrollArea className="max-h-[70vh] p-1">
                   <div className="p-4 bg-background text-foreground">

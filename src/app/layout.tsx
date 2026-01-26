@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://app-louvor-icabv.vercel.app'),
   title: 'Louvor ICABV',
   description: 'Gestão de escalas e repertório do ministério de louvor da ICABV.',
   icons: {

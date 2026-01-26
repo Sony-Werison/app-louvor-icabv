@@ -8,18 +8,20 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle as SheetTitleComponent,
+  SheetDescription as SheetDescriptionComponent,
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { ListMusic, Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
@@ -156,6 +158,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
       <DialogContent className="max-w-none w-full h-full p-0 gap-0 flex flex-col" style={{'--header-height': '6.5rem'} as React.CSSProperties}>
           <DialogHeader className="sr-only">
             <DialogTitle>Visualizador de Repertório</DialogTitle>
+            <DialogDescription>Navegue e visualize as letras e cifras do repertório selecionado.</DialogDescription>
           </DialogHeader>
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <header className="flex-shrink-0 bg-background/95 backdrop-blur-sm z-20 border-b">
@@ -283,6 +286,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
               <SheetContent side="left" className="p-0 flex flex-col">
                 <SheetHeader className="p-4 border-b">
                     <SheetTitleComponent>Repertório - {schedule.name}</SheetTitleComponent>
+                    <SheetDescriptionComponent>Lista de músicas no repertório para seleção rápida.</SheetDescriptionComponent>
                 </SheetHeader>
                 <ScrollArea className="flex-grow">
                     <div className="p-2 space-y-1">

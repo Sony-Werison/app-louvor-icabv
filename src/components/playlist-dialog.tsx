@@ -198,6 +198,9 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
             <DialogTitle className="text-base sm:text-lg font-bold text-center">
                 Gerenciar Repertório - <span className="text-muted-foreground font-medium">{schedule.name}</span>
             </DialogTitle>
+             <DialogDescription className="text-center">
+                Adicione, remova e reordene as músicas do repertório.
+            </DialogDescription>
         </DialogHeader>
         
         <Tabs defaultValue="available" className="flex-grow min-h-0 flex flex-col">
