@@ -44,9 +44,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   const fetchData = useCallback(async () => {
-    // Don't set loading to true here to avoid flickering on refetches
     if (!supabase) {
-      console.warn("Supabase not configured, falling back to empty data.");
       setMembers([]);
       setRawSongs([]);
       setMonthlySchedules([]);
@@ -102,10 +100,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
         playlists.forEach(playlist => {
             playlist.forEach(songId => {
-                // Total count from schedules
                 scheduleTotalCounts.set(songId, (scheduleTotalCounts.get(songId) || 0) + 1);
-
-                // Quarterly count from schedules
                 if (scheduleDate >= threeMonthsAgo) {
                     scheduleQuarterlyCounts.set(songId, (scheduleQuarterlyCounts.get(songId) || 0) + 1);
                 }
@@ -132,13 +127,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       assignments: {},
       playlist_manha: [],
       playlist_noite: [],
-      name_manha: '',
-      name_noite: '',
       isFeatured: false,
     };
     const { error } = await supabase.from('monthly_schedules').insert(newScheduleData);
     if (error) {
-        toast({ title: 'Erro ao adicionar data', description: error.message, variant: 'destructive'});
+        toast({ title: 'Falha ao Adicionar Data', description: `A operação foi bloqueada. Verifique as Políticas de Segurança (RLS) da sua tabela no Supabase. Erro: ${error.message}`, variant: 'destructive'});
         console.error(error);
         return;
     }
@@ -153,7 +146,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     
     const { error } = await supabase.from('monthly_schedules').delete().eq('id', id);
     if (error) {
-        toast({ title: 'Erro ao remover data', description: error.message, variant: 'destructive'});
+        toast({ title: 'Falha ao Remover Data', description: `A operação foi bloqueada. Verifique as Políticas de Segurança (RLS) da sua tabela no Supabase. Erro: ${error.message}`, variant: 'destructive'});
         console.error(error);
         return;
     }
@@ -177,9 +170,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       .eq('id', id);
 
      if (error) {
-        toast({ title: 'Erro ao salvar escala', description: error.message, variant: 'destructive'});
+        toast({ title: 'Falha ao Salvar Escala', description: `A operação foi bloqueada. Verifique as Políticas de Segurança (RLS) da sua tabela no Supabase. Erro: ${error.message}`, variant: 'destructive'});
         console.error(error);
-        await fetchData();
         return;
     }
     await fetchData();
@@ -190,11 +182,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: 'Operação não disponível', description: 'Supabase não está configurado.', variant: 'destructive'});
         return;
     }
-
-    const idWithoutPrefix = scheduleId.replace('s-', '');
-    const firstHyphenIndex = idWithoutPrefix.indexOf('-');
-    const type = idWithoutPrefix.substring(0, firstHyphenIndex);
-    const monthlyScheduleId = idWithoutPrefix.substring(firstHyphenIndex + 1);
+    
+    const idParts = scheduleId.split('-');
+    const type = idParts[1];
+    const monthlyScheduleId = idParts.slice(2).join('-');
 
     if (!monthlyScheduleId || (type !== 'manha' && type !== 'noite')) {
         toast({ title: 'Erro ao salvar repertório', description: 'ID da escala inválido.', variant: 'destructive'});
@@ -206,9 +197,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.from('monthly_schedules').update({ [fieldToUpdate]: playlist }).eq('id', monthlyScheduleId);
 
     if (error) {
-      toast({ title: 'Erro ao atualizar repertório', description: error.message, variant: 'destructive'});
+      toast({ title: 'Falha ao Atualizar Repertório', description: `A operação foi bloqueada. Verifique as Políticas de Segurança (RLS) da sua tabela no Supabase. Erro: ${error.message}`, variant: 'destructive'});
       console.error(error);
-      await fetchData();
       return;
     }
      await fetchData();
@@ -242,7 +232,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
     const { error } = await supabase.from('members').upsert(memberDataToSave);
     if(error){
-        toast({ title: 'Erro ao salvar membro', description: error.message, variant: 'destructive'});
+        toast({ title: 'Falha ao Salvar Membro', description: `A operação foi bloqueada. Verifique as Políticas de Segurança (RLS) da sua tabela no Supabase. Erro: ${error.message}`, variant: 'destructive'});
         console.error(error);
         return;
     }
@@ -257,7 +247,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
      const { error } = await supabase.from('members').delete().eq('id', memberId);
      if(error){
-        toast({ title: 'Erro ao remover membro', description: error.message, variant: 'destructive'});
+        toast({ title: 'Falha ao Remover Membro', description: `A operação foi bloqueada. Verifique as Políticas de Segurança (RLS) da sua tabela no Supabase. Erro: ${error.message}`, variant: 'destructive'});
         return;
      }
      await fetchData();
@@ -271,7 +261,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const newSong = { ...songData, id: uuidv4(), isNew: true };
     const { error } = await supabase.from('songs').insert(newSong);
     if (error) {
-        toast({ title: 'Erro ao adicionar música', description: error.message, variant: 'destructive'});
+        toast({ title: 'Falha ao Adicionar Música', description: `A operação foi bloqueada. Verifique as Políticas de Segurança (RLS) da sua tabela no Supabase. Erro: ${error.message}`, variant: 'destructive'});
         console.error(error);
         return;
     }
@@ -287,9 +277,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.from('songs').update(updates).eq('id', songId);
     
     if(error){
-        toast({ title: 'Erro ao atualizar música', description: error.message, variant: 'destructive'});
+        toast({ title: 'Falha ao Atualizar Música', description: `A operação foi bloqueada. Verifique as Políticas de Segurança (RLS) da sua tabela no Supabase. Erro: ${error.message}`, variant: 'destructive'});
         console.error(error);
-        await fetchData();
         return;
     }
     await fetchData();
@@ -303,7 +292,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
     const { error } = await supabase.from('songs').delete().in('id', songIds);
     if(error){
-        toast({ title: 'Erro ao remover músicas', description: error.message, variant: 'destructive'});
+        toast({ title: 'Falha ao Remover Músicas', description: `A operação foi bloqueada. Verifique as Políticas de Segurança (RLS) da sua tabela no Supabase. Erro: ${error.message}`, variant: 'destructive'});
         return;
     }
     await fetchData();
@@ -318,7 +307,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
     const { error } = await supabase.from('songs').upsert(songsToUpdate, { onConflict: 'title' });
     if (error) {
-      toast({ title: 'Erro ao atualizar músicas', description: error.message, variant: 'destructive'});
+      toast({ title: 'Falha ao Atualizar Músicas', description: `A operação foi bloqueada. Verifique as Políticas de Segurança (RLS) da sua tabela no Supabase. Erro: ${error.message}`, variant: 'destructive'});
       return;
     }
     await fetchData();
@@ -349,7 +338,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if(hadError) {
-          toast({ title: 'Erro ao importar de TXT', description: 'Algumas músicas podem não ter sido importadas.', variant: 'destructive'});
+          toast({ title: 'Erro ao importar de TXT', description: 'Algumas músicas podem não ter sido importadas. Verifique as políticas de segurança (RLS).', variant: 'destructive'});
       } else {
           toast({ title: 'Importação de TXT concluída!'});
       }
@@ -364,7 +353,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     
     const { error } = await supabase.from('songs').update(updates).in('id', songIds);
       if (error) {
-          toast({ title: 'Erro ao atualizar músicas', description: error.message, variant: 'destructive'});
+          toast({ title: 'Falha ao Atualizar Músicas', description: `A operação foi bloqueada. Verifique as Políticas de Segurança (RLS) da sua tabela no Supabase. Erro: ${error.message}`, variant: 'destructive'});
           console.error(error);
           return;
       }
