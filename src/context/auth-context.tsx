@@ -32,10 +32,17 @@ const rolePermissions: Record<Role, Permission[]> = {
 const defaultPasswords: PasswordSet = {
   admin: 'admin123',
   abertura: 'abertura123',
-  viewer: 'viewer123',
 };
 
-const defaultReminderMessage = 'Paz do Senhor, [NOME]! Tudo bem? Passando para lembrar que você ficou de montar o repertório para [PERIODO]. Assim que puder, acesse o app para definir as músicas. Deus abençoe!';
+const defaultReminderMessage = `Olá, [NOME]! Essa é uma mensagem automática para lembrar que você está escalado para a abertura de [PERIODO].
+
+Para montar o repertório, siga estes passos:
+1. Acesse o app: https://app-louvor-icabv.vercel.app/schedule
+2. No canto superior, clique em "Visualização" e troque para o perfil "Abertura" (senha: [SENHA]).
+3. No menu aberturas, procure a sua escala da semana e clique em "Gerenciar".
+4. Após salvar sua lista, você pode clicar no botão "Compartilhar" para enviar suas músicas.
+
+Não se esqueça de mandar o quanto antes ao grupo de louvor. Obrigado!`;
 
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -62,10 +69,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (storedPasswords) {
             setPasswords(JSON.parse(storedPasswords));
+        } else {
+            localStorage.setItem('appPasswords', JSON.stringify(defaultPasswords));
         }
 
         if (storedReminderMessage) {
             setReminderMessage(storedReminderMessage);
+        } else {
+             localStorage.setItem('reminderMessage', defaultReminderMessage);
         }
     } catch (e) {
         // Could be running on server or localStorage is disabled
@@ -81,8 +92,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loggedInRole = 'admin';
     } else if (password === passwords.abertura) {
         loggedInRole = 'abertura';
-    } else if (password === passwords.viewer) {
-        loggedInRole = 'viewer';
     }
 
     if (loggedInRole) {

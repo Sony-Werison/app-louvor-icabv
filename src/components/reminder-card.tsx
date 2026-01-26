@@ -15,7 +15,7 @@ interface ReminderCardProps {
 }
 
 export function ReminderCard({ schedules, members }: ReminderCardProps) {
-  const { can, reminderMessage } = useAuth();
+  const { can, reminderMessage, passwords } = useAuth();
   
   const getMemberById = (id: string) => members.find(m => m.id === id);
 
@@ -30,7 +30,8 @@ export function ReminderCard({ schedules, members }: ReminderCardProps) {
 
     const message = reminderMessage
         .replace(/\[NOME\]/g, firstName)
-        .replace(/\[PERIODO\]/g, schedule.name);
+        .replace(/\[PERIODO\]/g, schedule.name)
+        .replace(/\[SENHA\]/g, passwords.abertura);
 
     const whatsappLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 

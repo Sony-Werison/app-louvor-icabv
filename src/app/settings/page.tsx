@@ -33,7 +33,6 @@ import { Textarea } from '@/components/ui/textarea';
 const passwordFormSchema = z.object({
   admin: z.string().min(1, { message: 'A senha de admin é obrigatória.' }),
   abertura: z.string().min(1, { message: 'A senha de abertura é obrigatória.' }),
-  viewer: z.string().min(1, { message: 'A senha de visualização é obrigatória.' }),
 });
 type PasswordFormData = z.infer<typeof passwordFormSchema>;
 
@@ -53,13 +52,15 @@ function PasswordSettingsCard() {
         defaultValues: {
             admin: passwords?.admin || '',
             abertura: passwords?.abertura || '',
-            viewer: passwords?.viewer || '',
         },
     });
 
     useEffect(() => {
         if(passwords) {
-            form.reset(passwords);
+            form.reset({
+                admin: passwords.admin,
+                abertura: passwords.abertura,
+            });
         }
     }, [passwords, form]);
 
@@ -100,19 +101,6 @@ function PasswordSettingsCard() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Senha de Abertura</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="********" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="viewer"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Senha de Visualização</FormLabel>
                       <FormControl>
                         <Input type="password" placeholder="********" {...field} />
                       </FormControl>
@@ -161,7 +149,7 @@ function ReminderMessageCard() {
           <CardHeader>
             <CardTitle>Mensagem de Lembrete (WhatsApp)</CardTitle>
             <CardDescription>
-              Edite o texto usado para lembrar os membros sobre o repertório. Use as variáveis <code>[NOME]</code> e <code>[PERIODO]</code>.
+              Edite o texto usado para lembrar os membros sobre o repertório. Use as variáveis <code>[NOME]</code>, <code>[PERIODO]</code> e <code>[SENHA]</code>.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -174,7 +162,7 @@ function ReminderMessageCard() {
                     <FormItem>
                       <FormLabel>Template da Mensagem</FormLabel>
                       <FormControl>
-                        <Textarea rows={5} placeholder="Paz do Senhor, [NOME]! Passando para lembrar que você ficou de montar o repertório para [PERIODO]." {...field} />
+                        <Textarea rows={8} placeholder="Paz do Senhor, [NOME]! Passando para lembrar que você ficou de montar o repertório para [PERIODO]." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
