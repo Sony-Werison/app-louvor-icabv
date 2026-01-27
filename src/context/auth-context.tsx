@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const [isSyncEnabled, setIsSyncEnabled] = useState(true);
 
-  const shareMessage = "Paz do Senhor, segue o repertório para [PERIODO] ([DATA]). Deus abençoe!";
+  const shareMessage = "Lista dos louvores para [PERIODO].";
 
   const fallbackToLocal = useCallback((operation: 'read' | 'write' = 'read') => {
     if (isSyncEnabled) {
