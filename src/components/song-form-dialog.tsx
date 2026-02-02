@@ -22,6 +22,10 @@ const formSchema = z.object({
   artist: z.string().optional(),
   key: z.string().optional(),
   category: z.enum(songCategories, { required_error: 'Selecione uma categoria.' }),
+  bpm: z.preprocess(
+    (val) => (val === '' || val === undefined ? undefined : parseInt(String(val), 10)),
+    z.number().min(30).max(300).optional()
+  ),
   lyrics: z.string().optional(),
   chords: z.string().optional(),
 });
@@ -43,6 +47,7 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
       artist: song?.artist || '',
       key: song?.key || '',
       category: song?.category || 'Louvor',
+      bpm: song?.bpm || undefined,
       lyrics: song?.lyrics || '',
       chords: song?.chords || '',
     },
@@ -133,20 +138,36 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
                             </FormItem>
                         )}
                         />
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="key"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tom</FormLabel>
+                                    <FormControl>
+                                    <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="bpm"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>BPM (Batidas por Minuto)</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                        </div>
 
-                        <FormField
-                            control={form.control}
-                            name="key"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Tom</FormLabel>
-                                <FormControl>
-                                <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
 
                         <FormField
                         control={form.control}

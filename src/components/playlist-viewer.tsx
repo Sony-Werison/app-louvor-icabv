@@ -3,6 +3,7 @@
 
 import type { Schedule, Song } from '@/types';
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -20,12 +21,13 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ListMusic, Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus } from 'lucide-react';
+import { ListMusic, Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Metronome, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { getTransposedKey } from '@/lib/transpose';
+import { Separator } from './ui/separator';
 
 interface PlaylistViewerProps {
   schedule: Schedule;
@@ -39,30 +41,93 @@ const FONT_STEP = 0.1;
 const DEFAULT_FONT_SIZE = 1.25;
 const MIN_SPEED = 1;
 const MAX_SPEED = 10;
+const MIN_BPM = 30;
+const MAX_BPM = 300;
 
 export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewerProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'lyrics' | 'chords'>('lyrics');
   const [activeSongId, setActiveSongId] = useState<string | null>(null);
   const [transpose, setTranspose] = useState(0);
-  const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE); // em rem
+  const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE); 
 
   const [isScrolling, setIsScrolling] = useState(false);
-  const [scrollSpeed, setScrollSpeed] = useState(5); // 1 to 10
+  const [scrollSpeed, setScrollSpeed] = useState(5); 
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const songsInPlaylist = schedule.playlist.map(id => songs.find(s => s.id === id)).filter((s): s is Song => !!s);
   const activeSong = songsInPlaylist.find(s => s.id === activeSongId);
-  
   const activeSongIndex = songsInPlaylist.findIndex(s => s.id === activeSongId);
 
+  const [metronomeBpm, setMetronomeBpm] = useState(activeSong?.bpm || 120);
+  const [isMetronomePlaying, setIsMetronomePlaying] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const metronomeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   useEffect(() => {
     if (songsInPlaylist.length > 0 && !activeSongId) {
       setActiveSongId(songsInPlaylist[0].id);
     }
   }, [schedule.id, songsInPlaylist, activeSongId]);
+
+  // --- Metronome Logic ---
+   useEffect(() => {
+    return () => {
+      if (metronomeIntervalRef.current) {
+        clearInterval(metronomeIntervalRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setMetronomeBpm(activeSong?.bpm || 120);
+  }, [activeSong?.bpm]);
+
+  const playClick = () => {
+    if (typeof window.AudioContext === 'undefined' && typeof (window as any).webkitAudioContext === 'undefined') return;
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    const context = audioContextRef.current;
+    const osc = context.createOscillator();
+    osc.frequency.value = 880;
+    osc.connect(context.destination);
+    osc.start(context.currentTime);
+    osc.stop(context.currentTime + 0.05);
+  };
+  
+  const handleToggleMetronome = () => {
+    if (isMetronomePlaying) {
+      if (metronomeIntervalRef.current) {
+        clearInterval(metronomeIntervalRef.current);
+        metronomeIntervalRef.current = null;
+      }
+      setIsMetronomePlaying(false);
+    } else {
+      playClick();
+      const interval = 60000 / metronomeBpm;
+      metronomeIntervalRef.current = setInterval(playClick, interval);
+      setIsMetronomePlaying(true);
+    }
+  };
+
+  const changeMetronomeBpm = (delta: number) => {
+    setMetronomeBpm(prevBpm => {
+      const newBpm = Math.max(MIN_BPM, Math.min(MAX_BPM, prevBpm + delta));
+      if (isMetronomePlaying) {
+        if (metronomeIntervalRef.current) {
+          clearInterval(metronomeIntervalRef.current);
+        }
+        playClick();
+        const interval = 60000 / newBpm;
+        metronomeIntervalRef.current = setInterval(playClick, interval);
+      }
+      return newBpm;
+    });
+  };
 
   const stopScrolling = () => {
     if (scrollIntervalRef.current) {
@@ -80,12 +145,15 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   }, []);
   
   useEffect(() => {
-    // Reset transpose and scrolling when song or tab changes
+    // Reset when song or tab changes
     setTranspose(0);
     if (scrollViewportRef.current) {
       scrollViewportRef.current.scrollTop = 0;
     }
     stopScrolling();
+    if (isMetronomePlaying) {
+      handleToggleMetronome();
+    }
   }, [activeSongId, activeTab]);
 
 
@@ -124,7 +192,6 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
     const newSpeed = Math.max(MIN_SPEED, Math.min(MAX_SPEED, scrollSpeed + delta));
     setScrollSpeed(newSpeed);
     if (isScrolling) {
-      // Use a timeout to restart scrolling after the state has updated
       setTimeout(startScrolling, 0);
     }
   }
@@ -211,6 +278,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                                 <ZoomIn className="h-4 w-4" />
                             </Button>
                         </div>
+                        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => router.push(`/sala-ao-vivo?scheduleId=${schedule.id}`)}><Users/></Button>
                         <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0">
                           <X/>
                         </Button>
@@ -221,7 +289,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
               <main className="flex-grow min-h-0 relative group/main h-[calc(100vh-var(--header-height))]">
                   <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
                   {activeSong ? (
-                      <div className="p-4 sm:p-8 pb-28" style={{ fontSize: `${fontSize}rem` }}>
+                      <div className="p-4 sm:p-8 pb-32" style={{ fontSize: `${fontSize}rem` }}>
                           {activeTab === 'lyrics' ? (
                               <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75', whiteSpace: 'pre-wrap'}}>
                                   {activeSong.lyrics || 'Nenhuma letra disponível.'}
@@ -247,30 +315,52 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                         </div>
 
                         {activeTab === 'chords' && (
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center gap-4 rounded-full border bg-background/80 px-3 py-1 shadow-lg backdrop-blur-sm">
-                                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
-                                    <Turtle className="h-6 w-6" />
-                                </Button>
-                                <div className="flex flex-col items-center">
-                                <button
-                                    onClick={handleToggleScrolling}
-                                    className={cn("relative flex items-center justify-center w-10 h-10 text-foreground rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors",
-                                    isScrolling && "bg-primary text-primary-foreground"
-                                    )}
-                                    aria-label={isScrolling ? "Pausar rolagem" : "Iniciar rolagem"}
-                                >
-                                    {isScrolling ? 
-                                    <Pause className="w-6 h-6 fill-current"/> :
-                                    <Play className="w-6 h-6 fill-current" />
-                                    }
-                                </button>
-                                <span className="text-xs font-bold w-6 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50">
-                                    {scrollSpeed}
-                                </span>
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-end justify-center gap-2 rounded-full border bg-background/80 px-4 py-2 shadow-lg backdrop-blur-sm">
+                                {/* Scroll Controls */}
+                                <div className="flex items-center gap-2">
+                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
+                                        <Turtle className="h-6 w-6" />
+                                    </Button>
+                                    <div className="flex flex-col items-center">
+                                        <button
+                                            onClick={handleToggleScrolling}
+                                            className={cn("relative flex items-center justify-center w-10 h-10 text-foreground rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors",
+                                            isScrolling && "bg-primary text-primary-foreground"
+                                            )}
+                                            aria-label={isScrolling ? "Pausar rolagem" : "Iniciar rolagem"}
+                                        >
+                                            {isScrolling ? <Pause className="w-6 h-6 fill-current"/> : <Play className="w-6 h-6 fill-current" />}
+                                        </button>
+                                        <span className="text-xs font-bold w-6 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50">{scrollSpeed}</span>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
+                                        <Rabbit className="h-6 w-6" />
+                                    </Button>
                                 </div>
-                                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
-                                    <Rabbit className="h-6 w-6" />
-                                </Button>
+                                
+                                <Separator orientation="vertical" className="h-12"/>
+
+                                {/* Metronome Controls */}
+                                <div className="flex items-center gap-2">
+                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeMetronomeBpm(-5)} disabled={metronomeBpm <= MIN_BPM}>
+                                        <Minus className="h-5 w-5" />
+                                    </Button>
+                                    <div className="flex flex-col items-center">
+                                        <button
+                                            onClick={handleToggleMetronome}
+                                            className={cn("relative flex items-center justify-center w-10 h-10 text-foreground rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors",
+                                            isMetronomePlaying && "bg-primary text-primary-foreground"
+                                            )}
+                                            aria-label={isMetronomePlaying ? "Pausar metrônomo" : "Iniciar metrônomo"}
+                                        >
+                                            <Metronome className="w-6 h-6"/>
+                                        </button>
+                                        <span className="text-xs font-bold w-12 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50 tabular-nums">{metronomeBpm}</span>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeMetronomeBpm(5)} disabled={metronomeBpm >= MAX_BPM}>
+                                        <Plus className="h-5 w-5" />
+                                    </Button>
+                                </div>
                             </div>
                         )}
 
