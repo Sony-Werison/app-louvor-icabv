@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ListMusic, Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Metronome, Podcast } from 'lucide-react';
+import { ListMusic, Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Timer, Podcast } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Badge } from './ui/badge';
@@ -353,7 +353,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                                             )}
                                             aria-label={isMetronomePlaying ? "Pausar metrônomo" : "Iniciar metrônomo"}
                                         >
-                                            <Metronome className="w-6 h-6"/>
+                                            <Timer className="w-6 h-6"/>
                                         </button>
                                         <span className="text-xs font-bold w-12 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50 tabular-nums">{metronomeBpm}</span>
                                     </div>

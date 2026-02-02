@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { getTransposedKey } from '@/lib/transpose';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle as SheetTitleComponent, SheetDescription as SheetDescriptionComponent, SheetTrigger } from '@/components/ui/sheet';
-import { FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Metronome, Podcast, WifiOff, ArrowLeft, Play, Pause } from 'lucide-react';
+import { FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Timer, Podcast, WifiOff, ArrowLeft, Play, Pause } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const MIN_FONT_SIZE = 0.8;
@@ -359,7 +359,7 @@ function LiveRoomComponent() {
                                 <div className="flex items-center gap-2">
                                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeMetronomeBpm(-5)} disabled={readOnly || currentState?.metronome.bpm <= MIN_BPM}><Minus /></Button>
                                     <div className="flex flex-col items-center">
-                                        <button onClick={handleToggleMetronome} disabled={readOnly} className={cn("w-10 h-10 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring", currentState?.metronome.isPlaying && "bg-primary text-primary-foreground")}><Metronome className="w-6 h-6" /></button>
+                                        <button onClick={handleToggleMetronome} disabled={readOnly} className={cn("w-10 h-10 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring", currentState?.metronome.isPlaying && "bg-primary text-primary-foreground")}><Timer className="w-6 h-6" /></button>
                                         <span className="text-xs font-bold w-12 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50 tabular-nums">{currentState?.metronome.bpm}</span>
                                     </div>
                                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeMetronomeBpm(5)} disabled={readOnly || currentState?.metronome.bpm >= MAX_BPM}><Plus /></Button>

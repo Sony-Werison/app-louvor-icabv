@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSchedule } from '@/context/schedule-context';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Trash2, Plus, Minus, ZoomIn, ZoomOut, Turtle, Rabbit, Play, Pause, FileText, Music, Metronome } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Plus, Minus, ZoomIn, ZoomOut, Turtle, Rabbit, Play, Pause, FileText, Music, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SongEditForm } from '@/components/song-edit-form';
@@ -347,7 +347,7 @@ export default function SongDetailPage() {
                             )}
                             aria-label={isMetronomePlaying ? "Pausar metrônomo" : "Iniciar metrônomo"}
                         >
-                            <Metronome className="w-6 h-6"/>
+                            <Timer className="w-6 h-6"/>
                         </button>
                         <span className="text-xs font-bold w-12 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50 tabular-nums">{metronomeBpm}</span>
                     </div>
