@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Schedule, Song, SongCategory } from '@/types';
@@ -124,7 +123,11 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
     [currentPlaylist, allSongs]
   );
   
-  const hasChords = (song: Song) => song.chords && song.chords.includes('[');
+  const hasChords = (song: Song) => {
+    const hasNativeChords = song.chords && song.chords.includes('[');
+    const hasPdfChords = song.pdfLinks && song.pdfLinks.length > 0;
+    return hasNativeChords || hasPdfChords;
+  };
 
   const availableSongs = useMemo(() => {
     const lowercasedSearchTerm = searchTerm.toLowerCase();

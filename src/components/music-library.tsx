@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Song, SongCategory } from '@/types';
@@ -82,7 +81,11 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
     setSortConfig({ key, direction: newDirection });
   };
 
-  const hasChords = (song: Song) => song.chords && song.chords.includes('[');
+  const hasChords = (song: Song) => {
+    const hasNativeChords = song.chords && song.chords.includes('[');
+    const hasPdfChords = song.pdfLinks && song.pdfLinks.length > 0;
+    return hasNativeChords || hasPdfChords;
+  };
 
   const categoryCounts = useMemo(() => {
     const counts: Record<SongCategory | 'all', number> = {
