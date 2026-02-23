@@ -70,7 +70,7 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
     // Fill default names if empty
     const processedPdfLinks = values.pdfLinks?.map(link => ({
       ...link,
-      name: link.name?.trim() || 'Cifra PDF'
+      name: link.name?.trim() || 'Cifra'
     }));
     
     onSave({
@@ -211,7 +211,7 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
                             <div className="flex items-center justify-between">
                                 <FormLabel className="flex items-center gap-2">
                                     <LinkIcon className="h-4 w-4" />
-                                    Links de Cifras em PDF (Google Drive)
+                                    Cifras Externas (Google Drive / Docs)
                                 </FormLabel>
                                 <Button 
                                     type="button" 
@@ -220,7 +220,7 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
                                     onClick={() => append({ name: '', url: '' })}
                                 >
                                     <Plus className="h-4 w-4 mr-2" />
-                                    Adicionar PDF
+                                    Adicionar Link
                                 </Button>
                             </div>
                             
@@ -234,7 +234,7 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <Input placeholder="Nome do arquivo (ex: Cifra Completa)" {...field} />
+                                                            <Input placeholder="Nome da variação (ex: Cifra Completa)" {...field} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -247,7 +247,7 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormControl>
-                                                        <Input placeholder="Link do Google Drive" {...field} />
+                                                        <Input placeholder="Link do Google Drive ou Docs" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>

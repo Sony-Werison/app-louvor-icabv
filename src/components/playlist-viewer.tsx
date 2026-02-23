@@ -252,7 +252,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                               <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
                               <TabsTrigger value="pdfs" disabled={!activeSong?.pdfLinks || activeSong.pdfLinks.length === 0}>
                                   <FileDown className="w-4 h-4 md:mr-2"/>
-                                  <span className="hidden md:inline">Cifras (PDF)</span>
+                                  <span className="hidden md:inline">Cifras (Arquivo)</span>
                               </TabsTrigger>
                           </TabsList>
                         </Tabs>

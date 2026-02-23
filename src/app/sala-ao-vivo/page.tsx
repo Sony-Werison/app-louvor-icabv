@@ -383,7 +383,9 @@ function LiveRoomComponent() {
                   {activeSong && (
                     <>
                         <div className="absolute bottom-4 left-4 z-10">
-                             <Button variant="destructive" size="icon" className="h-12 w-12 rounded-full" onClick={() => navigateSong('prev')} disabled={readOnly || activeSongIndex <= 0}><SkipBack className="fill-current"/></Button>
+                             <Button variant="destructive" size="icon" className="h-12 w-12 rounded-full" onClick={() => navigateSong('prev')} disabled={readOnly || activeSongIndex <= 0}>
+                                <SkipBack className="fill-current"/>
+                             </Button>
                         </div>
 
                         {activeTab === 'chords' && (
@@ -415,7 +417,9 @@ function LiveRoomComponent() {
                         )}
 
                         <div className="absolute bottom-4 right-4 z-10">
-                            <Button variant="destructive" size="icon" className="h-12 w-12 rounded-full" onClick={() => navigateSong('next')} disabled={readOnly || activeSongIndex >= songsInPlaylist.length - 1}><SkipForward className="fill-current"/></Button>
+                            <Button variant="destructive" size="icon" className="h-12 w-12 rounded-full" onClick={() => navigateSong('next')} disabled={readOnly || activeSongIndex >= songsInPlaylist.length - 1}>
+                                <SkipForward className="fill-current"/>
+                            </Button>
                         </div>
                     </>
                   )}

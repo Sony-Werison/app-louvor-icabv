@@ -69,7 +69,7 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
     // Fill default names if empty
     const processedPdfLinks = values.pdfLinks?.map(link => ({
       ...link,
-      name: link.name?.trim() || 'Cifra PDF'
+      name: link.name?.trim() || 'Cifra'
     }));
 
     onSave({
@@ -221,7 +221,7 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
                 <div className="flex items-center justify-between">
                     <FormLabel className="flex items-center gap-2 text-lg">
                         <LinkIcon className="h-5 w-5" />
-                        Links de Cifras em PDF (Google Drive)
+                        Cifras Externas (Google Drive / Docs)
                     </FormLabel>
                     <Button 
                         type="button" 
@@ -230,7 +230,7 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
                         onClick={() => append({ name: '', url: '' })}
                     >
                         <Plus className="h-4 w-4 mr-2" />
-                        Adicionar PDF
+                        Adicionar Link
                     </Button>
                 </div>
                 
@@ -258,9 +258,9 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
                                     name={`pdfLinks.${index}.url`}
                                     render={({ field }) => (
                                         <FormItem className={fields.length === 1 ? "sm:col-span-2" : ""}>
-                                            <FormLabel>Link do Google Drive</FormLabel>
+                                            <FormLabel>Link do Google Drive ou Docs</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="https://drive.google.com/..." {...field} />
+                                                <Input placeholder="https://drive.google.com/... ou https://docs.google.com/..." {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -279,7 +279,7 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
                         </div>
                     ))}
                     {fields.length === 0 && (
-                        <p className="text-center text-muted-foreground py-4 italic">Nenhum PDF cadastrado.</p>
+                        <p className="text-center text-muted-foreground py-4 italic">Nenhum link externo cadastrado.</p>
                     )}
                 </div>
             </div>
