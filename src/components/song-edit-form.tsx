@@ -30,7 +30,7 @@ const formSchema = z.object({
   chords: z.string().optional(),
   isNew: z.boolean().optional(),
   pdfLinks: z.array(z.object({
-    name: z.string().min(1, { message: 'Dê um nome para este arquivo.' }),
+    name: z.string().optional(),
     url: z.string().url({ message: 'Insira um link válido.' }),
   })).optional(),
 });
@@ -66,7 +66,16 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
   const { handleKeyDown } = useAutoPairing(chordsTextareaRef);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    onSave(values);
+    // Fill default names if empty
+    const processedPdfLinks = values.pdfLinks?.map(link => ({
+      ...link,
+      name: link.name?.trim() || 'Cifra PDF'
+    }));
+
+    onSave({
+      ...values,
+      pdfLinks: processedPdfLinks
+    });
   };
 
   return (
@@ -229,24 +238,26 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
                     {fields.map((field, index) => (
                         <div key={field.id} className="flex gap-2 items-start p-4 border rounded-lg bg-card shadow-sm">
                             <div className="grid flex-1 grid-cols-1 sm:grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name={`pdfLinks.${index}.name`}
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Nome da Variação</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="ex: Cifra Simplificada" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                {fields.length > 1 && (
+                                    <FormField
+                                        control={form.control}
+                                        name={`pdfLinks.${index}.name`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Nome da Variação</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="ex: Cifra Simplificada" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
                                 <FormField
                                     control={form.control}
                                     name={`pdfLinks.${index}.url`}
                                     render={({ field }) => (
-                                        <FormItem>
+                                        <FormItem className={fields.length === 1 ? "sm:col-span-2" : ""}>
                                             <FormLabel>Link do Google Drive</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="https://drive.google.com/..." {...field} />

@@ -29,7 +29,7 @@ const formSchema = z.object({
   lyrics: z.string().optional(),
   chords: z.string().optional(),
   pdfLinks: z.array(z.object({
-    name: z.string().min(1, { message: 'Dê um nome para este arquivo.' }),
+    name: z.string().optional(),
     url: z.string().url({ message: 'Insira um link válido.' }),
   })).optional(),
 });
@@ -67,7 +67,16 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
   const { handleKeyDown } = useAutoPairing(chordsTextareaRef);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    onSave(values);
+    // Fill default names if empty
+    const processedPdfLinks = values.pdfLinks?.map(link => ({
+      ...link,
+      name: link.name?.trim() || 'Cifra PDF'
+    }));
+    
+    onSave({
+      ...values,
+      pdfLinks: processedPdfLinks
+    });
   };
 
   return (
@@ -218,18 +227,20 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
                             {fields.map((field, index) => (
                                 <div key={field.id} className="flex gap-2 items-start p-3 border rounded-lg bg-muted/30">
                                     <div className="grid flex-1 gap-3">
-                                        <FormField
-                                            control={form.control}
-                                            name={`pdfLinks.${index}.name`}
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormControl>
-                                                        <Input placeholder="Nome do arquivo (ex: Cifra Completa)" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                                        {fields.length > 1 && (
+                                            <FormField
+                                                control={form.control}
+                                                name={`pdfLinks.${index}.name`}
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormControl>
+                                                            <Input placeholder="Nome do arquivo (ex: Cifra Completa)" {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        )}
                                         <FormField
                                             control={form.control}
                                             name={`pdfLinks.${index}.url`}
