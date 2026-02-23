@@ -1,5 +1,3 @@
-
-
 export type Role = 'admin' | 'abertura' | 'viewer';
 
 export type PasswordSet = {
@@ -9,6 +7,11 @@ export type PasswordSet = {
 
 export type MemberRole = 'Abertura' | 'Pregação' | 'Multimídia' | 'Convidado';
 export type SongCategory = 'Hino' | 'Louvor' | 'Infantil';
+
+export type PdfLink = {
+  name: string;
+  url: string;
+};
 
 export type Member = {
   id: string;
@@ -32,6 +35,7 @@ export type Song = {
   timesPlayedQuarterly?: number;
   timesPlayedTotal?: number;
   bpm?: number;
+  pdfLinks?: PdfLink[];
 };
 
 export type Schedule = {

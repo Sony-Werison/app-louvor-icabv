@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { Song, SongCategory } from '@/types';
@@ -14,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { ScrollArea } from './ui/scroll-area';
 import { useRef } from 'react';
 import { useAutoPairing } from '@/hooks/use-auto-pairing';
+import { Plus, Trash2, Link as LinkIcon } from 'lucide-react';
 
 const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
 
@@ -28,6 +28,10 @@ const formSchema = z.object({
   ),
   lyrics: z.string().optional(),
   chords: z.string().optional(),
+  pdfLinks: z.array(z.object({
+    name: z.string().min(1, { message: 'Dê um nome para este arquivo.' }),
+    url: z.string().url({ message: 'Insira um link válido.' }),
+  })).optional(),
 });
 
 type SongFormData = Omit<Song, 'id'> & { id?: string };
@@ -50,7 +54,13 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
       bpm: song?.bpm || undefined,
       lyrics: song?.lyrics || '',
       chords: song?.chords || '',
+      pdfLinks: song?.pdfLinks || [],
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "pdfLinks",
   });
 
   const chordsTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -62,7 +72,7 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
 
   return (
      <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[90dvh] flex flex-col p-0">
+        <DialogContent className="max-h-[90dvh] flex flex-col p-0 max-w-2xl">
             <DialogHeader className="p-6 pb-0">
             <DialogTitle>{song ? 'Editar Música' : 'Nova Música'}</DialogTitle>
              <DialogDescription>
@@ -73,7 +83,7 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
               <ScrollArea className="h-full">
                 <div className="px-6">
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4 pb-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                             control={form.control}
@@ -168,7 +178,6 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
                             />
                         </div>
 
-
                         <FormField
                         control={form.control}
                         name="chords"
@@ -188,6 +197,64 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
                             </FormItem>
                         )}
                         />
+
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <FormLabel className="flex items-center gap-2">
+                                    <LinkIcon className="h-4 w-4" />
+                                    Links de Cifras em PDF (Google Drive)
+                                </FormLabel>
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => append({ name: '', url: '' })}
+                                >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Adicionar PDF
+                                </Button>
+                            </div>
+                            
+                            {fields.map((field, index) => (
+                                <div key={field.id} className="flex gap-2 items-start p-3 border rounded-lg bg-muted/30">
+                                    <div className="grid flex-1 gap-3">
+                                        <FormField
+                                            control={form.control}
+                                            name={`pdfLinks.${index}.name`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormControl>
+                                                        <Input placeholder="Nome do arquivo (ex: Cifra Completa)" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name={`pdfLinks.${index}.url`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormControl>
+                                                        <Input placeholder="Link do Google Drive" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <Button 
+                                        type="button" 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="text-destructive mt-1"
+                                        onClick={() => remove(index)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
                         
                         <DialogFooter className="sticky bottom-0 -mx-6 px-6 py-4 bg-background border-t">
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

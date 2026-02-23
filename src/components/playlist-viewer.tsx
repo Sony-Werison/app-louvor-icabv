@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Schedule, Song } from '@/types';
@@ -21,11 +20,11 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ListMusic, Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Timer, Podcast } from 'lucide-react';
+import { ListMusic, Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Timer, Podcast, FileDown, ExternalLink } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Badge } from './ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, convertGoogleDriveUrl } from '@/lib/utils';
 import { getTransposedKey } from '@/lib/transpose';
 import { Separator } from './ui/separator';
 
@@ -48,8 +47,9 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'lyrics' | 'chords'>('lyrics');
+  const [activeTab, setActiveTab] = useState<'lyrics' | 'chords' | 'pdfs'>('lyrics');
   const [activeSongId, setActiveSongId] = useState<string | null>(null);
+  const [activePdfIndex, setActivePdfIndex] = useState(0);
   const [transpose, setTranspose] = useState(0);
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE); 
 
@@ -147,6 +147,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   useEffect(() => {
     // Reset when song or tab changes
     setTranspose(0);
+    setActivePdfIndex(0);
     if (scrollViewportRef.current) {
       scrollViewportRef.current.scrollTop = 0;
     }
@@ -222,7 +223,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   return (
     <>
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
-      <DialogContent className="max-w-none w-full h-full p-0 gap-0 flex flex-col" style={{'--header-height': '6.5rem'} as React.CSSProperties}>
+      <DialogContent className="max-w-none w-full h-full p-0 gap-0 flex flex-col" style={{'--header-height': '7.5rem'} as React.CSSProperties}>
           <DialogHeader className="sr-only">
             <DialogTitle>Visualizador de Repertório</DialogTitle>
             <DialogDescription>Navegue e visualize as letras e cifras do repertório selecionado.</DialogDescription>
@@ -230,9 +231,9 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <header className="flex-shrink-0 bg-background/95 backdrop-blur-sm z-20 border-b">
                   <div className="h-full flex flex-col sm:flex-row items-center justify-between px-2 sm:px-4 gap-2 py-2" style={{height: 'var(--header-height)'}}>
-                      <div className="flex items-center gap-2 flex-1 min-w-0 w-full">
+                      <div className="flex items-center gap-2 flex-1 min-w-0 w-full overflow-x-auto pb-1 sm:pb-0">
                           <SheetTrigger asChild>
-                              <Button variant="destructive" size="sm">
+                              <Button variant="destructive" size="sm" className="shrink-0">
                                   Ver Todas
                               </Button>
                           </SheetTrigger>
@@ -249,11 +250,15 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                           <TabsList>
                               <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>
                               <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
+                              <TabsTrigger value="pdfs" disabled={!activeSong?.pdfLinks || activeSong.pdfLinks.length === 0}>
+                                  <FileDown className="w-4 h-4 md:mr-2"/>
+                                  <span className="hidden md:inline">Cifras (PDF)</span>
+                              </TabsTrigger>
                           </TabsList>
                         </Tabs>
                         
                         {activeTab === 'chords' && (
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 shrink-0">
                                 <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose - 1)}>
                                     <Minus className="h-4 w-4"/>
                                 </Button>
@@ -267,16 +272,36 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                             </div>
                         )}
 
-                        <div className="flex items-center gap-1">
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
-                                <ZoomOut className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" onClick={resetFontSize} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">
-                                {zoomPercentage}%
-                            </Button>
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
-                                <ZoomIn className="h-4 w-4" />
-                            </Button>
+                        <div className="flex items-center gap-1 shrink-0">
+                            {activeTab !== 'pdfs' ? (
+                                <>
+                                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
+                                        <ZoomOut className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" onClick={resetFontSize} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">
+                                        {zoomPercentage}%
+                                    </Button>
+                                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
+                                        <ZoomIn className="h-4 w-4" />
+                                    </Button>
+                                </>
+                            ) : (
+                                activeSong?.pdfLinks && activeSong.pdfLinks.length > 1 && (
+                                    <div className="flex items-center gap-1">
+                                        {activeSong.pdfLinks.map((pdf, idx) => (
+                                            <Button 
+                                                key={idx} 
+                                                variant={activePdfIndex === idx ? 'default' : 'outline'} 
+                                                size="sm" 
+                                                className="h-8 text-xs px-2"
+                                                onClick={() => setActivePdfIndex(idx)}
+                                            >
+                                                {pdf.name}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                )
+                            )}
                         </div>
                         <Button variant="ghost" size="icon" className="shrink-0" onClick={() => router.push(`/sala-ao-vivo?scheduleId=${schedule.id}`)}><Podcast/></Button>
                         <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0">
@@ -287,24 +312,42 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
               </header>
 
               <main className="flex-grow min-h-0 relative group/main h-[calc(100vh-var(--header-height))]">
-                  <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
-                  {activeSong ? (
-                      <div className="p-4 sm:p-8 pb-32" style={{ fontSize: `${fontSize}rem` }}>
-                          {activeTab === 'lyrics' ? (
-                              <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75', whiteSpace: 'pre-wrap'}}>
-                                  {activeSong.lyrics || 'Nenhuma letra disponível.'}
-                              </pre>
-                          ) : (
-                              <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose}/>
-                          )}
+                  {activeTab === 'pdfs' && activeSong?.pdfLinks?.[activePdfIndex] ? (
+                      <div className="w-full h-full flex flex-col items-center bg-muted/20">
+                          <div className="w-full flex justify-end p-2 gap-2">
+                              <Button variant="secondary" size="sm" asChild>
+                                  <a href={activeSong.pdfLinks[activePdfIndex].url} target="_blank" rel="noopener noreferrer">
+                                      <ExternalLink className="h-4 w-4 mr-2"/>
+                                      Abrir no Drive
+                                  </a>
+                              </Button>
+                          </div>
+                          <iframe 
+                              src={convertGoogleDriveUrl(activeSong.pdfLinks[activePdfIndex].url)} 
+                              className="w-full h-full border-none flex-grow"
+                              allow="autoplay"
+                          />
                       </div>
                   ) : (
-                      <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
-                          <h3 className="text-lg font-semibold">Nenhuma música no repertório</h3>
-                          <p className="text-sm">Adicione músicas na tela de gerenciamento.</p>
-                      </div>
+                      <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
+                      {activeSong ? (
+                          <div className="p-4 sm:p-8 pb-32" style={{ fontSize: `${fontSize}rem` }}>
+                              {activeTab === 'lyrics' ? (
+                                  <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75', whiteSpace: 'pre-wrap'}}>
+                                      {activeSong.lyrics || 'Nenhuma letra disponível.'}
+                                  </pre>
+                              ) : (
+                                  <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose}/>
+                              )}
+                          </div>
+                      ) : (
+                          <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
+                              <h3 className="text-lg font-semibold">Nenhuma música no repertório</h3>
+                              <p className="text-sm">Adicione músicas na tela de gerenciamento.</p>
+                          </div>
+                      )}
+                      </ScrollArea>
                   )}
-                  </ScrollArea>
                   
                   {activeSong && (
                     <>

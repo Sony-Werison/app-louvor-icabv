@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -12,11 +11,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChordDisplay } from '@/components/chord-display';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, convertGoogleDriveUrl } from '@/lib/utils';
 import { getTransposedKey } from '@/lib/transpose';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle as SheetTitleComponent, SheetDescription as SheetDescriptionComponent, SheetTrigger } from '@/components/ui/sheet';
-import { FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Timer, Podcast, WifiOff, ArrowLeft, Play, Pause } from 'lucide-react';
+import { FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Timer, Podcast, WifiOff, ArrowLeft, Play, Pause, FileDown, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const MIN_FONT_SIZE = 0.8;
@@ -52,7 +51,8 @@ function LiveRoomComponent() {
         lastUpdate: Date.now(),
     });
 
-    const [activeTab, setActiveTab] = useState<'lyrics' | 'chords'>('lyrics');
+    const [activeTab, setActiveTab] = useState<'lyrics' | 'chords' | 'pdfs'>('lyrics');
+    const [activePdfIndex, setActivePdfIndex] = useState(0);
     const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -223,6 +223,7 @@ function LiveRoomComponent() {
             }));
         }
         setIsSheetOpen(false);
+        setActivePdfIndex(0);
     }
     
     const navigateSong = (direction: 'next' | 'prev') => {
@@ -278,13 +279,13 @@ function LiveRoomComponent() {
     const readOnly = !isHost;
     
     return (
-      <div className="max-w-none w-full h-screen p-0 gap-0 flex flex-col bg-background" style={{'--header-height': '6.5rem'} as React.CSSProperties}>
+      <div className="max-w-none w-full h-screen p-0 gap-0 flex flex-col bg-background" style={{'--header-height': '7.5rem'} as React.CSSProperties}>
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
              <header className="flex-shrink-0 bg-background/95 backdrop-blur-sm z-20 border-b">
                  <div className="h-full flex flex-col sm:flex-row items-center justify-between px-2 sm:px-4 gap-2 py-2" style={{height: 'var(--header-height)'}}>
-                     <div className="flex items-center gap-2 flex-1 min-w-0 w-full">
+                     <div className="flex items-center gap-2 flex-1 min-w-0 w-full overflow-x-auto pb-1 sm:pb-0">
                          <SheetTrigger asChild>
-                             <Button variant="destructive" size="sm">
+                             <Button variant="destructive" size="sm" className="shrink-0">
                                  Ver Todas
                              </Button>
                          </SheetTrigger>
@@ -298,21 +299,45 @@ function LiveRoomComponent() {
                      </div>
                      <div className="w-full sm:w-auto flex justify-between sm:justify-end items-center gap-2">
                         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
-                            <TabsList><TabsTrigger value="lyrics"><FileText /></TabsTrigger><TabsTrigger value="chords"><Music /></TabsTrigger></TabsList>
+                            <TabsList>
+                                <TabsTrigger value="lyrics"><FileText /></TabsTrigger>
+                                <TabsTrigger value="chords"><Music /></TabsTrigger>
+                                <TabsTrigger value="pdfs" disabled={!activeSong?.pdfLinks || activeSong.pdfLinks.length === 0}><FileDown /></TabsTrigger>
+                            </TabsList>
                         </Tabs>
                        
                        {activeTab === 'chords' && (
-                           <div className="flex items-center gap-1">
+                           <div className="flex items-center gap-1 shrink-0">
                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeTranspose(-1)} disabled={readOnly}><Minus /></Button>
                                <div className="w-8 text-center"><span className="text-xs -mb-1 block text-muted-foreground">Tom</span><span className="font-bold text-sm">{currentState?.transpose > 0 ? `+${currentState?.transpose}`: currentState?.transpose}</span></div>
                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeTranspose(1)} disabled={readOnly}><Plus /></Button>
                            </div>
                        )}
 
-                       <div className="flex items-center gap-1">
-                           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setFontSize(s => Math.max(MIN_FONT_SIZE, s - FONT_STEP))}><ZoomOut /></Button>
-                           <Button variant="ghost" onClick={() => setFontSize(DEFAULT_FONT_SIZE)} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">{zoomPercentage}%</Button>
-                           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setFontSize(s => Math.min(MAX_FONT_SIZE, s + FONT_STEP))}><ZoomIn /></Button>
+                       <div className="flex items-center gap-1 shrink-0">
+                           {activeTab !== 'pdfs' ? (
+                               <>
+                                   <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setFontSize(s => Math.max(MIN_FONT_SIZE, s - FONT_STEP))}><ZoomOut /></Button>
+                                   <Button variant="ghost" onClick={() => setFontSize(DEFAULT_FONT_SIZE)} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">{zoomPercentage}%</Button>
+                                   <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setFontSize(s => Math.min(MAX_FONT_SIZE, s + FONT_STEP))}><ZoomIn /></Button>
+                               </>
+                           ) : (
+                               activeSong?.pdfLinks && activeSong.pdfLinks.length > 1 && (
+                                   <div className="flex items-center gap-1">
+                                       {activeSong.pdfLinks.map((pdf, idx) => (
+                                           <Button 
+                                               key={idx} 
+                                               variant={activePdfIndex === idx ? 'default' : 'outline'} 
+                                               size="sm" 
+                                               className="h-8 text-xs px-2"
+                                               onClick={() => setActivePdfIndex(idx)}
+                                           >
+                                               {pdf.name}
+                                           </Button>
+                                       ))}
+                                   </div>
+                               )
+                           )}
                        </div>
                        
                        <Button variant="ghost" size="icon" onClick={() => router.push('/schedule')} className="shrink-0"><X/></Button>
@@ -321,21 +346,39 @@ function LiveRoomComponent() {
              </header>
 
               <main className="flex-grow min-h-0 relative group/main h-[calc(100vh-var(--header-height))]">
-                  <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
-                      {activeSong ? (
-                          <div className="p-4 sm:p-8 pb-32" style={{ fontSize: `${fontSize}rem` }}>
-                              {activeTab === 'lyrics' ? (
-                                  <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75'}}>{activeSong.lyrics || 'Nenhuma letra.'}</pre>
-                              ) : (
-                                  <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra.'} transposeBy={currentState?.transpose || 0}/>
-                              )}
+                  {activeTab === 'pdfs' && activeSong?.pdfLinks?.[activePdfIndex] ? (
+                      <div className="w-full h-full flex flex-col items-center bg-muted/20">
+                          <div className="w-full flex justify-end p-2 gap-2">
+                              <Button variant="secondary" size="sm" asChild>
+                                  <a href={activeSong.pdfLinks[activePdfIndex].url} target="_blank" rel="noopener noreferrer">
+                                      <ExternalLink className="h-4 w-4 mr-2"/>
+                                      Abrir no Drive
+                                  </a>
+                              </Button>
                           </div>
-                      ) : (
-                           <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
-                              <h3 className="text-lg font-semibold">Nenhuma música no repertório</h3>
-                          </div>
-                      )}
-                  </ScrollArea>
+                          <iframe 
+                              src={convertGoogleDriveUrl(activeSong.pdfLinks[activePdfIndex].url)} 
+                              className="w-full h-full border-none flex-grow"
+                              allow="autoplay"
+                          />
+                      </div>
+                  ) : (
+                      <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
+                          {activeSong ? (
+                              <div className="p-4 sm:p-8 pb-32" style={{ fontSize: `${fontSize}rem` }}>
+                                  {activeTab === 'lyrics' ? (
+                                      <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75'}}>{activeSong.lyrics || 'Nenhuma letra.'}</pre>
+                                  ) : (
+                                      <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra.'} transposeBy={currentState?.transpose || 0}/>
+                                  )}
+                              </div>
+                          ) : (
+                               <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
+                                  <h3 className="text-lg font-semibold">Nenhuma música no repertório</h3>
+                              </div>
+                          )}
+                      </ScrollArea>
+                  )}
 
                   {activeSong && (
                     <>

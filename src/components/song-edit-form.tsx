@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { Song, SongCategory } from '@/types';
@@ -14,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useAutoPairing } from '@/hooks/use-auto-pairing';
 import { useRef } from 'react';
 import { Checkbox } from './ui/checkbox';
+import { Plus, Trash2, Link as LinkIcon } from 'lucide-react';
 
 const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
 
@@ -29,6 +29,10 @@ const formSchema = z.object({
   lyrics: z.string().optional(),
   chords: z.string().optional(),
   isNew: z.boolean().optional(),
+  pdfLinks: z.array(z.object({
+    name: z.string().min(1, { message: 'Dê um nome para este arquivo.' }),
+    url: z.string().url({ message: 'Insira um link válido.' }),
+  })).optional(),
 });
 
 interface SongEditFormProps {
@@ -49,7 +53,13 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
       lyrics: song.lyrics || '',
       chords: song.chords || '',
       isNew: song.isNew || false,
+      pdfLinks: song.pdfLinks || [],
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "pdfLinks",
   });
 
   const chordsTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -197,6 +207,71 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
                 </FormItem>
               )}
             />
+
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/10">
+                <div className="flex items-center justify-between">
+                    <FormLabel className="flex items-center gap-2 text-lg">
+                        <LinkIcon className="h-5 w-5" />
+                        Links de Cifras em PDF (Google Drive)
+                    </FormLabel>
+                    <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => append({ name: '', url: '' })}
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar PDF
+                    </Button>
+                </div>
+                
+                <div className="grid gap-4">
+                    {fields.map((field, index) => (
+                        <div key={field.id} className="flex gap-2 items-start p-4 border rounded-lg bg-card shadow-sm">
+                            <div className="grid flex-1 grid-cols-1 sm:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name={`pdfLinks.${index}.name`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Nome da Variação</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="ex: Cifra Simplificada" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name={`pdfLinks.${index}.url`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Link do Google Drive</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="https://drive.google.com/..." {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-destructive mt-8"
+                                onClick={() => remove(index)}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))}
+                    {fields.length === 0 && (
+                        <p className="text-center text-muted-foreground py-4 italic">Nenhum PDF cadastrado.</p>
+                    )}
+                </div>
+            </div>
             
             <div className="flex flex-col sm:flex-row justify-end gap-2">
               <Button type="button" variant="outline" onClick={onCancel}>

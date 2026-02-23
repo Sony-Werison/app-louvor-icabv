@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSchedule } from '@/context/schedule-context';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Trash2, Plus, Minus, ZoomIn, ZoomOut, Turtle, Rabbit, Play, Pause, FileText, Music, Timer } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Plus, Minus, ZoomIn, ZoomOut, Turtle, Rabbit, Play, Pause, FileText, Music, Timer, FileDown, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SongEditForm } from '@/components/song-edit-form';
@@ -24,7 +23,7 @@ import {
 import type { Song } from '@/types';
 import { getTransposedKey } from '@/lib/transpose';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
+import { cn, convertGoogleDriveUrl } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
 const MIN_FONT_SIZE = 0.8;
@@ -44,7 +43,8 @@ export default function SongDetailPage() {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [transpose, setTranspose] = useState(0);
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
-  const [activeTab, setActiveTab] = useState<'lyrics' | 'chords'>('lyrics');
+  const [activeTab, setActiveTab] = useState<'lyrics' | 'chords' | 'pdfs'>('lyrics');
+  const [activePdfIndex, setActivePdfIndex] = useState(0);
   
   const [isScrolling, setIsScrolling] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(5);
@@ -226,7 +226,7 @@ export default function SongDetailPage() {
   const zoomPercentage = Math.round((fontSize / DEFAULT_FONT_SIZE) * 100);
   
   return (
-    <div className="h-[calc(100vh-var(--header-height)-1px)] flex flex-col" style={{'--header-height': '7rem'} as React.CSSProperties}>
+    <div className="h-[calc(100vh-var(--header-height)-1px)] flex flex-col" style={{'--header-height': '7.5rem'} as React.CSSProperties}>
         <header className="flex-shrink-0 bg-background/95 backdrop-blur-sm z-20 border-b">
              <div className="h-14 flex items-center justify-between px-2 sm:px-4">
                 <Button variant="ghost" size="sm" onClick={() => router.push('/music')}>
@@ -250,12 +250,16 @@ export default function SongDetailPage() {
                     </div>
                 ) : <div className="w-10 sm:w-24"/>}
              </div>
-             <div className="h-14 flex items-center justify-between px-2 sm:px-4 gap-2 py-2 border-t">
-                <div className="flex items-center gap-2">
+             <div className="h-auto flex flex-col sm:flex-row items-center justify-between px-2 sm:px-4 gap-2 py-2 border-t">
+                <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
                     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
                         <TabsList>
                             <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>
                             <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
+                            <TabsTrigger value="pdfs" disabled={!song.pdfLinks || song.pdfLinks.length === 0}>
+                                <FileDown className="w-4 h-4 md:mr-2"/>
+                                <span className="hidden md:inline">Cifras (PDF)</span>
+                            </TabsTrigger>
                         </TabsList>
                     </Tabs>
                     
@@ -279,34 +283,72 @@ export default function SongDetailPage() {
                     )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
-                            <ZoomOut className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" onClick={resetFontSize} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">
-                            {zoomPercentage}%
-                        </Button>
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
-                            <ZoomIn className="h-4 w-4" />
-                        </Button>
-                    </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    {activeTab !== 'pdfs' && (
+                        <div className="flex items-center gap-1">
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
+                                <ZoomOut className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" onClick={resetFontSize} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">
+                                {zoomPercentage}%
+                            </Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
+                                <ZoomIn className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    )}
+                    {activeTab === 'pdfs' && song.pdfLinks && song.pdfLinks.length > 1 && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-muted-foreground">Variação:</span>
+                            <div className="flex gap-1">
+                                {song.pdfLinks.map((pdf, idx) => (
+                                    <Button 
+                                        key={idx} 
+                                        variant={activePdfIndex === idx ? 'default' : 'outline'} 
+                                        size="sm" 
+                                        className="h-8 text-xs"
+                                        onClick={() => setActivePdfIndex(idx)}
+                                    >
+                                        {pdf.name}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
              </div>
         </header>
 
       <main className="flex-grow min-h-0 relative">
-        <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
-            <div className="p-4 sm:p-8 pb-28" style={{ fontSize: `${fontSize}rem` }}>
-                 {activeTab === 'lyrics' ? (
-                    <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75'}}>
-                    {song.lyrics || 'Nenhuma letra disponível.'}
-                    </pre>
-                ) : (
-                    <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose} />
-                )}
+        {activeTab === 'pdfs' && song.pdfLinks?.[activePdfIndex] ? (
+            <div className="w-full h-full flex flex-col items-center bg-muted/20">
+                <div className="w-full flex justify-end p-2 gap-2">
+                    <Button variant="secondary" size="sm" asChild>
+                        <a href={song.pdfLinks[activePdfIndex].url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4 mr-2"/>
+                            Abrir no Drive
+                        </a>
+                    </Button>
+                </div>
+                <iframe 
+                    src={convertGoogleDriveUrl(song.pdfLinks[activePdfIndex].url)} 
+                    className="w-full h-full border-none flex-grow"
+                    allow="autoplay"
+                />
             </div>
-        </ScrollArea>
+        ) : (
+            <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
+                <div className="p-4 sm:p-8 pb-28" style={{ fontSize: `${fontSize}rem` }}>
+                    {activeTab === 'lyrics' ? (
+                        <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75'}}>
+                        {song.lyrics || 'Nenhuma letra disponível.'}
+                        </pre>
+                    ) : (
+                        <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose} />
+                    )}
+                </div>
+            </ScrollArea>
+        )}
         
         {activeTab === 'chords' && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-end justify-center gap-2 rounded-full border bg-background/80 px-4 py-2 shadow-lg backdrop-blur-sm">
