@@ -279,7 +279,7 @@ function LiveRoomComponent() {
     const readOnly = !isHost;
     
     return (
-      <div className="max-w-none w-full h-screen p-0 gap-0 flex flex-col bg-background" style={{'--header-height': '7.5rem'} as React.CSSProperties}>
+      <div className="max-w-none w-full h-screen p-0 gap-0 flex flex-col bg-background" style={{'--header-height': '7.5rem'} as any}>
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
              <header className="flex-shrink-0 bg-background/95 backdrop-blur-sm z-20 border-b">
                  <div className="h-full flex flex-col sm:flex-row items-center justify-between px-2 sm:px-4 gap-2 py-2" style={{height: 'var(--header-height)'}}>
@@ -391,7 +391,9 @@ function LiveRoomComponent() {
                                 <div className="flex items-center gap-2">
                                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={readOnly || currentState?.scroll.speed <= MIN_SPEED}><Turtle /></Button>
                                     <div className="flex flex-col items-center">
-                                        <button onClick={handleToggleScrolling} disabled={readOnly} className={cn("w-10 h-10 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring", currentState?.scroll.isScrolling && "bg-primary text-primary-foreground")}><{currentState?.scroll.isScrolling ? Pause : Play} className="fill-current w-6 h-6" /></button>
+                                        <button onClick={handleToggleScrolling} disabled={readOnly} className={cn("w-10 h-10 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring", currentState?.scroll.isScrolling && "bg-primary text-primary-foreground")}>
+                                            {currentState?.scroll.isScrolling ? <Pause className="fill-current w-6 h-6" /> : <Play className="fill-current w-6 h-6" />}
+                                        </button>
                                         <span className="text-xs font-bold w-6 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50">{currentState?.scroll.speed}</span>
                                     </div>
                                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(1)} disabled={readOnly || currentState?.scroll.speed >= MAX_SPEED}><Rabbit /></Button>
@@ -402,7 +404,9 @@ function LiveRoomComponent() {
                                 <div className="flex items-center gap-2">
                                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeMetronomeBpm(-5)} disabled={readOnly || currentState?.metronome.bpm <= MIN_BPM}><Minus /></Button>
                                     <div className="flex flex-col items-center">
-                                        <button onClick={handleToggleMetronome} disabled={readOnly} className={cn("w-10 h-10 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring", currentState?.metronome.isPlaying && "bg-primary text-primary-foreground")}><Timer className="w-6 h-6" /></button>
+                                        <button onClick={handleToggleMetronome} disabled={readOnly} className={cn("w-10 h-10 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring", currentState?.metronome.isPlaying && "bg-primary text-primary-foreground")}>
+                                            <Timer className="w-6 h-6" />
+                                        </button>
                                         <span className="text-xs font-bold w-12 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50 tabular-nums">{currentState?.metronome.bpm}</span>
                                     </div>
                                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeMetronomeBpm(5)} disabled={readOnly || currentState?.metronome.bpm >= MAX_BPM}><Plus /></Button>
