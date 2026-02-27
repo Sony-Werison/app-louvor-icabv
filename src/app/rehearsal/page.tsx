@@ -1,16 +1,15 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useSchedule } from '@/context/schedule-context';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PlaylistDialog } from '@/components/playlist-dialog';
 import { PlaylistViewer } from '@/components/playlist-viewer';
-import { ListMusic, Music, Trash2, Eye, Podcast, Plus, Sparkles } from 'lucide-react';
+import { ListMusic, Music, Trash2, Eye, Plus, Share2, Download, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Separator } from '@/components/ui/separator';
-import type { Schedule } from '@/types';
+import type { Schedule, Song } from '@/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,23 +21,36 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
+import * as htmlToImage from 'html-to-image';
+import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { format } from 'date-fns';
 
 export default function RehearsalPage() {
   const { rehearsalPlaylist, updateRehearsalPlaylist, songs } = useSchedule();
-  const router = useRouter();
+  const { shareMessage } = useAuth();
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [canShare, setCanShare] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        setCanShare(true);
+    }
+  }, []);
 
   const playlistSongs = useMemo(() => 
-    rehearsalPlaylist.map(id => songs.find(s => s.id === id)).filter((s): s is any => !!s)
+    rehearsalPlaylist.map(id => songs.find(s => s.id === id)).filter((s): s is Song => !!s)
   , [rehearsalPlaylist, songs]);
 
   const rehearsalSchedule: Schedule = {
     id: 'rehearsal',
     name: 'Ensaio do Ministério',
     date: new Date(),
-    leaderId: 'rehearsal-host', // Permite que qualquer um gerencie o ensaio
+    leaderId: 'rehearsal-host',
     preacherId: null,
     playlist: rehearsalPlaylist,
   };
@@ -51,6 +63,58 @@ export default function RehearsalPage() {
   const handleClearPlaylist = () => {
     updateRehearsalPlaylist([]);
   };
+
+  const captureAndAct = useCallback(async () => {
+    setIsCapturing(true);
+    const element = document.getElementById('rehearsal-card-to-capture');
+
+    if (!element) {
+      toast({ title: "Erro", description: "Não foi possível encontrar o elemento para exportar.", variant: "destructive" });
+      setIsCapturing(false);
+      return;
+    }
+
+    try {
+      const dataUrl = await htmlToImage.toPng(element, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: '#121212',
+      });
+      
+      const messageText = shareMessage
+        .replace(/\[PERIODO\]/g, 'Ensaio')
+        .replace(/\[DATA\]/g, format(new Date(), "dd/MM/yyyy"));
+
+      if (isMobile && canShare) {
+          const blob = await (await fetch(dataUrl)).blob();
+          const file = new File([blob], `repertorio_ensaio.png`, { type: blob.type });
+          
+          await navigator.share({
+              files: [file],
+              title: `Repertório - Ensaio`,
+              text: messageText,
+          }).catch((error) => {
+              if (error.name !== 'AbortError') throw error;
+          });
+      } else {
+        const link = document.createElement('a');
+        link.download = `repertorio_ensaio.png`;
+        link.href = dataUrl;
+        link.click();
+        toast({ title: 'Baixado!', description: 'A imagem foi baixada.' });
+      }
+    } catch (error: any) {
+        if (error.name !== 'AbortError') { 
+            console.error(`Action failed:`, error);
+            toast({ title: `Falha na Ação`, description: 'Não foi possível processar a imagem.', variant: 'destructive' });
+        }
+    } finally {
+      setIsCapturing(null as any);
+    }
+  }, [toast, isMobile, canShare, shareMessage]);
+
+  const actionIcon = isMobile && canShare ? <Share2 className="w-4 h-4 mr-2" /> : <Download className="w-4 h-4 mr-2" />;
+  const actionLabel = isMobile && canShare ? 'Compartilhar' : 'Baixar PNG';
 
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
@@ -94,7 +158,7 @@ export default function RehearsalPage() {
         </div>
       </div>
 
-      <Card>
+      <Card id="rehearsal-card-to-capture">
         <CardHeader>
           <CardTitle className="text-lg">Repertório Atual</CardTitle>
           <CardDescription>
@@ -123,16 +187,15 @@ export default function RehearsalPage() {
                   <Eye className="mr-2 h-4 w-4" />
                   Visualizar Cifras
                 </Button>
-                <div className="relative w-full sm:w-auto group">
-                    <Button variant="secondary" className="w-full sm:w-auto" onClick={() => router.push('/sala-ao-vivo?scheduleId=rehearsal')}>
-                        <Podcast className="mr-2 h-4 w-4" />
-                        Abrir Sala ao Vivo
-                    </Button>
-                    <Badge variant="outline" className="absolute -top-3 -right-2 bg-background text-[10px] px-1 h-4 border-amber-500 text-amber-500 pointer-events-none group-hover:scale-110 transition-transform">
-                        <Sparkles className="h-2.5 w-2.5 mr-1" />
-                        Beta
-                    </Badge>
-                </div>
+                <Button 
+                    variant="secondary" 
+                    className="w-full sm:w-auto" 
+                    onClick={captureAndAct}
+                    disabled={isCapturing}
+                >
+                    {isCapturing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : actionIcon}
+                    {actionLabel}
+                </Button>
               </div>
             </div>
           ) : (

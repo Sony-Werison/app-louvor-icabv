@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSchedule } from '@/context/schedule-context';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Trash2, Plus, Minus, ZoomIn, ZoomOut, Turtle, Rabbit, Play, Pause, FileText, Music, Timer, FileDown, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Plus, Minus, ZoomIn, ZoomOut, Turtle, Rabbit, Play, Pause, FileText, Music, FileDown, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SongEditForm } from '@/components/song-edit-form';
@@ -24,7 +24,6 @@ import type { Song } from '@/types';
 import { getTransposedKey } from '@/lib/transpose';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn, convertGoogleDriveUrl } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
 
 const MIN_FONT_SIZE = 0.8;
 const MAX_FONT_SIZE = 2.5;
@@ -32,8 +31,6 @@ const FONT_STEP = 0.1;
 const DEFAULT_FONT_SIZE = 1.25;
 const MIN_SPEED = 1;
 const MAX_SPEED = 10;
-const MIN_BPM = 30;
-const MAX_BPM = 300;
 
 export default function SongDetailPage() {
   const params = useParams();
@@ -54,70 +51,7 @@ export default function SongDetailPage() {
   const { can } = useAuth();
   const songId = params.id as string;
   const song = songs.find((s) => s.id === songId);
-  
-  const [metronomeBpm, setMetronomeBpm] = useState(song?.bpm || 120);
-  const [isMetronomePlaying, setIsMetronomePlaying] = useState(false);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const metronomeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-
-  // --- Metronome Logic ---
-  useEffect(() => {
-    return () => {
-      if (metronomeIntervalRef.current) {
-        clearInterval(metronomeIntervalRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    setMetronomeBpm(song?.bpm || 120);
-  }, [song?.bpm]);
-
-  const playClick = () => {
-    if (typeof window.AudioContext === 'undefined' && typeof (window as any).webkitAudioContext === 'undefined') return;
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    const context = audioContextRef.current;
-    const osc = context.createOscillator();
-    osc.frequency.value = 880;
-    osc.connect(context.destination);
-    osc.start(context.currentTime);
-    osc.stop(context.currentTime + 0.05);
-  };
-  
-  const handleToggleMetronome = () => {
-    if (isMetronomePlaying) {
-      if (metronomeIntervalRef.current) {
-        clearInterval(metronomeIntervalRef.current);
-        metronomeIntervalRef.current = null;
-      }
-      setIsMetronomePlaying(false);
-    } else {
-      playClick();
-      const interval = 60000 / metronomeBpm;
-      metronomeIntervalRef.current = setInterval(playClick, interval);
-      setIsMetronomePlaying(true);
-    }
-  };
-
-  const changeMetronomeBpm = (delta: number) => {
-    setMetronomeBpm(prevBpm => {
-      const newBpm = Math.max(MIN_BPM, Math.min(MAX_BPM, prevBpm + delta));
-      if (isMetronomePlaying) {
-        if (metronomeIntervalRef.current) {
-          clearInterval(metronomeIntervalRef.current);
-        }
-        playClick();
-        const interval = 60000 / newBpm;
-        metronomeIntervalRef.current = setInterval(playClick, interval);
-      }
-      return newBpm;
-    });
-  };
-
-  // --- Scrolling Logic ---
   const stopScrolling = () => {
     if (scrollIntervalRef.current) {
       clearInterval(scrollIntervalRef.current);
@@ -127,11 +61,10 @@ export default function SongDetailPage() {
   };
 
   useEffect(() => {
-    return () => stopScrolling(); // Cleanup on unmount
+    return () => stopScrolling();
   }, []);
 
   useEffect(() => {
-    // Reset scroll when tab changes
     if (scrollViewportRef.current) {
       scrollViewportRef.current.scrollTop = 0;
     }
@@ -178,7 +111,6 @@ export default function SongDetailPage() {
     }
   }
 
-  // --- Other Logic ---
   if (!song) {
     return (
       <div className="p-4 md:p-6 text-center">
@@ -344,10 +276,6 @@ export default function SongDetailPage() {
                                 </a>
                             </Button>
                         </div>
-                        {/* 
-                            Forcing height to enable parent ScrollArea to auto-scroll the element.
-                            This is a workaround because we cannot control the internal scroll of cross-origin iframes.
-                        */}
                         <div className="w-full h-[3000px]">
                             <iframe 
                                 src={convertGoogleDriveUrl(song.pdfLinks[activePdfIndex].url)} 
@@ -362,7 +290,6 @@ export default function SongDetailPage() {
         
         {(activeTab === 'chords' || activeTab === 'pdfs') && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-end justify-center gap-2 rounded-full border bg-background/80 px-4 py-2 shadow-lg backdrop-blur-sm">
-                {/* Scroll Controls */}
                 <div className="flex items-center gap-2">
                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>
                         <Turtle className="h-6 w-6" />
@@ -381,30 +308,6 @@ export default function SongDetailPage() {
                     </div>
                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(1)} disabled={scrollSpeed >= MAX_SPEED}>
                         <Rabbit className="h-6 w-6" />
-                    </Button>
-                </div>
-                
-                <Separator orientation="vertical" className="h-12"/>
-
-                {/* Metronome Controls */}
-                <div className="flex items-center gap-2">
-                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeMetronomeBpm(-5)} disabled={metronomeBpm <= MIN_BPM}>
-                        <Minus className="h-5 w-5" />
-                    </Button>
-                     <div className="flex flex-col items-center">
-                        <button
-                            onClick={handleToggleMetronome}
-                            className={cn("relative flex items-center justify-center w-10 h-10 text-foreground rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors",
-                            isMetronomePlaying && "bg-primary text-primary-foreground"
-                            )}
-                            aria-label={isMetronomePlaying ? "Pausar metrônomo" : "Iniciar metrônomo"}
-                        >
-                            <Timer className="w-6 h-6"/>
-                        </button>
-                        <span className="text-xs font-bold w-12 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50 tabular-nums">{metronomeBpm}</span>
-                    </div>
-                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeMetronomeBpm(5)} disabled={metronomeBpm >= MAX_BPM}>
-                        <Plus className="h-5 w-5" />
                     </Button>
                 </div>
             </div>
