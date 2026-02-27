@@ -1,7 +1,7 @@
 
 'use client';
 
-import Link from 'next/link';
+import Link from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ListMusic,
@@ -10,13 +10,13 @@ import {
   CalendarRange,
   Settings,
   History,
-  DraftingCompass,
+  Music,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 
 const menuItems = [
   { href: '/schedule', label: 'Aberturas', icon: ListMusic },
-  { href: '/rehearsal', label: 'Ensaio', icon: DraftingCompass },
+  { href: '/rehearsal', label: 'Ensaio', icon: Music },
   { href: '/monthly-schedule', label: 'Escala Mensal', icon: CalendarRange },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },

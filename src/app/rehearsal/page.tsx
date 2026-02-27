@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PlaylistDialog } from '@/components/playlist-dialog';
 import { PlaylistViewer } from '@/components/playlist-viewer';
-import { ListMusic, DraftingCompass, Trash2, Eye, Podcast, Plus } from 'lucide-react';
+import { ListMusic, Music, Trash2, Eye, Podcast, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
 import type { Schedule } from '@/types';
@@ -26,7 +26,6 @@ import {
 
 export default function RehearsalPage() {
   const { rehearsalPlaylist, updateRehearsalPlaylist, songs } = useSchedule();
-  const { can } = useAuth();
   const router = useRouter();
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
@@ -39,7 +38,7 @@ export default function RehearsalPage() {
     id: 'rehearsal',
     name: 'Ensaio do Ministério',
     date: new Date(),
-    leaderId: 'rehearsal-host', // dummy id to allow management
+    leaderId: 'rehearsal-host', // Permite que qualquer um gerencie o ensaio
     preacherId: null,
     playlist: rehearsalPlaylist,
   };
@@ -58,7 +57,7 @@ export default function RehearsalPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-headline font-bold flex items-center gap-2">
-            <DraftingCompass className="text-primary" />
+            <Music className="text-primary" />
             Ensaio
           </h1>
           <p className="text-muted-foreground text-sm">

@@ -10,13 +10,13 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { ListMusic, Library, Users, CalendarRange, Settings, Home, History, DraftingCompass } from 'lucide-react';
+import { ListMusic, Library, Users, CalendarRange, Settings, Home, History, Music } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 
 const navItems = [
   { href: '/', label: 'Início', icon: Home },
   { href: '/schedule', label: 'Aberturas', icon: ListMusic },
-  { href: '/rehearsal', label: 'Ensaio', icon: DraftingCompass },
+  { href: '/rehearsal', label: 'Ensaio', icon: Music },
   { href: '/monthly-schedule', label: 'Escala Mensal', icon: CalendarRange },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },
