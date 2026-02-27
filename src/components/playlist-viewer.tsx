@@ -31,7 +31,7 @@ import { Separator } from './ui/separator';
 interface PlaylistViewerProps {
   schedule: Schedule;
   songs: Song[];
-  onOpenChange: (open: boolean) void;
+  onOpenChange: (open: boolean) => void;
 }
 
 const MIN_FONT_SIZE = 0.8;
