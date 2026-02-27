@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -33,7 +34,7 @@ function LiveRoomComponent() {
     const searchParams = useSearchParams();
     const scheduleId = searchParams.get('scheduleId');
 
-    const { monthlySchedules, songs } = useSchedule();
+    const { monthlySchedules, songs, rehearsalPlaylist } = useSchedule();
     const { user, can } = useAuth();
     const { toast } = useToast();
 
@@ -65,6 +66,16 @@ function LiveRoomComponent() {
 
     const transformedSchedule = useMemo(() => {
         if (!scheduleId) return null;
+
+        if (scheduleId === 'rehearsal') {
+            return {
+                id: 'rehearsal',
+                name: 'Ensaio do Ministério',
+                date: new Date(),
+                playlist: rehearsalPlaylist,
+            } as Partial<Schedule>;
+        }
+
         const idParts = scheduleId.split('-');
         const scheduleType = idParts[1];
         const monthlyId = idParts.slice(2).join('-');
@@ -78,7 +89,7 @@ function LiveRoomComponent() {
             date: monthlySchedule.date,
             playlist: scheduleType === 'manha' ? monthlySchedule.playlist_manha : monthlySchedule.playlist_noite,
         } as Partial<Schedule>;
-    }, [scheduleId, monthlySchedules]);
+    }, [scheduleId, monthlySchedules, rehearsalPlaylist]);
 
     const songsInPlaylist = useMemo(() => 
         (transformedSchedule?.playlist || []).map(id => songs.find(s => s.id === id)).filter((s): s is Song => !!s)
@@ -340,7 +351,7 @@ function LiveRoomComponent() {
                            )}
                        </div>
                        
-                       <Button variant="ghost" size="icon" onClick={() => router.push('/schedule')} className="shrink-0"><X/></Button>
+                       <Button variant="ghost" size="icon" onClick={() => router.back()} className="shrink-0"><X/></Button>
                      </div>
                  </div>
              </header>

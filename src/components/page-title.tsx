@@ -7,6 +7,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 const routeTitles: { [key: string]: string } = {
     '/': 'Início',
     '/schedule': 'Aberturas da Semana',
+    '/rehearsal': 'Ensaio do Ministério',
     '/monthly-schedule': 'Escala Mensal',
     '/music': 'Biblioteca de Músicas',
     '/members': 'Membros',

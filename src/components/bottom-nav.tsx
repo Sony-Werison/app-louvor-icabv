@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ListMusic, Library, Users, CalendarRange, Settings, Home, History } from 'lucide-react';
+import { ListMusic, Library, Users, CalendarRange, Settings, Home, History, DraftingCompass } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
@@ -11,10 +11,9 @@ import { useAuth } from '@/context/auth-context';
 const navItems = [
   { href: '/', label: 'Início', icon: Home },
   { href: '/schedule', label: 'Aberturas', icon: ListMusic },
-  { href: '/monthly-schedule', label: 'Escala', icon: CalendarRange },
+  { href: '/rehearsal', label: 'Ensaio', icon: DraftingCompass },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },
-  { href: '/history', label: 'Histórico', icon: History },
 ];
 
 const adminNavItems = [
