@@ -350,25 +350,15 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                     <CardFooter className="p-2 schedule-card-footer">
                         <div className="flex flex-col gap-2 w-full">
                             <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/3">
+                                <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className={cn("h-8 text-xs", canManagePlaylists ? "w-1/2" : "w-full")}>
                                     <Eye className="w-4 h-4 mr-2" />
-                                    Voz
+                                    Ver
                                 </Button>
-                                <div className="relative w-1/3 group">
-                                    <Button variant="outline" onClick={() => router.push(`/sala-ao-vivo?scheduleId=${schedule.id}`)} className="h-8 text-xs w-full">
-                                        <Podcast className="w-4 h-4 mr-2" />
-                                        Ao Vivo
-                                    </Button>
-                                    <Badge variant="outline" className="absolute -top-2 -right-1 bg-background text-[8px] px-1 h-3.5 border-amber-500 text-amber-500 pointer-events-none">
-                                        <Sparkles className="h-2 w-2 mr-0.5" />
-                                        Beta
-                                    </Badge>
-                                </div>
                                 {canManagePlaylists && (
                                      <Button 
                                         variant="outline"
                                         onClick={() => captureAndAct(schedule.id, actionType)} 
-                                        className="h-8 text-xs w-1/3" 
+                                        className="h-8 text-xs w-1/2" 
                                         disabled={isCurrentlyExporting || !hasPlaylist}>
                                         {isCurrentlyExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : actionIcon}
                                         {actionLabel}

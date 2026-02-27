@@ -28,13 +28,15 @@ import { format } from 'date-fns';
 
 export default function RehearsalPage() {
   const { rehearsalPlaylist, updateRehearsalPlaylist, songs } = useSchedule();
-  const { shareMessage } = useAuth();
+  const { can, shareMessage } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [canShare, setCanShare] = useState(false);
+
+  const isAuthorized = can('manage:playlists');
 
   useEffect(() => {
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
@@ -135,7 +137,7 @@ export default function RehearsalPage() {
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-            {playlistSongs.length > 0 && (
+            {isAuthorized && playlistSongs.length > 0 && (
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
@@ -157,10 +159,12 @@ export default function RehearsalPage() {
                     </AlertDialogContent>
                 </AlertDialog>
             )}
-            <Button onClick={() => setIsPlaylistDialogOpen(true)} size="sm" className="flex-1 sm:flex-none">
-                <Plus className="mr-2 h-4 w-4" />
-                Montar Lista
-            </Button>
+            {isAuthorized && (
+              <Button onClick={() => setIsPlaylistDialogOpen(true)} size="sm" className="flex-1 sm:flex-none">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Gerenciar Lista
+              </Button>
+            )}
         </div>
       </div>
 
@@ -193,22 +197,24 @@ export default function RehearsalPage() {
                   <Eye className="mr-2 h-4 w-4" />
                   Visualizar Cifras
                 </Button>
-                <Button 
-                    variant="secondary" 
-                    className="w-full sm:w-auto" 
-                    onClick={captureAndAct}
-                    disabled={isCapturing}
-                >
-                    {isCapturing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : actionIcon}
-                    {actionLabel}
-                </Button>
+                {isAuthorized && (
+                  <Button 
+                      variant="secondary" 
+                      className="w-full sm:w-auto" 
+                      onClick={captureAndAct}
+                      disabled={isCapturing}
+                  >
+                      {isCapturing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : actionIcon}
+                      {actionLabel}
+                  </Button>
+                )}
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
               <ListMusic className="h-12 w-12 mb-4 opacity-20" />
               <p className="font-medium">Nenhuma música no ensaio</p>
-              <p className="text-sm">Clique em "Montar Lista" para começar seu ensaio.</p>
+              <p className="text-sm">Clique em "Gerenciar Lista" para começar seu ensaio.</p>
             </div>
           )}
         </CardContent>
