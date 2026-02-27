@@ -320,37 +320,47 @@ export default function SongDetailPage() {
         </header>
 
       <main className="flex-grow min-h-0 relative">
-        {activeTab === 'pdfs' && song.pdfLinks?.[activePdfIndex] ? (
-            <div className="w-full h-full flex flex-col items-center bg-muted/20">
-                <div className="w-full flex justify-end p-2 gap-2">
-                    <Button variant="secondary" size="sm" asChild>
-                        <a href={song.pdfLinks[activePdfIndex].url} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4 mr-2"/>
-                            Abrir no Drive
-                        </a>
-                    </Button>
-                </div>
-                <iframe 
-                    src={convertGoogleDriveUrl(song.pdfLinks[activePdfIndex].url)} 
-                    className="w-full h-full border-none flex-grow"
-                    allow="autoplay"
-                />
-            </div>
-        ) : (
-            <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
-                <div className="p-4 sm:p-8 pb-28" style={{ fontSize: `${fontSize}rem` }}>
-                    {activeTab === 'lyrics' ? (
+        <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
+            <div className={cn("p-4 sm:p-8 pb-28", activeTab === 'pdfs' && "p-0 sm:p-0 pb-28")}>
+                {activeTab === 'lyrics' && (
+                    <div style={{ fontSize: `${fontSize}rem` }}>
                         <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75'}}>
                         {song.lyrics || 'Nenhuma letra disponível.'}
                         </pre>
-                    ) : (
+                    </div>
+                )}
+                {activeTab === 'chords' && (
+                    <div style={{ fontSize: `${fontSize}rem` }}>
                         <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose} />
-                    )}
-                </div>
-            </ScrollArea>
-        )}
+                    </div>
+                )}
+                {activeTab === 'pdfs' && song.pdfLinks?.[activePdfIndex] && (
+                    <div className="w-full flex flex-col items-center bg-muted/20">
+                        <div className="w-full flex justify-end p-2 gap-2 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+                            <Button variant="secondary" size="sm" asChild>
+                                <a href={song.pdfLinks[activePdfIndex].url} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4 mr-2"/>
+                                    Abrir no Drive
+                                </a>
+                            </Button>
+                        </div>
+                        {/* 
+                            Forcing height to enable parent ScrollArea to auto-scroll the element.
+                            This is a workaround because we cannot control the internal scroll of cross-origin iframes.
+                        */}
+                        <div className="w-full h-[3000px]">
+                            <iframe 
+                                src={convertGoogleDriveUrl(song.pdfLinks[activePdfIndex].url)} 
+                                className="w-full h-full border-none"
+                                allow="autoplay"
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </ScrollArea>
         
-        {activeTab === 'chords' && (
+        {(activeTab === 'chords' || activeTab === 'pdfs') && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-end justify-center gap-2 rounded-full border bg-background/80 px-4 py-2 shadow-lg backdrop-blur-sm">
                 {/* Scroll Controls */}
                 <div className="flex items-center gap-2">

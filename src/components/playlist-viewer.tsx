@@ -31,7 +31,7 @@ import { Separator } from './ui/separator';
 interface PlaylistViewerProps {
   schedule: Schedule;
   songs: Song[];
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (open: boolean) void;
 }
 
 const MIN_FONT_SIZE = 0.8;
@@ -251,8 +251,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                               <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>
                               <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
                               <TabsTrigger value="pdfs" disabled={!activeSong?.pdfLinks || activeSong.pdfLinks.length === 0}>
-                                  <FileDown className="w-4 h-4 md:mr-2"/>
-                                  <span className="hidden md:inline">Cifras (Arquivo)</span>
+                                  <FileDown className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras (Arquivo)</span>
                               </TabsTrigger>
                           </TabsList>
                         </Tabs>
@@ -312,42 +311,50 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
               </header>
 
               <main className="flex-grow min-h-0 relative group/main h-[calc(100vh-var(--header-height))]">
-                  {activeTab === 'pdfs' && activeSong?.pdfLinks?.[activePdfIndex] ? (
-                      <div className="w-full h-full flex flex-col items-center bg-muted/20">
-                          <div className="w-full flex justify-end p-2 gap-2">
-                              <Button variant="secondary" size="sm" asChild>
-                                  <a href={activeSong.pdfLinks[activePdfIndex].url} target="_blank" rel="noopener noreferrer">
-                                      <ExternalLink className="h-4 w-4 mr-2"/>
-                                      Abrir no Drive
-                                  </a>
-                              </Button>
-                          </div>
-                          <iframe 
-                              src={convertGoogleDriveUrl(activeSong.pdfLinks[activePdfIndex].url)} 
-                              className="w-full h-full border-none flex-grow"
-                              allow="autoplay"
-                          />
-                      </div>
-                  ) : (
-                      <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
+                  <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
+                      <div className={cn("p-4 sm:p-8 pb-32", activeTab === 'pdfs' && "p-0 sm:p-0 pb-32")}>
                       {activeSong ? (
-                          <div className="p-4 sm:p-8 pb-32" style={{ fontSize: `${fontSize}rem` }}>
-                              {activeTab === 'lyrics' ? (
-                                  <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75', whiteSpace: 'pre-wrap'}}>
-                                      {activeSong.lyrics || 'Nenhuma letra disponível.'}
-                                  </pre>
-                              ) : (
-                                  <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose}/>
+                          <>
+                              {activeTab === 'lyrics' && (
+                                  <div style={{ fontSize: `${fontSize}rem` }}>
+                                      <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75', whiteSpace: 'pre-wrap'}}>
+                                          {activeSong.lyrics || 'Nenhuma letra disponível.'}
+                                      </pre>
+                                  </div>
                               )}
-                          </div>
+                              {activeTab === 'chords' && (
+                                  <div style={{ fontSize: `${fontSize}rem` }}>
+                                      <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose}/>
+                                  </div>
+                              )}
+                              {activeTab === 'pdfs' && activeSong.pdfLinks?.[activePdfIndex] && (
+                                  <div className="w-full flex flex-col items-center bg-muted/20">
+                                      <div className="w-full flex justify-end p-2 gap-2 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+                                          <Button variant="secondary" size="sm" asChild>
+                                              <a href={activeSong.pdfLinks[activePdfIndex].url} target="_blank" rel="noopener noreferrer">
+                                                  <ExternalLink className="h-4 w-4 mr-2"/>
+                                                  Abrir no Drive
+                                              </a>
+                                          </Button>
+                                      </div>
+                                      <div className="w-full h-[3000px]">
+                                          <iframe 
+                                              src={convertGoogleDriveUrl(activeSong.pdfLinks[activePdfIndex].url)} 
+                                              className="w-full h-full border-none"
+                                              allow="autoplay"
+                                          />
+                                      </div>
+                                  </div>
+                              )}
+                          </>
                       ) : (
                           <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
                               <h3 className="text-lg font-semibold">Nenhuma música no repertório</h3>
                               <p className="text-sm">Adicione músicas na tela de gerenciamento.</p>
                           </div>
                       )}
-                      </ScrollArea>
-                  )}
+                      </div>
+                  </ScrollArea>
                   
                   {activeSong && (
                     <>
@@ -357,7 +364,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                             </Button>
                         </div>
 
-                        {activeTab === 'chords' && (
+                        {(activeTab === 'chords' || activeTab === 'pdfs') && (
                             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-end justify-center gap-2 rounded-full border bg-background/80 px-4 py-2 shadow-lg backdrop-blur-sm">
                                 {/* Scroll Controls */}
                                 <div className="flex items-center gap-2">

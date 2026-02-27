@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -16,7 +15,7 @@ import { cn, convertGoogleDriveUrl } from '@/lib/utils';
 import { getTransposedKey } from '@/lib/transpose';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle as SheetTitleComponent, SheetDescription as SheetDescriptionComponent, SheetTrigger } from '@/components/ui/sheet';
-import { FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Timer, Podcast, WifiOff, ArrowLeft, Play, Pause, FileDown, ExternalLink } from 'lucide-react';
+import { FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Timer, Podcast, WifiOff, ArrowLeft, Play, Pause, FileDown, ExternalLink, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const MIN_FONT_SIZE = 0.8;
@@ -290,10 +289,14 @@ function LiveRoomComponent() {
     const readOnly = !isHost;
     
     return (
-      <div className="max-w-none w-full h-screen p-0 gap-0 flex flex-col bg-background" style={{'--header-height': '7.5rem'} as any}>
+      <div className="max-w-none w-full h-screen p-0 gap-0 flex flex-col bg-background" style={{'--header-height': '7.5rem'} as React.CSSProperties}>
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
              <header className="flex-shrink-0 bg-background/95 backdrop-blur-sm z-20 border-b">
-                 <div className="h-full flex flex-col sm:flex-row items-center justify-between px-2 sm:px-4 gap-2 py-2" style={{height: 'var(--header-height)'}}>
+                 <div className="bg-amber-500/10 text-amber-500 py-1 text-[10px] text-center font-bold flex items-center justify-center gap-2">
+                    <AlertTriangle className="h-3 w-3" />
+                    RECURSO EM DESENVOLVIMENTO - INSTABILIDADES PODEM OCORRER
+                 </div>
+                 <div className="flex flex-col sm:flex-row items-center justify-between px-2 sm:px-4 gap-2 py-2" style={{height: 'calc(var(--header-height) - 1.5rem)'}}>
                      <div className="flex items-center gap-2 flex-1 min-w-0 w-full overflow-x-auto pb-1 sm:pb-0">
                          <SheetTrigger asChild>
                              <Button variant="destructive" size="sm" className="shrink-0">
@@ -357,39 +360,47 @@ function LiveRoomComponent() {
              </header>
 
               <main className="flex-grow min-h-0 relative group/main h-[calc(100vh-var(--header-height))]">
-                  {activeTab === 'pdfs' && activeSong?.pdfLinks?.[activePdfIndex] ? (
-                      <div className="w-full h-full flex flex-col items-center bg-muted/20">
-                          <div className="w-full flex justify-end p-2 gap-2">
-                              <Button variant="secondary" size="sm" asChild>
-                                  <a href={activeSong.pdfLinks[activePdfIndex].url} target="_blank" rel="noopener noreferrer">
-                                      <ExternalLink className="h-4 w-4 mr-2"/>
-                                      Abrir no Drive
-                                  </a>
-                              </Button>
-                          </div>
-                          <iframe 
-                              src={convertGoogleDriveUrl(activeSong.pdfLinks[activePdfIndex].url)} 
-                              className="w-full h-full border-none flex-grow"
-                              allow="autoplay"
-                          />
-                      </div>
-                  ) : (
-                      <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
+                  <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
+                      <div className={cn("p-4 sm:p-8 pb-32", activeTab === 'pdfs' && "p-0 sm:p-0 pb-32")}>
                           {activeSong ? (
-                              <div className="p-4 sm:p-8 pb-32" style={{ fontSize: `${fontSize}rem` }}>
-                                  {activeTab === 'lyrics' ? (
-                                      <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75'}}>{activeSong.lyrics || 'Nenhuma letra.'}</pre>
-                                  ) : (
-                                      <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra.'} transposeBy={currentState?.transpose || 0}/>
+                              <>
+                                  {activeTab === 'lyrics' && (
+                                      <div style={{ fontSize: `${fontSize}rem` }}>
+                                          <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75'}}>{activeSong.lyrics || 'Nenhuma letra.'}</pre>
+                                      </div>
                                   )}
-                              </div>
+                                  {activeTab === 'chords' && (
+                                      <div style={{ fontSize: `${fontSize}rem` }}>
+                                          <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra.'} transposeBy={currentState?.transpose || 0}/>
+                                      </div>
+                                  )}
+                                  {activeTab === 'pdfs' && activeSong.pdfLinks?.[activePdfIndex] && (
+                                      <div className="w-full flex flex-col items-center bg-muted/20">
+                                          <div className="w-full flex justify-end p-2 gap-2 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+                                              <Button variant="secondary" size="sm" asChild>
+                                                  <a href={activeSong.pdfLinks[activePdfIndex].url} target="_blank" rel="noopener noreferrer">
+                                                      <ExternalLink className="h-4 w-4 mr-2"/>
+                                                      Abrir no Drive
+                                                  </a>
+                                              </Button>
+                                          </div>
+                                          <div className="w-full h-[3000px]">
+                                              <iframe 
+                                                  src={convertGoogleDriveUrl(activeSong.pdfLinks[activePdfIndex].url)} 
+                                                  className="w-full h-full border-none"
+                                                  allow="autoplay"
+                                              />
+                                          </div>
+                                      </div>
+                                  )}
+                              </>
                           ) : (
                                <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
                                   <h3 className="text-lg font-semibold">Nenhuma música no repertório</h3>
                               </div>
                           )}
-                      </ScrollArea>
-                  )}
+                      </div>
+                  </ScrollArea>
 
                   {activeSong && (
                     <>
@@ -399,7 +410,7 @@ function LiveRoomComponent() {
                              </Button>
                         </div>
 
-                        {activeTab === 'chords' && (
+                        {(activeTab === 'chords' || activeTab === 'pdfs') && (
                             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-end justify-center gap-2 rounded-full border bg-background/80 px-4 py-2 shadow-lg backdrop-blur-sm">
                                 <div className="flex items-center gap-2">
                                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={readOnly || currentState?.scroll.speed <= MIN_SPEED}><Turtle /></Button>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PlaylistDialog } from '@/components/playlist-dialog';
 import { PlaylistViewer } from '@/components/playlist-viewer';
-import { ListMusic, Music, Trash2, Eye, Podcast, Plus } from 'lucide-react';
+import { ListMusic, Music, Trash2, Eye, Podcast, Plus, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
 import type { Schedule } from '@/types';
@@ -23,6 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 
 export default function RehearsalPage() {
   const { rehearsalPlaylist, updateRehearsalPlaylist, songs } = useSchedule();
@@ -123,10 +123,16 @@ export default function RehearsalPage() {
                   <Eye className="mr-2 h-4 w-4" />
                   Visualizar Cifras
                 </Button>
-                <Button variant="secondary" className="w-full sm:w-auto" onClick={() => router.push('/sala-ao-vivo?scheduleId=rehearsal')}>
-                  <Podcast className="mr-2 h-4 w-4" />
-                  Abrir Sala ao Vivo
-                </Button>
+                <div className="relative w-full sm:w-auto group">
+                    <Button variant="secondary" className="w-full sm:w-auto" onClick={() => router.push('/sala-ao-vivo?scheduleId=rehearsal')}>
+                        <Podcast className="mr-2 h-4 w-4" />
+                        Abrir Sala ao Vivo
+                    </Button>
+                    <Badge variant="outline" className="absolute -top-3 -right-2 bg-background text-[10px] px-1 h-4 border-amber-500 text-amber-500 pointer-events-none group-hover:scale-110 transition-transform">
+                        <Sparkles className="h-2.5 w-2.5 mr-1" />
+                        Beta
+                    </Badge>
+                </div>
               </div>
             </div>
           ) : (

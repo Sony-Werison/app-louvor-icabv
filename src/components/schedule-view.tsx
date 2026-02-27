@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -9,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaylistDialog } from '@/components/playlist-dialog';
 import { PlaylistViewer } from '@/components/playlist-viewer';
-import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2, AlertTriangle, Share2 } from 'lucide-react';
+import { ListMusic, Users, Mic, BookUser, Tv, Eye, Sun, Moon, Download, Loader2, AlertTriangle, Share2, Podcast, Sparkles } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useSchedule } from '@/context/schedule-context';
 import { Separator } from './ui/separator';
@@ -21,6 +19,8 @@ import * as htmlToImage from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
+import { Badge } from './ui/badge';
+import { useRouter } from 'next/navigation';
 
 
 interface ScheduleViewProps {
@@ -109,6 +109,7 @@ const EditableTitle = ({ schedule, canEdit, onUpdate }: { schedule: Schedule, ca
 
 
 export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds, onScheduleUpdate }: ScheduleViewProps) {
+  const router = useRouter();
   const [schedules, setSchedules] = useState(initialSchedules);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
@@ -349,15 +350,25 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                     <CardFooter className="p-2 schedule-card-footer">
                         <div className="flex flex-col gap-2 w-full">
                             <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/2">
+                                <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-1/3">
                                     <Eye className="w-4 h-4 mr-2" />
-                                    Visualizar
+                                    Voz
                                 </Button>
+                                <div className="relative w-1/3 group">
+                                    <Button variant="outline" onClick={() => router.push(`/sala-ao-vivo?scheduleId=${schedule.id}`)} className="h-8 text-xs w-full">
+                                        <Podcast className="w-4 h-4 mr-2" />
+                                        Ao Vivo
+                                    </Button>
+                                    <Badge variant="outline" className="absolute -top-2 -right-1 bg-background text-[8px] px-1 h-3.5 border-amber-500 text-amber-500 pointer-events-none">
+                                        <Sparkles className="h-2 w-2 mr-0.5" />
+                                        Beta
+                                    </Badge>
+                                </div>
                                 {canManagePlaylists && (
                                      <Button 
                                         variant="outline"
                                         onClick={() => captureAndAct(schedule.id, actionType)} 
-                                        className="h-8 text-xs w-1/2" 
+                                        className="h-8 text-xs w-1/3" 
                                         disabled={isCurrentlyExporting || !hasPlaylist}>
                                         {isCurrentlyExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : actionIcon}
                                         {actionLabel}
@@ -367,7 +378,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                             {canManagePlaylists && (
                                 <Button onClick={() => handleOpenPlaylist(schedule)} className="w-full h-8 text-xs">
                                     <ListMusic className="w-4 h-4 mr-2" />
-                                    Gerenciar
+                                    Gerenciar Repertório
                                 </Button>
                             )}
                         </div>
