@@ -184,7 +184,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
         quality: 1,
         pixelRatio: 2,
         backgroundColor: '#121212',
-        // Re-fetch images to avoid CORS issues
+        skipFonts: true, // Crucial para evitar erro de 'cssRules' com stylesheets externos
         fetchRequestInit: {
             mode: 'cors',
             cache: 'no-cache',
@@ -228,7 +228,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
         if (scheduleCard) scheduleCard.classList.remove('capturing');
         if (error.name !== 'AbortError') { 
             console.error(`Action failed:`, error);
-            toast({ title: `Falha na Ação`, description: 'Não foi possível processar a imagem.', variant: 'destructive' });
+            toast({ title: `Falha na Ação`, description: 'Não foi possível processar a imagem por restrições de segurança do navegador.', variant: 'destructive' });
         }
     } finally {
       setIsCapturing(null);

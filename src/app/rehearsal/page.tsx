@@ -75,10 +75,16 @@ export default function RehearsalPage() {
     }
 
     try {
+      // Adiciona skipFonts para evitar erro de 'cssRules' com fontes externas (CORS)
       const dataUrl = await htmlToImage.toPng(element, {
         quality: 1,
         pixelRatio: 2,
         backgroundColor: '#121212',
+        skipFonts: true, // Crucial para evitar o erro de CORS com stylesheets
+        fetchRequestInit: {
+            mode: 'cors',
+            cache: 'no-cache',
+        },
       });
       
       const messageText = shareMessage
@@ -106,10 +112,10 @@ export default function RehearsalPage() {
     } catch (error: any) {
         if (error.name !== 'AbortError') { 
             console.error(`Action failed:`, error);
-            toast({ title: `Falha na Ação`, description: 'Não foi possível processar a imagem.', variant: 'destructive' });
+            toast({ title: `Falha na Ação`, description: 'Não foi possível processar a imagem por restrições de segurança do navegador.', variant: 'destructive' });
         }
     } finally {
-      setIsCapturing(null as any);
+      setIsCapturing(false);
     }
   }, [toast, isMobile, canShare, shareMessage]);
 
