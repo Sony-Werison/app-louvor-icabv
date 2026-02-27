@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Podcast, FileDown, ExternalLink } from 'lucide-react';
+import { Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, FileDown, ExternalLink, Plus, Minus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Badge } from './ui/badge';
@@ -189,7 +189,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                         {activeTab === 'chords' && (
                             <div className="flex items-center gap-1 shrink-0">
                                 <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose - 1)}>
-                                    <X className="h-4 w-4 rotate-45"/>
+                                    <Minus className="h-4 w-4"/>
                                 </Button>
                                 <div className="flex flex-col items-center w-8">
                                     <span className="text-[10px] text-muted-foreground -mb-1">Tom</span>
@@ -232,7 +232,6 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                                 )
                             )}
                         </div>
-                        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => router.push(`/sala-ao-vivo?scheduleId=${schedule.id}`)}><Podcast/></Button>
                         <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0">
                           <X/>
                         </Button>
