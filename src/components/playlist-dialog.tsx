@@ -270,7 +270,8 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                         <TabsTrigger key={filter} value={filter} className="text-xs sm:text-sm">{quickFilterLabels[filter]}</TabsTrigger>
                                     ))}
                                 </TabsList>
-                            </div>
+                            </Tabs>
+                        </div>
                     )}
                 </div>
                  <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground shrink-0">
