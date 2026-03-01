@@ -285,20 +285,20 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                   <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
                       <div className={cn(
                           "p-4 sm:p-8 pb-32 transition-all duration-300", 
-                          activeTab === 'pdfs' && "p-0 sm:p-0 pb-32",
-                          isFitWidth && activeTab !== 'pdfs' && "px-1 sm:px-2 md:px-4 max-w-none"
+                          activeTab === 'pdfs' && "p-0 pb-32",
+                          isFitWidth && "px-0 sm:px-0 md:px-0 max-w-none"
                       )}>
                       {activeSong ? (
                           <>
                               {activeTab === 'lyrics' && (
-                                  <div style={{ fontSize: `${fontSize}rem` }}>
+                                  <div className={cn(isFitWidth ? "px-2" : "")} style={{ fontSize: `${fontSize}rem` }}>
                                       <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75', whiteSpace: 'pre-wrap'}}>
                                           {activeSong.lyrics || 'Nenhuma letra disponível.'}
                                       </pre>
                                   </div>
                               )}
                               {activeTab === 'chords' && (
-                                  <div style={{ fontSize: `${fontSize}rem` }}>
+                                  <div className={cn(isFitWidth ? "px-2" : "")} style={{ fontSize: `${fontSize}rem` }}>
                                       <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose}/>
                                   </div>
                               )}
@@ -316,7 +316,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                                           className="w-full transition-all duration-300 origin-top"
                                           style={{ 
                                               height: `${3000 * scale}px`,
-                                              width: isFitWidth ? '100%' : `${100 / scale}%`,
+                                              width: `${100 / scale}%`,
                                               transform: `scale(${scale})`,
                                           }}
                                       >

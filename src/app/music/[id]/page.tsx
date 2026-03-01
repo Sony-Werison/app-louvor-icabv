@@ -78,7 +78,7 @@ export default function SongDetailPage() {
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => window.removeOriginEventListener ? null : window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -314,18 +314,18 @@ export default function SongDetailPage() {
         <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
             <div className={cn(
                 "p-4 sm:p-8 pb-28 transition-all duration-300", 
-                activeTab === 'pdfs' && "p-0 sm:p-0 pb-28",
-                isFitWidth && activeTab !== 'pdfs' && "px-1 sm:px-2 md:px-4 max-w-none"
+                activeTab === 'pdfs' && "p-0 pb-28",
+                isFitWidth && "px-0 sm:px-0 md:px-0 max-w-none"
             )}>
                 {activeTab === 'lyrics' && (
-                    <div style={{ fontSize: `${fontSize}rem` }}>
+                    <div className={cn(isFitWidth ? "px-2" : "")} style={{ fontSize: `${fontSize}rem` }}>
                         <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75'}}>
                         {song.lyrics || 'Nenhuma letra disponível.'}
                         </pre>
                     </div>
                 )}
                 {activeTab === 'chords' && (
-                    <div style={{ fontSize: `${fontSize}rem` }}>
+                    <div className={cn(isFitWidth ? "px-2" : "")} style={{ fontSize: `${fontSize}rem` }}>
                         <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose} />
                     </div>
                 )}
@@ -343,7 +343,7 @@ export default function SongDetailPage() {
                             className="w-full transition-all duration-300 origin-top"
                             style={{ 
                                 height: `${3000 * scale}px`,
-                                width: isFitWidth ? '100%' : `${100 / scale}%`,
+                                width: `${100 / scale}%`,
                                 transform: `scale(${scale})`,
                             }}
                         >
