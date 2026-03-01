@@ -38,6 +38,8 @@ interface ScheduleContextType {
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
+const BATCH_SIZE = 50;
+
 export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [members, setMembers] = useState<Member[]>([]);
   const [rawSongs, setRawSongs] = useState<Song[]>([]);
@@ -249,52 +251,87 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   
   const removeSongs = async (songIds: string[]) => {
     if (!supabase) return;
-    const { error } = await supabase.from('songs').delete().in('id', songIds);
-    if(error){
+    
+    try {
+        // Process in batches to avoid URL/body limits
+        for (let i = 0; i < songIds.length; i += BATCH_SIZE) {
+            const chunk = songIds.slice(i, i + BATCH_SIZE);
+            const { error } = await supabase.from('songs').delete().in('id', chunk);
+            if (error) throw error;
+        }
+        toast({ title: 'Músicas removidas com sucesso!' });
+    } catch (error: any) {
         toast({ title: 'Falha ao Remover Músicas', description: error.message, variant: 'destructive'});
-        return;
+    } finally {
+        await fetchData();
     }
-    await fetchData();
   };
 
   const removeSong = async (songId: string) => removeSongs([songId]);
 
   const addOrUpdateSongs = async (songsToUpdate: Song[]) => {
     if (!supabase) return;
-    const { error } = await supabase.from('songs').upsert(songsToUpdate, { onConflict: 'title' });
-    if (error) {
-      toast({ title: 'Falha ao Atualizar Músicas', description: error.message, variant: 'destructive'});
-      return;
+    
+    try {
+        // Process in batches
+        for (let i = 0; i < songsToUpdate.length; i += BATCH_SIZE) {
+            const chunk = songsToUpdate.slice(i, i + BATCH_SIZE);
+            const { error } = await supabase.from('songs').upsert(chunk, { onConflict: 'title' });
+            if (error) throw error;
+        }
+        toast({ title: 'Músicas atualizadas com sucesso!' });
+    } catch (error: any) {
+        toast({ title: 'Falha ao Atualizar Músicas', description: error.message, variant: 'destructive'});
+    } finally {
+        await fetchData();
     }
-    await fetchData();
   };
 
   const importSongsFromTxt = async (songsToCreate: Omit<Song, 'id'>[], songsToUpdate: Omit<Song, 'id'>[]) => {
       if (!supabase) return;
-      const createPromises = supabase.from('songs').insert(songsToCreate.map(s => ({...s, isNew: true})));
-      const updatePromises = songsToUpdate.map(songData => 
-        supabase.from('songs').update({ lyrics: songData.lyrics }).match({ title: songData.title, artist: songData.artist })
-      );
-      const [createRes, ...updateRes] = await Promise.all([createPromises, ...updatePromises]);
-      let hadError = false;
-      if(createRes.error) hadError = true;
-      updateRes.forEach(res => { if(res.error) hadError = true; });
-      if(hadError) {
-          toast({ title: 'Erro ao importar de TXT', variant: 'destructive'});
-      } else {
+      
+      try {
+          // Process creations in batches
+          const creations = songsToCreate.map(s => ({...s, isNew: true, id: uuidv4()}));
+          for (let i = 0; i < creations.length; i += BATCH_SIZE) {
+              const chunk = creations.slice(i, i + BATCH_SIZE);
+              const { error } = await supabase.from('songs').insert(chunk);
+              if (error) throw error;
+          }
+
+          // Process updates one by one (Supabase update doesn't support batch matching multiple specific conditions easily)
+          // But we can batch them if we match by title/artist
+          for (const songData of songsToUpdate) {
+              const { error } = await supabase.from('songs')
+                .update({ lyrics: songData.lyrics })
+                .match({ title: songData.title, artist: songData.artist });
+              if (error) console.warn("Update failed for:", songData.title);
+          }
+
           toast({ title: 'Importação de TXT concluída!'});
+      } catch (error: any) {
+          toast({ title: 'Erro ao importar de TXT', description: error.message, variant: 'destructive'});
+      } finally {
+          await fetchData();
       }
-      await fetchData();
   }
 
   const updateSongs = async (songIds: string[], updates: Partial<Pick<Song, 'category' | 'artist' | 'key' | 'chords' | 'isNew'>>) => {
     if (!supabase) return;
-    const { error } = await supabase.from('songs').update(updates).in('id', songIds);
-      if (error) {
-          toast({ title: 'Falha ao Atualizar Músicas', description: error.message, variant: 'destructive'});
-          return;
-      }
-      await fetchData();
+    
+    try {
+        // Process in batches to avoid URL length limits in filters
+        for (let i = 0; i < songIds.length; i += BATCH_SIZE) {
+            const chunk = songIds.slice(i, i + BATCH_SIZE);
+            const { error } = await supabase.from('songs').update(updates).in('id', chunk);
+            if (error) throw error;
+        }
+        toast({ title: 'Músicas atualizadas com sucesso!' });
+    } catch (error: any) {
+        toast({ title: 'Falha ao Atualizar Músicas', description: error.message, variant: 'destructive'});
+    } finally {
+        await fetchData();
+    }
   };
 
  const exportData = async (): Promise<BackupData> => {
@@ -337,6 +374,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       if (selections.monthlySchedules) {
         const { error } = await supabase.from('monthly_schedules').delete().neq('id', uuidv4());
         if (error) throw new Error(`Falha ao limpar escalas: ${error.message}`);
+        
         const schedulesToInsert = data.monthlySchedules.map(s => ({
           id: s.id || uuidv4(),
           date: new Date(s.date).toISOString(),
@@ -347,21 +385,39 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
           name_manha: s.name_manha || '',
           name_noite: s.name_noite || '',
         }));
-        const { error: insertError } = await supabase.from('monthly_schedules').insert(schedulesToInsert);
-        if (insertError) throw new Error(`Falha ao inserir escalas: ${insertError.message}`);
+
+        // Batch insert schedules
+        for (let i = 0; i < schedulesToInsert.length; i += BATCH_SIZE) {
+            const chunk = schedulesToInsert.slice(i, i + BATCH_SIZE);
+            const { error: insertError } = await supabase.from('monthly_schedules').insert(chunk);
+            if (insertError) throw insertError;
+        }
       }
+
       if (selections.songs) {
         const { error } = await supabase.from('songs').delete().neq('id', uuidv4());
         if (error) throw new Error(`Falha ao limpar músicas: ${error.message}`);
-        const { error: insertError } = await supabase.from('songs').insert(data.songs);
-        if (insertError) throw new Error(`Falha ao inserir músicas: ${insertError.message}`);
+        
+        // Batch insert songs
+        for (let i = 0; i < data.songs.length; i += BATCH_SIZE) {
+            const chunk = data.songs.slice(i, i + BATCH_SIZE);
+            const { error: insertError } = await supabase.from('songs').insert(chunk);
+            if (insertError) throw insertError;
+        }
       }
+
       if (selections.members) {
         const { error } = await supabase.from('members').delete().neq('id', uuidv4());
         if (error) throw new Error(`Falha ao limpar membros: ${error.message}`);
-        const { error: insertError = null } = await supabase.from('members').insert(data.members);
-        if (insertError) throw new Error(`Falha ao inserir membros: ${insertError.message}`);
+        
+        // Batch insert members
+        for (let i = 0; i < data.members.length; i += BATCH_SIZE) {
+            const chunk = data.members.slice(i, i + BATCH_SIZE);
+            const { error: insertError } = await supabase.from('members').insert(chunk);
+            if (insertError) throw insertError;
+        }
       }
+
       toast({ title: 'Importação Concluída!'});
       setTimeout(() => { window.location.reload(); }, 2000);
     } catch (error: any) {
