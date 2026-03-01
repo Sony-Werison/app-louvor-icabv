@@ -14,7 +14,7 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { X, Music, Search, ArrowDownUp, ArrowUp, ArrowDown, AlertTriangle, Sparkles, Eye } from 'lucide-react';
+import { X, Music, Search, ArrowDownUp, ArrowUp, ArrowDown, AlertTriangle, Eye, Link as LinkIcon, Plus, Trash2, FileText } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
@@ -23,6 +23,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Badge } from './ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/context/auth-context';
+import { useSchedule } from '@/context/schedule-context';
 
 
 interface PlaylistDialogProps {
@@ -62,6 +64,8 @@ const getQuarterlyColorClass = (count: number = 0) => {
 }
 
 export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repeatedSongIds = new Set() }: PlaylistDialogProps) {
+  const { can } = useAuth();
+  const { updateSong } = useSchedule();
   const [isOpen, setIsOpen] = useState(true);
   const [currentPlaylist, setCurrentPlaylist] = useState<string[]>(schedule.playlist);
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,7 +74,11 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'title', direction: 'asc' });
   const [duplicatedInCurrent, setDuplicatedInCurrent] = useState<Set<string>>(new Set());
   const [songToPreview, setSongToPreview] = useState<Song | null>(null);
+  const [songToLink, setSongToLink] = useState<Song | null>(null);
+  const [tempLinks, setTempLinks] = useState<{ name: string, url: string }[]>([]);
   const isMobile = useIsMobile();
+
+  const isAdmin = can('edit:songs');
 
   useEffect(() => {
     const counts = new Map<string, number>();
@@ -124,9 +132,9 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
   );
   
   const hasChords = (song: Song) => {
-    const hasNativeChords = song.chords && song.chords.includes('[');
+    const hasNativeChords = song.chords && song.chords.trim().length > 0;
     const hasPdfChords = song.pdfLinks && song.pdfLinks.length > 0;
-    return hasNativeChords || hasPdfChords;
+    return !!(hasNativeChords || hasPdfChords);
   };
 
   const availableSongs = useMemo(() => {
@@ -194,6 +202,30 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
   const isRepeated = (songId: string) => repeatedSongIds.has(songId) || duplicatedInCurrent.has(songId);
   const showFilters = !(isMobile && searchTerm);
 
+  const handleOpenLinkEditor = (song: Song) => {
+    setSongToLink(song);
+    setTempLinks(song.pdfLinks ? [...song.pdfLinks] : []);
+  }
+
+  const handleSaveLinks = async () => {
+    if (songToLink) {
+        await updateSong(songToLink.id, { pdfLinks: tempLinks });
+        setSongToLink(null);
+    }
+  }
+
+  const removeTempLink = (index: number) => {
+    setTempLinks(prev => prev.filter((_, i) => i !== index));
+  }
+
+  const addTempLink = () => {
+    setTempLinks(prev => [...prev, { name: '', url: '' }]);
+  }
+
+  const updateTempLink = (index: number, field: 'name' | 'url', value: string) => {
+    setTempLinks(prev => prev.map((link, i) => i === index ? { ...link, [field]: value } : link));
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-none w-full h-full sm:h-[90vh] p-0 gap-0 flex flex-col">
@@ -252,7 +284,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                         Trimestre
                         {sortConfig.key === 'quarterly' && <ArrowDownUp className="h-3 w-3" />}
                     </button>
-                    <div className="w-8" />
+                    <div className="w-24" />
                 </div>
                 <ScrollArea className="flex-grow">
                     <TooltipProvider>
@@ -265,21 +297,17 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                 <AccordionContent>
                                     <div className="divide-y divide-border">
                                         {songs.map(song => (
-                                            <Label 
-                                                htmlFor={`song-${song.id}`} 
-                                                key={song.id} 
-                                                className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-3 p-4 pl-3 cursor-pointer hover:bg-accent/50"
-                                            >
+                                            <div key={song.id} className="group grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-3 p-4 pl-3 hover:bg-accent/50">
                                                 <Checkbox 
                                                     id={`song-${song.id}`} 
                                                     onCheckedChange={(checked) => handleCheckedChange(song.id, checked)}
                                                     checked={currentPlaylist.includes(song.id)}
                                                 />
-                                                <div>
+                                                <Label htmlFor={`song-${song.id}`} className="cursor-pointer">
                                                   <div className="font-medium flex items-center gap-2">
-                                                    {hasChords(song) && <Music className="h-3 w-3 text-muted-foreground" />}
                                                     <span>{song.title}</span>
-                                                    {song.isNew && <Badge variant="outline" className="border-green-500 text-green-500">Nova</Badge>}
+                                                    {hasChords(song) && <Music className="h-3 w-3 text-primary opacity-70" />}
+                                                    {song.isNew && <Badge variant="outline" className="border-green-500 text-green-500 h-4 text-[10px] px-1">Nova</Badge>}
                                                     {isRepeated(song.id) && (
                                                       <Tooltip>
                                                         <TooltipTrigger>
@@ -292,29 +320,51 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                                     )}
                                                   </div>
                                                   <div className="text-sm text-muted-foreground">{song.artist}</div>
-                                                </div>
+                                                </Label>
                                                 <div className={cn("text-center font-medium p-2 rounded-md transition-colors w-20", getQuarterlyColorClass(song.timesPlayedQuarterly))}>
                                                     {song.timesPlayedQuarterly ?? 0}
                                                 </div>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8"
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                setSongToPreview(song);
-                                                            }}
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>Pré-visualizar Letra</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </Label>
+                                                <div className="flex items-center gap-1 w-24 justify-end">
+                                                    {isAdmin && (
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        handleOpenLinkEditor(song);
+                                                                    }}
+                                                                >
+                                                                    <LinkIcon className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>Editar Link de Cifra</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    )}
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    setSongToPreview(song);
+                                                                }}
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Pré-visualizar Letra</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </div>
+                                            </div>
                                         ))}
                                     </div>
                                 </AccordionContent>
@@ -337,7 +387,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, x: -20, transition: { duration: 0.15 } }}
                           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                          className="grid grid-cols-[auto_1fr_auto] items-center gap-2 p-2 rounded-md hover:bg-muted bg-card"
+                          className="grid grid-cols-[auto_1fr_auto] items-center gap-2 p-2 rounded-md hover:bg-muted bg-card border"
                         >
                            <div className="flex items-center gap-3">
                                 <div className="flex flex-col shrink-0">
@@ -378,23 +428,36 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                       </TooltipProvider>
                                     )}
                                     <p className="font-medium truncate">{song.title}</p>
-                                    {song.isNew && <Badge variant="outline" className="border-green-500 text-green-500">Nova</Badge>}
+                                    {hasChords(song) && <Music className="h-3 w-3 text-primary opacity-70" />}
+                                    {song.isNew && <Badge variant="outline" className="border-green-500 text-green-500 h-4 text-[10px] px-1">Nova</Badge>}
                                 </div>
                                 <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
                             </div>
 
-                          <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => {
-                                  const newPlaylist = [...currentPlaylist];
-                                  newPlaylist.splice(index, 1);
-                                  setCurrentPlaylist(newPlaylist);
-                              }}
-                              className="shrink-0 h-8 w-8 rounded-full text-muted-foreground hover:text-destructive"
-                          >
-                              <X className="h-4 w-4"/>
-                          </Button>
+                          <div className="flex items-center gap-1">
+                              {isAdmin && (
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                    onClick={() => handleOpenLinkEditor(song)}
+                                >
+                                    <LinkIcon className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => {
+                                      const newPlaylist = [...currentPlaylist];
+                                      newPlaylist.splice(index, 1);
+                                      setCurrentPlaylist(newPlaylist);
+                                  }}
+                                  className="shrink-0 h-8 w-8 rounded-full text-muted-foreground hover:text-destructive"
+                              >
+                                  <X className="h-4 w-4"/>
+                              </Button>
+                          </div>
                         </motion.div>
                       ))}
                       </AnimatePresence>
@@ -427,6 +490,65 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                             {songToPreview.lyrics || 'Nenhuma letra disponível.'}
                         </pre>
                     </ScrollArea>
+                </DialogContent>
+            </Dialog>
+        )}
+
+        {songToLink && (
+            <Dialog open={!!songToLink} onOpenChange={(isOpen) => !isOpen && setSongToLink(null)}>
+                <DialogContent className="max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle>Editar Links de Cifra</DialogTitle>
+                        <DialogDescription>
+                            Adicione links do Google Drive ou Docs para <strong>{songToLink.title}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-sm font-semibold">Links Externos</Label>
+                            <Button variant="outline" size="sm" onClick={addTempLink}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Adicionar
+                            </Button>
+                        </div>
+                        <ScrollArea className="max-h-60 border rounded-md p-3">
+                            <div className="space-y-3">
+                                {tempLinks.map((link, index) => (
+                                    <div key={index} className="flex gap-2 items-start bg-muted/20 p-2 rounded-lg relative group/link">
+                                        <div className="grid flex-1 gap-2">
+                                            <Input 
+                                                placeholder="Nome (ex: Cifra Completa)" 
+                                                className="h-8 text-xs" 
+                                                value={link.name} 
+                                                onChange={e => updateTempLink(index, 'name', e.target.value)}
+                                            />
+                                            <Input 
+                                                placeholder="URL (Google Drive / Docs)" 
+                                                className="h-8 text-xs" 
+                                                value={link.url} 
+                                                onChange={e => updateTempLink(index, 'url', e.target.value)}
+                                            />
+                                        </div>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 text-destructive opacity-0 group-hover/link:opacity-100 transition-opacity" 
+                                            onClick={() => removeTempLink(index)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                {tempLinks.length === 0 && (
+                                    <p className="text-center text-xs text-muted-foreground py-4">Nenhum link cadastrado.</p>
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setSongToLink(null)}>Cancelar</Button>
+                        <Button onClick={handleSaveLinks}>Salvar Links</Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         )}
