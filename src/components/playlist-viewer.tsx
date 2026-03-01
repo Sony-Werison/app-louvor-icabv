@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Schedule, Song } from '@/types';
@@ -20,13 +21,10 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, FileDown, ExternalLink, Plus, Minus, Maximize, Minimize, Expand, Shrink } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { ChordDisplay } from './chord-display';
+import { Play, Pause, FileText, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, FileDown, ExternalLink, Maximize, Minimize, Expand, Shrink } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from './ui/badge';
 import { cn, convertGoogleDriveUrl } from '@/lib/utils';
-import { getTransposedKey } from '@/lib/transpose';
-import { Separator } from './ui/separator';
 
 interface PlaylistViewerProps {
   schedule: Schedule;
@@ -45,10 +43,9 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'lyrics' | 'chords' | 'pdfs'>('lyrics');
+  const [activeTab, setActiveTab] = useState<'lyrics' | 'pdfs'>('lyrics');
   const [activeSongId, setActiveSongId] = useState<string | null>(null);
   const [activePdfIndex, setActivePdfIndex] = useState(0);
-  const [transpose, setTranspose] = useState(0);
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE); 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isFitWidth, setIsFitWidth] = useState(false);
@@ -108,7 +105,6 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   }, []);
   
   useEffect(() => {
-    setTranspose(0);
     setActivePdfIndex(0);
     if (scrollViewportRef.current) {
       scrollViewportRef.current.scrollTop = 0;
@@ -199,7 +195,6 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
       }
   }
   
-  const transposedKey = activeSong ? getTransposedKey(activeSong.key, transpose) : null;
   const zoomPercentage = Math.round((fontSize / DEFAULT_FONT_SIZE) * 100);
   const scale = fontSize / DEFAULT_FONT_SIZE;
 
@@ -223,8 +218,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                           <div className="flex flex-col flex-1 min-w-0">
                             <h1 className="font-headline font-bold text-base sm:text-lg truncate leading-tight">{activeSong?.title || 'Repertório'}</h1>
                             <div className="flex items-center gap-2">
-                                {activeSong?.key && activeTab === 'chords' && <Badge variant="secondary" className="text-xs">{activeSong.key}</Badge>}
-                                {transpose !== 0 && transposedKey && activeTab === 'chords' && <Badge className="text-xs">{transposedKey}</Badge>}
+                                {activeSong?.key && <Badge variant="secondary" className="text-xs">{activeSong.key}</Badge>}
                             </div>
                           </div>
                       </div>
@@ -232,28 +226,12 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
                           <TabsList>
                               <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>
-                              <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
                               <TabsTrigger value="pdfs" disabled={!activeSong?.pdfLinks || activeSong.pdfLinks.length === 0}>
-                                  <FileDown className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras (Arquivo)</span>
+                                  <FileDown className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span>
                               </TabsTrigger>
                           </TabsList>
                         </Tabs>
                         
-                        {activeTab === 'chords' && (
-                            <div className="flex items-center gap-1 shrink-0">
-                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose - 1)}>
-                                    <Minus className="h-4 w-4"/>
-                                </Button>
-                                <div className="flex flex-col items-center w-8">
-                                    <span className="text-[10px] text-muted-foreground -mb-1">Tom</span>
-                                    <span className="font-bold text-center text-sm">{transpose > 0 ? `+${transpose}` : transpose}</span>
-                                </div>
-                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose + 1)}>
-                                    <Plus className="h-4 w-4"/>
-                                </Button>
-                            </div>
-                        )}
-
                         <div className="flex items-center gap-1 shrink-0">
                             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
                                 <ZoomOut className="h-4 w-4" />
@@ -295,11 +273,6 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                                       <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75', whiteSpace: 'pre-wrap'}}>
                                           {activeSong.lyrics || 'Nenhuma letra disponível.'}
                                       </pre>
-                                  </div>
-                              )}
-                              {activeTab === 'chords' && (
-                                  <div className={cn(isFitWidth ? "px-2" : "")} style={{ fontSize: `${fontSize}rem` }}>
-                                      <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose}/>
                                   </div>
                               )}
                               {activeTab === 'pdfs' && activeSong.pdfLinks?.[activePdfIndex] && (
@@ -346,7 +319,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                             </Button>
                         </div>
 
-                        {(activeTab === 'chords' || activeTab === 'pdfs') && (
+                        {activeTab === 'pdfs' && (
                             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-end justify-center gap-2 rounded-full border bg-background/80 px-4 py-2 shadow-lg backdrop-blur-sm">
                                 <div className="flex items-center gap-2">
                                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>

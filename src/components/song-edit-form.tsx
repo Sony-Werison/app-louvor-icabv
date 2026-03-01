@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -10,8 +11,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { useAutoPairing } from '@/hooks/use-auto-pairing';
-import { useRef } from 'react';
 import { Checkbox } from './ui/checkbox';
 import { Plus, Trash2, Link as LinkIcon } from 'lucide-react';
 
@@ -27,7 +26,6 @@ const formSchema = z.object({
     z.number().min(30).max(300).optional()
   ),
   lyrics: z.string().optional(),
-  chords: z.string().optional(),
   isNew: z.boolean().optional(),
   pdfLinks: z.array(z.object({
     name: z.string().optional(),
@@ -51,7 +49,6 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
       category: song.category || 'Louvor',
       bpm: song.bpm || undefined,
       lyrics: song.lyrics || '',
-      chords: song.chords || '',
       isNew: song.isNew || false,
       pdfLinks: song.pdfLinks || [],
     },
@@ -61,9 +58,6 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
     control: form.control,
     name: "pdfLinks",
   });
-
-  const chordsTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const { handleKeyDown } = useAutoPairing(chordsTextareaRef);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     // Fill default names if empty
@@ -197,31 +191,11 @@ export function SongEditForm({ song, onSave, onCancel }: SongEditFormProps) {
                 />
             </div>
 
-            <FormField
-              control={form.control}
-              name="chords"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cifras</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      className="font-code" 
-                      rows={15} 
-                      {...field} 
-                      ref={chordsTextareaRef} 
-                      onKeyDown={handleKeyDown} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <div className="space-y-4 border rounded-lg p-4 bg-muted/10">
                 <div className="flex items-center justify-between">
                     <FormLabel className="flex items-center gap-2 text-lg">
                         <LinkIcon className="h-5 w-5" />
-                        Cifras Externas (Google Drive / Docs)
+                        Links de Cifras (Google Drive / Docs)
                     </FormLabel>
                     <Button 
                         type="button" 

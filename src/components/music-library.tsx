@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Song, SongCategory } from '@/types';
@@ -82,9 +83,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
   };
 
   const hasChords = (song: Song) => {
-    const hasNativeChords = song.chords && song.chords.includes('[');
-    const hasPdfChords = song.pdfLinks && song.pdfLinks.length > 0;
-    return hasNativeChords || hasPdfChords;
+    return !!(song.pdfLinks && song.pdfLinks.length > 0);
   };
 
   const categoryCounts = useMemo(() => {
@@ -326,7 +325,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                   )}
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      {hasChords(song) && <Music className="h-3 w-3 text-muted-foreground" />}
+                      {hasChords(song) && <Music className="h-3 w-3 text-primary opacity-70" />}
                       <span>{song.title}</span>
                       {song.isNew && <Badge variant="outline" className="border-green-500 text-green-500">Nova</Badge>}
                     </div>

@@ -1,14 +1,13 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSchedule } from '@/context/schedule-context';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Trash2, Plus, Minus, ZoomIn, ZoomOut, Turtle, Rabbit, Play, Pause, FileText, Music, FileDown, ExternalLink, Maximize, Minimize, Expand, Shrink } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Edit, Trash2, ZoomIn, ZoomOut, Turtle, Rabbit, Play, Pause, FileText, FileDown, ExternalLink, Maximize, Minimize, Expand, Shrink } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SongEditForm } from '@/components/song-edit-form';
-import { ChordDisplay } from '@/components/chord-display';
 import { useAuth } from '@/context/auth-context';
 import {
   AlertDialog,
@@ -21,7 +20,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { Song } from '@/types';
-import { getTransposedKey } from '@/lib/transpose';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn, convertGoogleDriveUrl } from '@/lib/utils';
 
@@ -38,9 +36,8 @@ export default function SongDetailPage() {
   const { songs, updateSong, removeSong } = useSchedule();
   const [isEditing, setIsEditing] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [transpose, setTranspose] = useState(0);
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
-  const [activeTab, setActiveTab] = useState<'lyrics' | 'chords' | 'pdfs'>('lyrics');
+  const [activeTab, setActiveTab] = useState<'lyrics' | 'pdfs'>('lyrics');
   const [activePdfIndex, setActivePdfIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isFitWidth, setIsFitWidth] = useState(false);
@@ -78,7 +75,7 @@ export default function SongDetailPage() {
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeOriginEventListener ? null : window.removeEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -206,7 +203,6 @@ export default function SongDetailPage() {
     setIsFitWidth(false);
   }
 
-  const transposedKey = getTransposedKey(song.key, transpose);
   const zoomPercentage = Math.round((fontSize / DEFAULT_FONT_SIZE) * 100);
   const scale = fontSize / DEFAULT_FONT_SIZE;
   
@@ -245,32 +241,12 @@ export default function SongDetailPage() {
                     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
                         <TabsList>
                             <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>
-                            <TabsTrigger value="chords"><Music className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Cifras</span></TabsTrigger>
                             <TabsTrigger value="pdfs" disabled={!song.pdfLinks || song.pdfLinks.length === 0}>
                                 <FileDown className="w-4 h-4 md:mr-2"/>
-                                <span className="hidden md:inline">Cifras (Arquivo)</span>
+                                <span className="hidden md:inline">Cifras</span>
                             </TabsTrigger>
                         </TabsList>
                     </Tabs>
-                    
-                    {activeTab === 'chords' && (
-                        <>
-                            <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose - 1)}>
-                                    <Minus className="h-4 w-4"/>
-                                </Button>
-                                <div className="flex flex-col items-center w-8">
-                                    <span className="text-[10px] text-muted-foreground -mb-1">Tom</span>
-                                    <span className="font-bold text-center text-sm">{transpose > 0 ? `+${transpose}` : transpose}</span>
-                                </div>
-                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTranspose(transpose + 1)}>
-                                    <Plus className="h-4 w-4"/>
-                                </Button>
-                            </div>
-                            {song.key && <Badge variant="secondary" className="text-sm sm:text-base">{song.key}</Badge>}
-                            {transpose !== 0 && <Badge className="text-sm sm:text-base">{transposedKey}</Badge>}
-                        </>
-                    )}
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
@@ -324,11 +300,6 @@ export default function SongDetailPage() {
                         </pre>
                     </div>
                 )}
-                {activeTab === 'chords' && (
-                    <div className={cn(isFitWidth ? "px-2" : "")} style={{ fontSize: `${fontSize}rem` }}>
-                        <ChordDisplay chordsText={song.chords || 'Nenhuma cifra disponível.'} transposeBy={transpose} />
-                    </div>
-                )}
                 {activeTab === 'pdfs' && song.pdfLinks?.[activePdfIndex] && (
                     <div className="w-full flex flex-col items-center bg-muted/20">
                         <div className="w-full flex justify-end p-2 gap-2 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
@@ -358,7 +329,7 @@ export default function SongDetailPage() {
             </div>
         </ScrollArea>
         
-        {(activeTab === 'chords' || activeTab === 'pdfs') && (
+        {activeTab === 'pdfs' && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-end justify-center gap-2 rounded-full border bg-background/80 px-4 py-2 shadow-lg backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={scrollSpeed <= MIN_SPEED}>

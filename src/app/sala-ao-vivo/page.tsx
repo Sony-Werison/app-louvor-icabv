@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -9,13 +10,11 @@ import type { LiveState, Schedule, Song } from '@/types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChordDisplay } from '@/components/chord-display';
 import { Badge } from '@/components/ui/badge';
 import { cn, convertGoogleDriveUrl } from '@/lib/utils';
-import { getTransposedKey } from '@/lib/transpose';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle as SheetTitleComponent, SheetDescription as SheetDescriptionComponent, SheetTrigger } from '@/components/ui/sheet';
-import { FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Timer, Podcast, WifiOff, ArrowLeft, Play, Pause, FileDown, ExternalLink, AlertTriangle } from 'lucide-react';
+import { FileText, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, Plus, Minus, Timer, Podcast, WifiOff, ArrowLeft, Play, Pause, FileDown, ExternalLink, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const MIN_FONT_SIZE = 0.8;
@@ -51,7 +50,7 @@ function LiveRoomComponent() {
         lastUpdate: Date.now(),
     });
 
-    const [activeTab, setActiveTab] = useState<'lyrics' | 'chords' | 'pdfs'>('lyrics');
+    const [activeTab, setActiveTab] = useState<'lyrics' | 'pdfs'>('lyrics');
     const [activePdfIndex, setActivePdfIndex] = useState(0);
     const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -195,7 +194,7 @@ function LiveRoomComponent() {
             metronomeIntervalRef.current = null;
         }
         if (currentState?.metronome.isPlaying) {
-            playClick(); // Play first click immediately
+            playClick(); 
             const interval = 60000 / currentState.metronome.bpm;
             metronomeIntervalRef.current = setInterval(playClick, interval);
         }
@@ -215,11 +214,6 @@ function LiveRoomComponent() {
             const newBpm = Math.max(MIN_BPM, Math.min(MAX_BPM, prev.metronome.bpm + delta));
             return { ...prev, metronome: { ...prev.metronome, bpm: newBpm }};
         });
-    };
-
-    const changeTranspose = (delta: number) => {
-        if (!isHost) return;
-        setHostState(prev => ({ ...prev, transpose: prev.transpose + delta }));
     };
 
     const handleSelectSong = (songId: string) => {
@@ -284,7 +278,6 @@ function LiveRoomComponent() {
         );
     }
 
-    const transposedKey = activeSong ? getTransposedKey(activeSong.key, currentState?.transpose || 0) : null;
     const zoomPercentage = Math.round((fontSize / DEFAULT_FONT_SIZE) * 100);
     const readOnly = !isHost;
     
@@ -306,8 +299,7 @@ function LiveRoomComponent() {
                          <div className="flex flex-col flex-1 min-w-0">
                            <h1 className="font-headline font-bold text-base sm:text-lg truncate leading-tight">{activeSong?.title || 'Sala ao Vivo'}</h1>
                            <div className="flex items-center gap-2">
-                               {activeSong?.key && activeTab === 'chords' && <Badge variant="secondary" className="text-xs">{activeSong.key}</Badge>}
-                               {transposedKey && transposedKey !== activeSong?.key && activeTab === 'chords' && <Badge className="text-xs">{transposedKey}</Badge>}
+                               {activeSong?.key && <Badge variant="secondary" className="text-xs">{activeSong.key}</Badge>}
                            </div>
                          </div>
                      </div>
@@ -315,43 +307,14 @@ function LiveRoomComponent() {
                         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
                             <TabsList>
                                 <TabsTrigger value="lyrics"><FileText /></TabsTrigger>
-                                <TabsTrigger value="chords"><Music /></TabsTrigger>
                                 <TabsTrigger value="pdfs" disabled={!activeSong?.pdfLinks || activeSong.pdfLinks.length === 0}><FileDown /></TabsTrigger>
                             </TabsList>
                         </Tabs>
-                       
-                       {activeTab === 'chords' && (
-                           <div className="flex items-center gap-1 shrink-0">
-                               <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeTranspose(-1)} disabled={readOnly}><Minus /></Button>
-                               <div className="w-8 text-center"><span className="text-xs -mb-1 block text-muted-foreground">Tom</span><span className="font-bold text-sm">{currentState?.transpose > 0 ? `+${currentState?.transpose}`: currentState?.transpose}</span></div>
-                               <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeTranspose(1)} disabled={readOnly}><Plus /></Button>
-                           </div>
-                       )}
 
                        <div className="flex items-center gap-1 shrink-0">
-                           {activeTab !== 'pdfs' ? (
-                               <>
-                                   <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setFontSize(s => Math.max(MIN_FONT_SIZE, s - FONT_STEP))}><ZoomOut /></Button>
-                                   <Button variant="ghost" onClick={() => setFontSize(DEFAULT_FONT_SIZE)} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">{zoomPercentage}%</Button>
-                                   <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setFontSize(s => Math.min(MAX_FONT_SIZE, s + FONT_STEP))}><ZoomIn /></Button>
-                               </>
-                           ) : (
-                               activeSong?.pdfLinks && activeSong.pdfLinks.length > 1 && (
-                                   <div className="flex items-center gap-1">
-                                       {activeSong.pdfLinks.map((pdf, idx) => (
-                                           <Button 
-                                               key={idx} 
-                                               variant={activePdfIndex === idx ? 'default' : 'outline'} 
-                                               size="sm" 
-                                               className="h-8 text-xs px-2"
-                                               onClick={() => setActivePdfIndex(idx)}
-                                           >
-                                               {pdf.name}
-                                           </Button>
-                                       ))}
-                                   </div>
-                               )
-                           )}
+                           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setFontSize(s => Math.max(MIN_FONT_SIZE, s - FONT_STEP))}><ZoomOut /></Button>
+                           <Button variant="ghost" onClick={() => setFontSize(DEFAULT_FONT_SIZE)} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">{zoomPercentage}%</Button>
+                           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setFontSize(s => Math.min(MAX_FONT_SIZE, s + FONT_STEP))}><ZoomIn /></Button>
                        </div>
                        
                        <Button variant="ghost" size="icon" onClick={() => router.back()} className="shrink-0"><X/></Button>
@@ -367,11 +330,6 @@ function LiveRoomComponent() {
                                   {activeTab === 'lyrics' && (
                                       <div style={{ fontSize: `${fontSize}rem` }}>
                                           <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75'}}>{activeSong.lyrics || 'Nenhuma letra.'}</pre>
-                                      </div>
-                                  )}
-                                  {activeTab === 'chords' && (
-                                      <div style={{ fontSize: `${fontSize}rem` }}>
-                                          <ChordDisplay chordsText={activeSong.chords || 'Nenhuma cifra.'} transposeBy={currentState?.transpose || 0}/>
                                       </div>
                                   )}
                                   {activeTab === 'pdfs' && activeSong.pdfLinks?.[activePdfIndex] && (
@@ -410,7 +368,7 @@ function LiveRoomComponent() {
                              </Button>
                         </div>
 
-                        {(activeTab === 'chords' || activeTab === 'pdfs') && (
+                        {(activeTab === 'lyrics' || activeTab === 'pdfs') && (
                             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-end justify-center gap-2 rounded-full border bg-background/80 px-4 py-2 shadow-lg backdrop-blur-sm">
                                 <div className="flex items-center gap-2">
                                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={readOnly || currentState?.scroll.speed <= MIN_SPEED}><Turtle /></Button>

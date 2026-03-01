@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Schedule, Song, SongCategory } from '@/types';
@@ -14,8 +15,8 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { X, Music, Search, ArrowDownUp, ArrowUp, ArrowDown, AlertTriangle, Eye, Link as LinkIcon, Plus, Trash2, FileText } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { X, Music, Search, ArrowDownUp, ArrowUp, ArrowDown, AlertTriangle, Eye, Link as LinkIcon, Plus, Trash2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from './ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { cn } from '@/lib/utils';
@@ -132,9 +133,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
   );
   
   const hasChords = (song: Song) => {
-    const hasNativeChords = song.chords && song.chords.trim().length > 0;
-    const hasPdfChords = song.pdfLinks && song.pdfLinks.length > 0;
-    return !!(hasNativeChords || hasPdfChords);
+    return !!(song.pdfLinks && song.pdfLinks.length > 0);
   };
 
   const availableSongs = useMemo(() => {
@@ -271,8 +270,7 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
                                         <TabsTrigger key={filter} value={filter} className="text-xs sm:text-sm">{quickFilterLabels[filter]}</TabsTrigger>
                                     ))}
                                 </TabsList>
-                            </Tabs>
-                        </div>
+                            </div>
                     )}
                 </div>
                  <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground shrink-0">
