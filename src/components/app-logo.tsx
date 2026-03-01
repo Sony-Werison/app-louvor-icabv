@@ -10,6 +10,7 @@ export function AppLogo({ className }: { className?: string }) {
         alt="Logotipo ICABV" 
         width={32} 
         height={32}
+        style={{ height: 'auto' }}
       />
       <h1 className="text-lg font-headline font-bold text-foreground hidden sm:block">
         Louvor ICABV
