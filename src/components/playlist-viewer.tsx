@@ -35,7 +35,7 @@ interface PlaylistViewerProps {
 }
 
 const MIN_FONT_SIZE = 0.8;
-const MAX_FONT_SIZE = 5.0; // Increased for better fill-width support
+const MAX_FONT_SIZE = 5.0; 
 const FONT_STEP = 0.1;
 const DEFAULT_FONT_SIZE = 1.25;
 const MIN_SPEED = 1;
@@ -79,7 +79,9 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!scrollViewportRef.current) return;
-      const step = 60;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const step = 100;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         scrollViewportRef.current.scrollTop += step;
@@ -199,6 +201,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   
   const transposedKey = activeSong ? getTransposedKey(activeSong.key, transpose) : null;
   const zoomPercentage = Math.round((fontSize / DEFAULT_FONT_SIZE) * 100);
+  const scale = fontSize / DEFAULT_FONT_SIZE;
 
   return (
     <>
@@ -252,38 +255,18 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                         )}
 
                         <div className="flex items-center gap-1 shrink-0">
-                            {activeTab !== 'pdfs' ? (
-                                <>
-                                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
-                                        <ZoomOut className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="ghost" onClick={resetFontSize} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">
-                                        {zoomPercentage}%
-                                    </Button>
-                                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
-                                        <ZoomIn className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant={isFitWidth ? "secondary" : "outline"} size="icon" className="h-8 w-8" onClick={toggleFitWidth} title="Ajustar Largura">
-                                        {isFitWidth ? <Shrink className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
-                                    </Button>
-                                </>
-                            ) : (
-                                activeSong?.pdfLinks && activeSong.pdfLinks.length > 1 && (
-                                    <div className="flex items-center gap-1">
-                                        {activeSong.pdfLinks.map((pdf, idx) => (
-                                            <Button 
-                                                key={idx} 
-                                                variant={activePdfIndex === idx ? 'default' : 'outline'} 
-                                                size="sm" 
-                                                className="h-8 text-xs px-2"
-                                                onClick={() => setActivePdfIndex(idx)}
-                                            >
-                                                {pdf.name}
-                                            </Button>
-                                        ))}
-                                    </div>
-                                )
-                            )}
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
+                                <ZoomOut className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" onClick={resetFontSize} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">
+                                {zoomPercentage}%
+                            </Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
+                                <ZoomIn className="h-4 w-4" />
+                            </Button>
+                            <Button variant={isFitWidth ? "secondary" : "outline"} size="icon" className="h-8 w-8" onClick={toggleFitWidth} title="Ajustar Largura">
+                                {isFitWidth ? <Shrink className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
+                            </Button>
                         </div>
                         
                         <div className="flex items-center gap-1">
@@ -303,7 +286,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                       <div className={cn(
                           "p-4 sm:p-8 pb-32 transition-all duration-300", 
                           activeTab === 'pdfs' && "p-0 sm:p-0 pb-32",
-                          isFitWidth && "px-1 sm:px-2 md:px-4 max-w-none"
+                          isFitWidth && activeTab !== 'pdfs' && "px-1 sm:px-2 md:px-4 max-w-none"
                       )}>
                       {activeSong ? (
                           <>
@@ -329,7 +312,14 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                                               </a>
                                           </Button>
                                       </div>
-                                      <div className="w-full h-[3000px]">
+                                      <div 
+                                          className="w-full transition-all duration-300 origin-top"
+                                          style={{ 
+                                              height: `${3000 * scale}px`,
+                                              width: isFitWidth ? '100%' : `${100 / scale}%`,
+                                              transform: `scale(${scale})`,
+                                          }}
+                                      >
                                           <iframe 
                                               src={convertGoogleDriveUrl(activeSong.pdfLinks[activePdfIndex].url)} 
                                               className="w-full h-full border-none"

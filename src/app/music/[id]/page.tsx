@@ -26,7 +26,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn, convertGoogleDriveUrl } from '@/lib/utils';
 
 const MIN_FONT_SIZE = 0.8;
-const MAX_FONT_SIZE = 5.0; // Increased for better fill-width support
+const MAX_FONT_SIZE = 5.0; 
 const FONT_STEP = 0.1;
 const DEFAULT_FONT_SIZE = 1.25;
 const MIN_SPEED = 1;
@@ -65,7 +65,9 @@ export default function SongDetailPage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!scrollViewportRef.current) return;
-      const step = 60;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const step = 100;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         scrollViewportRef.current.scrollTop += step;
@@ -206,6 +208,7 @@ export default function SongDetailPage() {
 
   const transposedKey = getTransposedKey(song.key, transpose);
   const zoomPercentage = Math.round((fontSize / DEFAULT_FONT_SIZE) * 100);
+  const scale = fontSize / DEFAULT_FONT_SIZE;
   
   return (
     <div className="h-[calc(100vh-var(--header-height)-1px)] flex flex-col" style={{'--header-height': '7.5rem'} as React.CSSProperties}>
@@ -271,22 +274,20 @@ export default function SongDetailPage() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                    {activeTab !== 'pdfs' && (
-                        <div className="flex items-center gap-1">
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
-                                <ZoomOut className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" onClick={resetFontSize} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">
-                                {zoomPercentage}%
-                            </Button>
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
-                                <ZoomIn className="h-4 w-4" />
-                            </Button>
-                            <Button variant={isFitWidth ? "secondary" : "outline"} size="icon" className="h-8 w-8" onClick={toggleFitWidth} title="Ajustar Largura">
-                                {isFitWidth ? <Shrink className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
-                            </Button>
-                        </div>
-                    )}
+                    <div className="flex items-center gap-1">
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(-FONT_STEP)} disabled={fontSize <= MIN_FONT_SIZE}>
+                            <ZoomOut className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" onClick={resetFontSize} className="font-bold w-12 text-center text-sm tabular-nums h-8 px-1">
+                            {zoomPercentage}%
+                        </Button>
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
+                            <ZoomIn className="h-4 w-4" />
+                        </Button>
+                        <Button variant={isFitWidth ? "secondary" : "outline"} size="icon" className="h-8 w-8" onClick={toggleFitWidth} title="Ajustar Largura">
+                            {isFitWidth ? <Shrink className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
+                        </Button>
+                    </div>
                     {activeTab === 'pdfs' && song.pdfLinks && song.pdfLinks.length > 1 && (
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-medium text-muted-foreground">Variação:</span>
@@ -314,7 +315,7 @@ export default function SongDetailPage() {
             <div className={cn(
                 "p-4 sm:p-8 pb-28 transition-all duration-300", 
                 activeTab === 'pdfs' && "p-0 sm:p-0 pb-28",
-                isFitWidth && "px-1 sm:px-2 md:px-4 max-w-none"
+                isFitWidth && activeTab !== 'pdfs' && "px-1 sm:px-2 md:px-4 max-w-none"
             )}>
                 {activeTab === 'lyrics' && (
                     <div style={{ fontSize: `${fontSize}rem` }}>
@@ -338,7 +339,14 @@ export default function SongDetailPage() {
                                 </a>
                             </Button>
                         </div>
-                        <div className="w-full h-[3000px]">
+                        <div 
+                            className="w-full transition-all duration-300 origin-top"
+                            style={{ 
+                                height: `${3000 * scale}px`,
+                                width: isFitWidth ? '100%' : `${100 / scale}%`,
+                                transform: `scale(${scale})`,
+                            }}
+                        >
                             <iframe 
                                 src={convertGoogleDriveUrl(song.pdfLinks[activePdfIndex].url)} 
                                 className="w-full h-full border-none"
