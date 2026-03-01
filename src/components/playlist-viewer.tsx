@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, FileDown, ExternalLink, Plus, Minus } from 'lucide-react';
+import { Play, Pause, FileText, Music, X, SkipBack, SkipForward, Rabbit, Turtle, ZoomIn, ZoomOut, FileDown, ExternalLink, Plus, Minus, Maximize, Minimize, Expand, Shrink } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ChordDisplay } from './chord-display';
 import { Badge } from './ui/badge';
@@ -35,7 +35,7 @@ interface PlaylistViewerProps {
 }
 
 const MIN_FONT_SIZE = 0.8;
-const MAX_FONT_SIZE = 2.5;
+const MAX_FONT_SIZE = 5.0; // Increased for better fill-width support
 const FONT_STEP = 0.1;
 const DEFAULT_FONT_SIZE = 1.25;
 const MIN_SPEED = 1;
@@ -50,6 +50,8 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
   const [activePdfIndex, setActivePdfIndex] = useState(0);
   const [transpose, setTranspose] = useState(0);
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE); 
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFitWidth, setIsFitWidth] = useState(false);
 
   const [isScrolling, setIsScrolling] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(5); 
@@ -73,6 +75,31 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
     }
     setIsScrolling(false);
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!scrollViewportRef.current) return;
+      const step = 60;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        scrollViewportRef.current.scrollTop += step;
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        scrollViewportRef.current.scrollTop -= step;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
 
   useEffect(() => {
     return () => stopScrolling();
@@ -133,6 +160,29 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
 
   const resetFontSize = () => {
     setFontSize(DEFAULT_FONT_SIZE);
+    setIsFitWidth(false);
+  }
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  const toggleFitWidth = () => {
+    if (!isFitWidth) {
+      setIsFitWidth(true);
+      setFontSize(Math.max(2.2, fontSize));
+    } else {
+      setIsFitWidth(false);
+      setFontSize(DEFAULT_FONT_SIZE);
+    }
   }
   
   const handleSelectSong = (songId: string) => {
@@ -152,7 +202,7 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
 
   return (
     <>
-    <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); setIsOpen(open); }}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open && document.fullscreenElement) document.exitFullscreen(); onOpenChange(open); setIsOpen(open); }}>
       <DialogContent className="max-w-none w-full h-full p-0 gap-0 flex flex-col" style={{'--header-height': '7.5rem'} as React.CSSProperties}>
           <DialogHeader className="sr-only">
             <DialogTitle>Visualizador de Repertório</DialogTitle>
@@ -213,6 +263,9 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                                     <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
                                         <ZoomIn className="h-4 w-4" />
                                     </Button>
+                                    <Button variant={isFitWidth ? "secondary" : "outline"} size="icon" className="h-8 w-8" onClick={toggleFitWidth} title="Ajustar Largura">
+                                        {isFitWidth ? <Shrink className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
+                                    </Button>
                                 </>
                             ) : (
                                 activeSong?.pdfLinks && activeSong.pdfLinks.length > 1 && (
@@ -232,16 +285,26 @@ export function PlaylistViewer({ schedule, songs, onOpenChange }: PlaylistViewer
                                 )
                             )}
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0">
-                          <X/>
-                        </Button>
+                        
+                        <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" onClick={toggleFullscreen} className="shrink-0 h-8 w-8" title="Tela Cheia">
+                                {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0">
+                                <X/>
+                            </Button>
+                        </div>
                       </div>
                   </div>
               </header>
 
               <main className="flex-grow min-h-0 relative group/main h-[calc(100vh-var(--header-height))]">
                   <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
-                      <div className={cn("p-4 sm:p-8 pb-32", activeTab === 'pdfs' && "p-0 sm:p-0 pb-32")}>
+                      <div className={cn(
+                          "p-4 sm:p-8 pb-32 transition-all duration-300", 
+                          activeTab === 'pdfs' && "p-0 sm:p-0 pb-32",
+                          isFitWidth && "px-1 sm:px-2 md:px-4 max-w-none"
+                      )}>
                       {activeSong ? (
                           <>
                               {activeTab === 'lyrics' && (

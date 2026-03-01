@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSchedule } from '@/context/schedule-context';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Trash2, Plus, Minus, ZoomIn, ZoomOut, Turtle, Rabbit, Play, Pause, FileText, Music, FileDown, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Plus, Minus, ZoomIn, ZoomOut, Turtle, Rabbit, Play, Pause, FileText, Music, FileDown, ExternalLink, Maximize, Minimize, Expand, Shrink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SongEditForm } from '@/components/song-edit-form';
@@ -26,7 +26,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn, convertGoogleDriveUrl } from '@/lib/utils';
 
 const MIN_FONT_SIZE = 0.8;
-const MAX_FONT_SIZE = 2.5;
+const MAX_FONT_SIZE = 5.0; // Increased for better fill-width support
 const FONT_STEP = 0.1;
 const DEFAULT_FONT_SIZE = 1.25;
 const MIN_SPEED = 1;
@@ -42,6 +42,8 @@ export default function SongDetailPage() {
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
   const [activeTab, setActiveTab] = useState<'lyrics' | 'chords' | 'pdfs'>('lyrics');
   const [activePdfIndex, setActivePdfIndex] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFitWidth, setIsFitWidth] = useState(false);
   
   const [isScrolling, setIsScrolling] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(5);
@@ -59,6 +61,31 @@ export default function SongDetailPage() {
     }
     setIsScrolling(false);
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!scrollViewportRef.current) return;
+      const step = 60;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        scrollViewportRef.current.scrollTop += step;
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        scrollViewportRef.current.scrollTop -= step;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
 
   useEffect(() => {
     return () => stopScrolling();
@@ -111,6 +138,28 @@ export default function SongDetailPage() {
     }
   }
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  const toggleFitWidth = () => {
+    if (!isFitWidth) {
+      setIsFitWidth(true);
+      setFontSize(Math.max(2.2, fontSize));
+    } else {
+      setIsFitWidth(false);
+      setFontSize(DEFAULT_FONT_SIZE);
+    }
+  }
+
   if (!song) {
     return (
       <div className="p-4 md:p-6 text-center">
@@ -152,6 +201,7 @@ export default function SongDetailPage() {
 
   const resetFontSize = () => {
     setFontSize(DEFAULT_FONT_SIZE);
+    setIsFitWidth(false);
   }
 
   const transposedKey = getTransposedKey(song.key, transpose);
@@ -169,18 +219,23 @@ export default function SongDetailPage() {
                     <h1 className="font-headline font-bold text-base sm:text-lg truncate leading-tight w-full">{song.title}</h1>
                     <span className="text-sm text-muted-foreground truncate w-full">{song.artist}</span>
                 </div>
-                {can('edit:songs') ? (
-                    <div className="flex gap-1 sm:gap-2">
-                        <Button size="icon" variant="ghost" className="h-8 w-8 sm:h-auto sm:w-auto sm:px-3 sm:py-1" onClick={() => setIsEditing(true)}>
-                            <Edit className="h-4 w-4 sm:mr-2"/>
-                            <span className="hidden sm:inline">Editar</span>
-                        </Button>
-                        <Button size="icon" variant="destructive" className="h-8 w-8 sm:h-auto sm:w-auto sm:px-3 sm:py-1" onClick={() => setIsAlertOpen(true)}>
-                            <Trash2 className="h-4 w-4 sm:mr-2" />
-                             <span className="hidden sm:inline">Excluir</span>
-                        </Button>
-                    </div>
-                ) : <div className="w-10 sm:w-24"/>}
+                <div className="flex items-center gap-1 sm:gap-2">
+                    {can('edit:songs') && (
+                        <div className="hidden sm:flex gap-1 sm:gap-2">
+                            <Button size="icon" variant="ghost" className="h-8 w-8 sm:h-auto sm:w-auto sm:px-3 sm:py-1" onClick={() => setIsEditing(true)}>
+                                <Edit className="h-4 w-4 sm:mr-2"/>
+                                <span className="hidden sm:inline">Editar</span>
+                            </Button>
+                            <Button size="icon" variant="destructive" className="h-8 w-8 sm:h-auto sm:w-auto sm:px-3 sm:py-1" onClick={() => setIsAlertOpen(true)}>
+                                <Trash2 className="h-4 w-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Excluir</span>
+                            </Button>
+                        </div>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={toggleFullscreen} className="h-8 w-8" title="Tela Cheia">
+                        {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                    </Button>
+                </div>
              </div>
              <div className="h-auto flex flex-col sm:flex-row items-center justify-between px-2 sm:px-4 gap-2 py-2 border-t">
                 <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
@@ -227,6 +282,9 @@ export default function SongDetailPage() {
                             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => changeFontSize(FONT_STEP)} disabled={fontSize >= MAX_FONT_SIZE}>
                                 <ZoomIn className="h-4 w-4" />
                             </Button>
+                            <Button variant={isFitWidth ? "secondary" : "outline"} size="icon" className="h-8 w-8" onClick={toggleFitWidth} title="Ajustar Largura">
+                                {isFitWidth ? <Shrink className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
+                            </Button>
                         </div>
                     )}
                     {activeTab === 'pdfs' && song.pdfLinks && song.pdfLinks.length > 1 && (
@@ -253,7 +311,11 @@ export default function SongDetailPage() {
 
       <main className="flex-grow min-h-0 relative">
         <ScrollArea className="h-full" viewportRef={scrollViewportRef}>
-            <div className={cn("p-4 sm:p-8 pb-28", activeTab === 'pdfs' && "p-0 sm:p-0 pb-28")}>
+            <div className={cn(
+                "p-4 sm:p-8 pb-28 transition-all duration-300", 
+                activeTab === 'pdfs' && "p-0 sm:p-0 pb-28",
+                isFitWidth && "px-1 sm:px-2 md:px-4 max-w-none"
+            )}>
                 {activeTab === 'lyrics' && (
                     <div style={{ fontSize: `${fontSize}rem` }}>
                         <pre className="whitespace-pre-wrap font-body" style={{lineHeight: '1.75'}}>
