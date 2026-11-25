@@ -236,8 +236,8 @@ export default function SongDetailPage() {
                     </Button>
                 </div>
              </div>
-             <div className="h-auto flex flex-col sm:flex-row items-center justify-between px-2 sm:px-4 gap-2 py-2 border-t">
-                <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+             <div className="flex flex-row items-center justify-between px-2 sm:px-4 gap-2 py-2 border-t">
+                <div className="flex items-center gap-2 min-w-0 overflow-x-auto">
                     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="shrink-0">
                         <TabsList>
                             <TabsTrigger value="lyrics"><FileText className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Letra</span></TabsTrigger>

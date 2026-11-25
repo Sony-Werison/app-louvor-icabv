@@ -47,7 +47,7 @@ export default function MusicPage() {
         <div/>
         {can('edit:songs') && (
             <TooltipProvider>
-                <div className="flex gap-2 flex-wrap justify-end">
+                <div className="flex w-full justify-center gap-2 flex-wrap">
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button onClick={() => setIsImporting(true)} size="sm" variant="outline">

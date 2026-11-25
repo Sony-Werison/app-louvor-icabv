@@ -10,7 +10,12 @@ function keyBytes(base64: string) { const raw = atob((base64 + '='.repeat((4 - b
 export function PushPermission() {
  const { user, account } = useAuth();
  const [dismissed, setDismissed] = useState(false);
- useEffect(() => { setDismissed(false); }, [user?.id]);
+ useEffect(() => {
+  setDismissed(false);
+  const open = () => setDismissed(false);
+  window.addEventListener('louvor:open-push-settings', open);
+  return () => window.removeEventListener('louvor:open-push-settings', open);
+ }, [user?.id]);
  const [state, setState] = useState<'loading'|'enabled'|'prompt'|'blocked'|'unsupported'|'error'>('loading');
  const register = useCallback(async (prompt: boolean) => {
   if (!user || !account?.active || account.must_change_password) return;

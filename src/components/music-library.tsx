@@ -242,7 +242,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
                 </TabsList>
             </Tabs>
             <Tabs value={quickFilter} onValueChange={(value) => setQuickFilter(value as any)}>
-                <TabsList className="grid w-full h-10 grid-cols-3 sm:w-auto">
+                <TabsList className="grid w-full grid-cols-3 sm:w-auto">
                     {quickFilters.map(filter => (
                         <TabsTrigger key={filter} value={filter} className="text-xs sm:text-sm">{quickFilterLabels[filter]}</TabsTrigger>
                     ))}
@@ -252,7 +252,7 @@ export function MusicLibrary({ songs, onSongsDelete, onSelectionChange, onBulkEd
         )}
       </div>
 
-      <div className="h-10">
+      <div>
         {selectedSongs.length > 0 && !isReadOnly && (
           <div className="flex justify-between items-center bg-muted/50 p-2 rounded-lg">
             <span className="text-sm font-medium">{selectedSongs.length} música(s) selecionada(s)</span>

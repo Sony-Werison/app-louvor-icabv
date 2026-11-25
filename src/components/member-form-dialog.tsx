@@ -43,7 +43,6 @@ const memberRoles: MemberRole[] = ['Abertura', 'Pregação', 'Multimídia', 'Con
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
   email: z.string().email({ message: 'Por favor, insira um e-mail válido.' }).optional().or(z.literal('')),
-  phone: z.string().optional().or(z.literal('')),
   roles: z.array(z.string()).refine(value => value.some(item => item), {
     message: "Você deve selecionar pelo menos uma função.",
   }),
@@ -63,7 +62,6 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
     defaultValues: {
       name: '',
       email: '',
-      phone: '',
       roles: [],
     },
   });
@@ -74,7 +72,6 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
         form.reset({
           name: member.name || '',
           email: member.email || '',
-          phone: member.phone || '',
           roles: member.roles || [],
         });
         setAvatarPreview(member.avatar || null);
@@ -82,7 +79,6 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
         form.reset({
           name: '',
           email: '',
-          phone: '',
           roles: [],
         });
         setAvatarPreview(null);
@@ -111,7 +107,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
         id: memberId,
         name: values.name,
         email: values.email || '',
-        phone: values.phone || '',
+        phone: member?.phone || '',
         roles: values.roles as MemberRole[],
         avatar: member?.avatar,
       };
@@ -186,20 +182,6 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
                 </FormItem>
               )}
             />
-             <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone (WhatsApp)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="5511999998888" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
             <FormField
               control={form.control}
               name="roles"

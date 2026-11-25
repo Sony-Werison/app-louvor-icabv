@@ -23,83 +23,6 @@ import type { BackupData, ImportSelections } from '@/types';
 import { useSchedule } from '@/context/schedule-context';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-
-const reminderFormSchema = z.object({
-    message: z.string().min(10, { message: 'A mensagem deve ter pelo menos 10 caracteres.' }),
-});
-type ReminderFormData = z.infer<typeof reminderFormSchema>;
-
-
-function ReminderMessageCard() {
-    const { reminderMessage, updateReminderMessage } = useAuth();
-    const [isSaving, setIsSaving] = useState(false);
-    const { toast } = useToast();
-
-    const form = useForm<ReminderFormData>({
-        resolver: zodResolver(reminderFormSchema),
-        defaultValues: {
-            message: reminderMessage || '',
-        },
-    });
-
-    useEffect(() => {
-        if(reminderMessage) {
-            form.reset({ message: reminderMessage });
-        }
-    }, [reminderMessage, form]);
-
-    const onSubmit = async (values: ReminderFormData) => {
-        setIsSaving(true);
-        try {
-            await updateReminderMessage(values.message);
-            toast({ title: 'Mensagem de lembrete atualizada!' });
-        } catch (error) {
-            toast({ title: 'Não foi possível salvar', description: error instanceof Error ? error.message : 'Tente novamente.', variant: 'destructive' });
-        } finally { setIsSaving(false); }
-    };
-
-    return (
-        <Card>
-          <CardHeader>
-            <CardTitle>Mensagem de Lembrete (WhatsApp)</CardTitle>
-            <CardDescription>
-              Edite o texto usado para lembrar os membros sobre o repertório. Use as variáveis <code>[NOME]</code> e <code>[PERIODO]</code>.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="message"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Template da Mensagem</FormLabel>
-                      <FormControl>
-                        <Textarea rows={8} placeholder="Paz do Senhor, [NOME]! Passando para lembrar que você ficou de montar o repertório para [PERIODO]." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" disabled={isSaving} className="w-full sm:w-auto">
-                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                   Salvar Mensagem
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-    )
-}
-
-
 export default function SettingsPage() {
   const { exportData, importData, clearAllData } = useSchedule();
   const { can } = useAuth();
@@ -204,12 +127,18 @@ export default function SettingsPage() {
       <div className="max-w-2xl mx-auto space-y-8">
         <h1 className="text-2xl font-headline font-bold">Configurações</h1>
 
-        {can('manage:settings') && (
-            <>
-                <ReminderMessageCard />
-            </>
-        )}
-        
+        <Card>
+          <CardHeader>
+            <CardTitle>Notificações</CardTitle>
+            <CardDescription>Configure as notificações push deste dispositivo. Você receberá avisos sobre escalas, trocas e repertórios.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" onClick={() => window.dispatchEvent(new Event('louvor:open-push-settings'))}>
+              Ativar notificações push
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Backup e Restauração</CardTitle>

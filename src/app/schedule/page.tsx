@@ -3,7 +3,6 @@
 'use client';
 import { useSchedule } from '@/context/schedule-context';
 import { ScheduleView } from '@/components/schedule-view';
-import { ReminderCard } from '@/components/reminder-card';
 import { startOfWeek, endOfWeek, isWithinInterval, format, getDay, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Schedule, MonthlySchedule } from '@/types';
@@ -124,10 +123,6 @@ export default function SchedulePage() {
 
   }, [monthlySchedules, songs]);
 
-  const schedulesWithEmptyPlaylists = useMemo(() => 
-    relevantSchedules.filter(schedule => schedule.playlist.length === 0 && schedule.leaderId)
-  , [relevantSchedules]);
-  
   const dailyRepeatedSongIds = useMemo(() => {
     const songCountsByDay: Record<string, Map<string, number>> = {};
 
@@ -178,10 +173,6 @@ export default function SchedulePage() {
   return (
     <div className="p-4 md:p-6 space-y-6">
       <h1 className="text-xl font-headline font-bold">Aberturas em Destaque</h1>
-      
-      {schedulesWithEmptyPlaylists.length > 0 && (
-          <ReminderCard schedules={schedulesWithEmptyPlaylists} members={members} />
-      )}
       
       <ScheduleView 
         initialSchedules={relevantSchedules} 
