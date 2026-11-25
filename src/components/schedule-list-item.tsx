@@ -124,6 +124,7 @@ export function ScheduleListItem({
   isExporting = false,
   onEditMeeting,
   hideMeetingNames = false,
+  editing = false,
 }: {
     schedule: MonthlySchedule;
     members: Member[];
@@ -138,6 +139,7 @@ export function ScheduleListItem({
     isReadOnly?: boolean;
     isExporting?: boolean;
     onEditMeeting?: () => void;
+    editing?: boolean;
     hideMeetingNames?: boolean;
 }) {
 
@@ -184,7 +186,7 @@ export function ScheduleListItem({
                     filteredMembers={filteredMembersForColumn}
                     onValueChange={(memberId) => handleMemberChange(schedule.id, col.id, memberId, index)}
                     onClear={() => handleClearAssignment(schedule.id, col.id, index)}
-                    isReadOnly={isReadOnly}
+                    isReadOnly={isReadOnly || !editing}
                     isExporting={isExporting}
                 />
             ))}
@@ -197,18 +199,18 @@ export function ScheduleListItem({
         <TableRow key={schedule.date.toISOString()} className={cn(isExporting ? 'bg-card' : '', schedule.date.getDay() !== 0 && 'bg-muted/40', schedule.isFeatured && 'bg-amber-500/10')}>
             <TableCell className={cn("font-medium p-2 sticky left-0 z-10", isExporting ? 'bg-card text-card-foreground' : 'bg-background group-hover:bg-muted/50', schedule.isFeatured && 'bg-amber-500/10')}>
              <div className="flex items-center gap-1">
-                {!isReadOnly && (
+                {!isReadOnly && editing && (
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleFeatureToggle(schedule.id)}>
                         <Pin className={cn("h-4 w-4", schedule.isFeatured ? "text-amber-500 fill-amber-500" : "text-muted-foreground")}/>
                     </Button>
                 )}
-                 {isReadOnly ? (
+                 {isReadOnly || !editing ? (
                     <div className="text-left font-normal capitalize h-9 px-3 py-2 text-xs sm:text-sm">
                          {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
                     </div>
                 ) : (
                     <Popover>
-                        <PopoverTrigger asChild disabled={isReadOnly}>
+                        <PopoverTrigger asChild disabled={isReadOnly || !editing}>
                             <Button variant="outline" size="sm" className="w-full justify-start font-normal capitalize h-9 text-xs sm:text-sm">
                                 {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
                             </Button>
@@ -244,7 +246,7 @@ export function ScheduleListItem({
             })}
             {!isReadOnly && (
                 <TableCell className={cn("p-2 sticky right-0 z-10", isExporting ? 'bg-card' : 'bg-background group-hover:bg-muted/50', schedule.isFeatured && 'bg-amber-500/10')}>
-                    <Button variant="outline" size="sm" onClick={onEditMeeting}>Editar reunião</Button><AlertDialog>
+                    <Button variant="outline" size="sm" onClick={onEditMeeting}>{editing ? "Editar reuni?o" : "Editar escala"}</Button>{editing && <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon">
                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -262,7 +264,7 @@ export function ScheduleListItem({
                                 <AlertDialogAction onClick={() => handleRemoveSchedule(schedule.id)}>Excluir</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
-                    </AlertDialog>
+                    </AlertDialog>}
                 </TableCell>
             )}
         </TableRow>
@@ -274,7 +276,7 @@ export function ScheduleListItem({
     <Card className={cn(isExporting ? 'bg-card border-border shadow-lg' : '', schedule.isFeatured && 'bg-amber-500/10 border-amber-500/20')}>
         <CardHeader className="flex flex-row items-center justify-between p-3 border-b">
              <div className={cn("font-semibold capitalize text-base flex items-center gap-2 flex-grow justify-start", isExporting ? 'text-card-foreground' : '')}>
-                 {!isReadOnly && (
+                 {!isReadOnly && editing && (
                     <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2" onClick={() => handleFeatureToggle(schedule.id)}>
                         <Pin className={cn("h-4 w-4", schedule.isFeatured ? "text-amber-500 fill-amber-500" : "text-muted-foreground")}/>
                     </Button>
