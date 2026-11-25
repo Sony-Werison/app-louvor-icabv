@@ -18,6 +18,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase-client';
 
 export default function MonthlySchedulePage() {
     const { monthlySchedules, addSchedule, members, scheduleColumns } = useSchedule();
@@ -27,6 +28,7 @@ export default function MonthlySchedulePage() {
     const { can } = useAuth();
     
     const [isExporting, setIsExporting] = useState(false);
+    const [notifying, setNotifying] = useState(false);
     const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [selectedMonthsForExport, setSelectedMonthsForExport] = useState<string[]>([]);
@@ -177,7 +179,15 @@ export default function MonthlySchedulePage() {
                         <ChevronRight className="h-4 w-4" />
                     </Button>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                    {can('edit:schedule') && <Button size="sm" variant="outline" disabled={notifying || !filteredSchedules.length} onClick={async () => {
+                        if (!supabase) return;
+                        setNotifying(true);
+                        const { data, error } = await supabase.rpc('notify_monthly_schedule', { p_year: currentMonth.getFullYear(), p_month: currentMonth.getMonth() + 1 });
+                        setNotifying(false);
+                        if (error) toast({ title: 'Não foi possível notificar', description: 'Tente novamente.', variant: 'destructive' });
+                        else toast({ title: 'Membros notificados', description: `${data} notificações enviadas para a caixa de avisos.` });
+                    }}>{notifying ? 'Notificando...' : 'Notificar membros'}</Button>}
                     <Button size="sm" variant="outline" className="w-full" onClick={() => setIsExportDialogOpen(true)}>
                         <Download className="mr-2 h-4 w-4" />
                         Escala Completa

@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, User as UserIcon, ChevronDown, LogIn } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { NotificationBell } from './notification-bell';
 
 
 export function ProfileSwitcher() {
@@ -47,7 +48,7 @@ export function ProfileSwitcher() {
 
 
   return (
-    <DropdownMenu>
+    <div className="flex items-center gap-2"><NotificationBell /><DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="w-48 justify-between">
           <div className="flex items-center gap-2 truncate">
@@ -68,6 +69,6 @@ export function ProfileSwitcher() {
             <span>Sair</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
-    </DropdownMenu>
+    </DropdownMenu></div>
   );
 }

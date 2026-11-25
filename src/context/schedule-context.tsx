@@ -1,12 +1,11 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect, useCallback } from 'react';
 import type { MonthlySchedule, Member, Song, BackupData, ImportSelections } from '@/types';
 import { subMonths } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/lib/supabase-client';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { scheduleColumns } from './initial-data';
 import { useAuth } from './auth-context';
@@ -47,23 +46,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
-  const playlistChannel = useRef<RealtimeChannel | null>(null);
-
-  useEffect(() => {
-    if (!supabase) return;
-    const client = supabase;
-    const channel = client.channel('playlist-notifications', { config: { broadcast: { self: false } } });
-    playlistChannel.current = channel;
-    channel.on('broadcast', { event: 'playlist-created' }, ({ payload }) => {
-      const description = typeof payload?.description === 'string' ? payload.description : 'Um repertorio foi preparado.';
-      toast({ title: 'Novo repertorio disponivel', description });
-    }).subscribe();
-    return () => {
-      playlistChannel.current = null;
-      void client.removeChannel(channel);
-    };
-  }, [toast]);
-
   const fetchData = useCallback(async () => {
     if (!supabase) {
       setMembers([]);
@@ -192,13 +174,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
     if (error) {
       throw new Error('Não foi possível salvar o repertório. Confira sua permissão ou conexão.');
-    }
-    const schedule = monthlySchedules.find(item => item.id === monthlyScheduleId);
-    const previous = type === 'manha' ? schedule?.playlist_manha : schedule?.playlist_noite;
-    if (playlist.length > 0 && (!previous || previous.length === 0)) {
-      const date = schedule?.date.toLocaleDateString('pt-BR') || '';
-      const description = `Repertorio de ${type === 'manha' ? 'manha' : 'noite'} ${date} disponivel.`;
-      void playlistChannel.current?.send({ type: 'broadcast', event: 'playlist-created', payload: { description } }).catch(() => undefined);
     }
     await fetchData();
   };
