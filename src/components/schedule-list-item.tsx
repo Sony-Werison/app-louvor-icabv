@@ -118,6 +118,7 @@ export function ScheduleListItem({
   isReadOnly = false,
   isExporting = false,
   onEditMeeting,
+  hideMeetingNames = false,
 }: {
     schedule: MonthlySchedule;
     members: Member[];
@@ -132,6 +133,7 @@ export function ScheduleListItem({
     isReadOnly?: boolean;
     isExporting?: boolean;
     onEditMeeting?: () => void;
+    hideMeetingNames?: boolean;
 }) {
 
   const [nameManha, setNameManha] = useState(schedule.name_manha || '');
@@ -187,7 +189,7 @@ export function ScheduleListItem({
   
   if (isDesktop) {
     return (
-        <TableRow key={schedule.date.toISOString()} className={cn(isExporting ? 'bg-card' : '', schedule.date.getDay() !== 0 && 'bg-blue-500/10', schedule.isFeatured && 'bg-amber-500/10')}>
+        <TableRow key={schedule.date.toISOString()} className={cn(isExporting ? 'bg-card' : '', schedule.date.getDay() !== 0 && 'bg-muted/40', schedule.isFeatured && 'bg-amber-500/10')}>
             <TableCell className={cn("font-medium p-2 sticky left-0 z-10", isExporting ? 'bg-card text-card-foreground' : 'bg-background group-hover:bg-muted/50', schedule.isFeatured && 'bg-amber-500/10')}>
              <div className="flex items-center gap-1">
                 {!isReadOnly && (
@@ -218,18 +220,19 @@ export function ScheduleListItem({
                     </Popover>
                 )}
              </div>
-             {(schedule.name_manha || schedule.name_noite) && <div className="px-3 text-xs text-muted-foreground">{schedule.name_manha && <div>Manhã: {schedule.name_manha}</div>}{schedule.name_noite && <div>Noite: {schedule.name_noite}</div>}</div>}
             </TableCell>
             {columns.map((col) => {
                if (col.id.includes('manha')) {
                   return (
                      <TableCell key={col.id} className="p-2 min-w-44">
+                        {col.id === 'abertura_manha' && schedule.name_manha && <div className="mb-1 text-xs text-muted-foreground">Reunião da manhã: {schedule.name_manha}</div>}
                         {renderDesktopAssignment(col)}
                     </TableCell>
                   )
                }
                return (
                 <TableCell key={col.id} className="p-2 min-w-44">
+                    {col.id === 'abertura_noite' && schedule.name_noite && <div className="mb-1 text-xs text-muted-foreground">Reunião da noite: {schedule.name_noite}</div>}
                     {renderDesktopAssignment(col)}
                 </TableCell>
                )
@@ -339,7 +342,7 @@ export function ScheduleListItem({
                                     <Sun className="h-5 w-5 text-amber-500"/>
                                     Manhã
                                   </div>
-                                  {!isReadOnly && <div className="space-y-2">
+                                  {!isReadOnly && !hideMeetingNames && <div className="space-y-2">
                                         <Label htmlFor="name_manha">Nome da Reunião</Label>
                                         <Input 
                                             id="name_manha"
@@ -381,7 +384,7 @@ export function ScheduleListItem({
                                     <Moon className="h-5 w-5 text-blue-400"/>
                                     Noite
                                   </div>
-                                   {!isReadOnly && <div className="space-y-2">
+                                   {!isReadOnly && !hideMeetingNames && <div className="space-y-2">
                                         <Label htmlFor="name_noite">Nome da Reunião</Label>
                                         <Input 
                                             id="name_noite"

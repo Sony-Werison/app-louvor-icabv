@@ -180,9 +180,9 @@ export default function MonthlySchedulePage() {
                         <ChevronRight className="h-4 w-4" />
                     </Button>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    <Button asChild size="sm" variant="outline"><Link href="/trocas">Solicitar troca</Link></Button>
-                    {can('edit:schedule') && <Button size="sm" variant="outline" disabled={notifying || !filteredSchedules.length} onClick={async () => {
+                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
+                    <Button asChild size="sm" variant="outline" className="w-full sm:w-auto"><Link href="/trocas">Solicitar troca</Link></Button>
+                    {can('edit:schedule') && <Button size="sm" variant="outline" className="w-full sm:w-auto" disabled={notifying || !filteredSchedules.length} onClick={async () => {
                         if (!supabase) return;
                         setNotifying(true);
                         const { data, error } = await supabase.rpc('notify_monthly_schedule', { p_year: currentMonth.getFullYear(), p_month: currentMonth.getMonth() + 1 });
@@ -190,15 +190,15 @@ export default function MonthlySchedulePage() {
                         if (error) toast({ title: 'Não foi possível notificar', description: 'Tente novamente.', variant: 'destructive' });
                         else toast({ title: 'Membros notificados', description: `${data} notificações enviadas para a caixa de avisos.` });
                     }}>{notifying ? 'Notificando...' : 'Notificar membros'}</Button>}
-                    <Button size="sm" variant="outline" className="w-full" onClick={() => setIsExportDialogOpen(true)}>
-                        <Download className="mr-2 h-4 w-4" />
+                    <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => setIsExportDialogOpen(true)}>
+                        <Download className="h-4 w-4" />
                         Escala Completa
                     </Button>
                     {can('edit:schedule') && (
                         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                             <PopoverTrigger asChild>
-                                <Button size="sm" className="sm:size-auto w-full sm:w-auto">
-                                    <Plus className="mr-2" />
+                                <Button size="sm" className="w-full sm:w-auto">
+                                    <Plus />
                                     Adicionar Data
                                 </Button>
                             </PopoverTrigger>

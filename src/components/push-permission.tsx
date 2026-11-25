@@ -3,11 +3,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 function keyBytes(base64: string) { const raw = atob((base64 + '='.repeat((4 - base64.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(raw, c => c.charCodeAt(0)); }
 export function PushPermission() {
  const { user, account } = useAuth();
+ const [dismissed, setDismissed] = useState(false);
+ useEffect(() => { setDismissed(false); }, [user?.id]);
  const [state, setState] = useState<'loading'|'enabled'|'prompt'|'blocked'|'unsupported'|'error'>('loading');
  const register = useCallback(async (prompt: boolean) => {
   if (!user || !account?.active || account.must_change_password) return;
@@ -26,8 +29,18 @@ export function PushPermission() {
  }, [user, account]);
  useEffect(() => { void register(false); }, [register]);
  if (!user || !account?.active || account.must_change_password || state === 'loading' || state === 'enabled') return null;
- return <div role="status" className="flex flex-wrap items-center justify-center gap-2 border-b bg-amber-500/10 px-4 py-2 text-sm">
-  <span>{state === 'blocked' ? 'As notificações estão bloqueadas. Ative-as nas configurações do navegador para este site.' : state === 'unsupported' ? 'Notificações push indisponíveis neste navegador. No iPhone, adicione o aplicativo à Tela de Início e abra-o por lá.' : state === 'error' ? 'Não foi possível ativar as notificações neste dispositivo.' : 'Ative as notificações para receber avisos de escalas e repertórios.'}</span>
-  {(state === 'prompt' || state === 'error') && <Button size="sm" variant="outline" onClick={() => void register(true)}>Ativar notificações</Button>}
- </div>;
+ return <Dialog open={!dismissed} onOpenChange={open => { if (!open) setDismissed(true); }}>
+  <DialogContent className="w-[calc(100%-2rem)] rounded-lg sm:max-w-md">
+   <DialogHeader>
+    <DialogTitle>Ative as notificações</DialogTitle>
+    <DialogDescription>
+     {state === 'blocked' ? 'As notificações estão bloqueadas neste navegador. Abra as configurações do site pelo ícone ao lado do endereço, permita notificações e depois toque em “Verificar novamente”.' : state === 'unsupported' ? 'As notificações push não estão disponíveis neste navegador. No iPhone, adicione o aplicativo à Tela de Início e abra-o por lá.' : state === 'error' ? 'Não foi possível ativar as notificações neste dispositivo. Tente novamente para receber avisos de escalas e repertórios.' : 'Receba avisos sobre suas escalas, trocas e novos repertórios diretamente neste dispositivo.'}
+    </DialogDescription>
+   </DialogHeader>
+   <DialogFooter className="gap-2 sm:gap-2">
+    <Button variant="outline" onClick={() => setDismissed(true)}>Agora não</Button>
+    {state === 'blocked' ? <Button onClick={() => void register(false)}>Verificar novamente</Button> : (state === 'prompt' || state === 'error') && <Button onClick={() => void register(true)}>Ativar notificações</Button>}
+   </DialogFooter>
+  </DialogContent>
+ </Dialog>;
 }
