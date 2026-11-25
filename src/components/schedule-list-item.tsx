@@ -41,7 +41,7 @@ const MemberSelector: React.FC<{
     const guestName = assignedMemberId?.startsWith('guest:') ? assignedMemberId.slice(6) : '';
     const { account } = useAuth();
     const [guest, setGuest] = useState('');
-    const [guestMode, setGuestMode] = useState(false);
+    const [guestDialogOpen, setGuestDialogOpen] = useState(false);
     
     if (isExporting && selectedMember) {
         return (
@@ -64,45 +64,47 @@ const MemberSelector: React.FC<{
     }
     
     return (
-        <div className="flex min-w-0 flex-col gap-1"><div className="flex items-center gap-1">
-          {guestMode ? <div className="flex min-w-0 flex-1 items-center gap-1"><Input autoFocus value={guest} onChange={event => setGuest(event.target.value)} placeholder="Nome da visita" aria-label="Nome da visita" className="h-9 min-w-0 flex-1 text-xs" /><Button type="button" variant="outline" size="sm" className="h-9 px-2 text-xs" disabled={!guest.trim()} onClick={() => { onValueChange(`guest:${guest.trim().slice(0,120)}`); setGuest(''); setGuestMode(false); }}>Usar</Button><Button type="button" variant="ghost" size="sm" className="h-9 px-1 text-xs" onClick={() => { setGuestMode(false); setGuest(''); }}>×</Button></div> : <>
-             <Select value={assignedMemberId || ''} onValueChange={onValueChange} disabled={isReadOnly}>
-                <SelectTrigger className={cn("h-9 text-xs sm:text-sm w-full", !assignedMemberId && "text-muted-foreground/60")}>
-                    <div className="flex items-center gap-2 truncate">
-                         {selectedMember ? (
-                            <>
-                                <Avatar className="w-5 h-5">
-                                    <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
-                                    <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <span className={cn('truncate', selectedMember.id === account?.member_id && 'font-bold text-amber-400')}>{selectedMember.name}</span>
-                            </>
-                        ) : guestName ? <span className="truncate">{guestName} (visita)</span> : (
-                            <SelectValue placeholder="Selecione..." />
-                        )}
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex items-center gap-1">
+            <Select value={assignedMemberId || ''} onValueChange={(value) => value === '__guest__' ? setGuestDialogOpen(true) : onValueChange(value)} disabled={isReadOnly}>
+              <SelectTrigger className={cn("h-9 text-xs sm:text-sm w-full", !assignedMemberId && "text-muted-foreground/60")}>
+                <div className="flex items-center gap-2 truncate">
+                  {selectedMember ? (
+                    <>
+                      <Avatar className="w-5 h-5">
+                        <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
+                        <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span className={cn('truncate', selectedMember.id === account?.member_id && 'font-bold text-amber-400')}>{selectedMember.name}</span>
+                    </>
+                  ) : guestName ? <span className="truncate">{guestName} (visita)</span> : <SelectValue placeholder="Selecione..." />}
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__guest__">Visita</SelectItem>
+                {filteredMembers.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="w-5 h-5"><AvatarImage src={member.avatar} alt={member.name} /><AvatarFallback>{member.name.charAt(0)}</AvatarFallback></Avatar>
+                      <span>{member.name}</span>
                     </div>
-                </SelectTrigger>
-                <SelectContent>
-                    {filteredMembers.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                           <div className="flex items-center gap-2">
-                                <Avatar className="w-5 h-5">
-                                    <AvatarImage src={member.avatar} alt={member.name} />
-                                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <span>{member.name}</span>
-                           </div>
-                        </SelectItem>
-                    ))}
-                </SelectContent>
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
-            {assignedMemberId && !isReadOnly && (
-                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onClear}>
-                    <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                </Button>
-            )}
-            {!isReadOnly && <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 px-1 text-[10px] text-muted-foreground" onClick={() => setGuestMode(true)}>Visita</Button>}
-          </>}</div></div>
+            {assignedMemberId && !isReadOnly && <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onClear}><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></Button>}
+          </div>
+          <AlertDialog open={guestDialogOpen} onOpenChange={setGuestDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader><AlertDialogTitle>Adicionar visita</AlertDialogTitle><AlertDialogDescription>Informe o nome da pessoa para esta atribui??o.</AlertDialogDescription></AlertDialogHeader>
+              <Input autoFocus value={guest} onChange={event => setGuest(event.target.value)} placeholder="Nome da visita" aria-label="Nome da visita" />
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setGuest('')}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction disabled={!guest.trim()} onClick={() => { onValueChange(`guest:${guest.trim().slice(0, 120)}`); setGuest(''); }}>Adicionar</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
     );
 };
 
