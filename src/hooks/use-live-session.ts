@@ -22,7 +22,8 @@ export function useLiveSession(scheduleId: string, isHost: boolean) {
       return;
     }
 
-    const channel = supabase.channel(`live-room-${scheduleId}`, {
+    const client = supabase;
+    const channel = client.channel(`live-room-${scheduleId}`, {
       // self: false means we don't receive our own broadcasts, but we set it to !isHost so the host can see its own messages if needed for debugging or state persistence.
       config: { broadcast: { self: !isHost, ack: true } },
     });
@@ -53,7 +54,7 @@ export function useLiveSession(scheduleId: string, isHost: boolean) {
 
     return () => {
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+        client.removeChannel(channelRef.current);
         channelRef.current = null;
       }
        if (broadcastTimeoutRef.current) {

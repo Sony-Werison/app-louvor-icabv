@@ -31,7 +31,7 @@ import {
 } from './ui/select';
 import { Input } from './ui/input';
 
-const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
+const songCategories = ['Louvor', 'Hino', 'Infantil'] as const;
 
 const formSchema = z.object({
   category: z.enum(songCategories).optional(),

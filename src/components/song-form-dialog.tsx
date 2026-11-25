@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { ScrollArea } from './ui/scroll-area';
 import { Plus, Trash2, Link as LinkIcon } from 'lucide-react';
 
-const songCategories: SongCategory[] = ['Louvor', 'Hino', 'Infantil'];
+const songCategories = ['Louvor', 'Hino', 'Infantil'] as const;
 
 const formSchema = z.object({
   title: z.string().min(2, { message: 'O título deve ter pelo menos 2 caracteres.' }),
@@ -69,6 +69,8 @@ export function SongFormDialog({ isOpen, onOpenChange, onSave, song }: SongFormD
     
     onSave({
       ...values,
+      artist: values.artist || '',
+      key: values.key || '',
       pdfLinks: processedPdfLinks
     });
   };

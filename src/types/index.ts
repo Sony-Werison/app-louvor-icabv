@@ -1,9 +1,13 @@
 export type Role = 'admin' | 'abertura' | 'viewer';
 
-export type PasswordSet = {
-  admin: string;
-  abertura: string;
-}
+export type MemberAccount = {
+  user_id: string;
+  member_id: string;
+  login_email: string;
+  role: Role;
+  must_change_password: boolean;
+  active: boolean;
+};
 
 export type MemberRole = 'Abertura' | 'Pregação' | 'Multimídia' | 'Convidado';
 export type SongCategory = 'Hino' | 'Louvor' | 'Infantil';

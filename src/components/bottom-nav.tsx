@@ -11,7 +11,7 @@ import { useAuth } from '@/context/auth-context';
 const navItems = [
   { href: '/', label: 'Início', icon: Home },
   { href: '/schedule', label: 'Aberturas', icon: ListMusic },
-  { href: '/rehearsal', label: 'Ensaio', icon: Music },
+  { href: '/monthly-schedule', label: 'Escala', icon: CalendarRange },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },
 ];
@@ -34,7 +34,7 @@ export function BottomNav() {
     ...adminNavItems.filter(item => can(item.permission as any))
   ].slice(0, 6); // Max 6 items for bottom nav
   
-  const gridColsClass = `grid-cols-${allNavItems.length}`;
+  const gridColsClass = allNavItems.length === 6 ? 'grid-cols-6' : 'grid-cols-5';
 
   return (
     <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border md:hidden">

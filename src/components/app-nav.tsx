@@ -16,7 +16,6 @@ import { useAuth } from '@/context/auth-context';
 const navItems = [
   { href: '/', label: 'Início', icon: Home },
   { href: '/schedule', label: 'Aberturas', icon: ListMusic },
-  { href: '/rehearsal', label: 'Ensaio', icon: Music },
   { href: '/monthly-schedule', label: 'Escala Mensal', icon: CalendarRange },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },
@@ -43,17 +42,14 @@ export function AppNav() {
         <SidebarMenu>
           {allNavItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} passHref>
-                <SidebarMenuButton
-                  as="a"
+              <SidebarMenuButton
+                  asChild
                   isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
                   tooltip={item.label}
                   onClick={() => setOpenMobile(false)}
                 >
-                    <item.icon />
-                    <span>{item.label}</span>
+                  <Link href={item.href}><item.icon /><span>{item.label}</span></Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>

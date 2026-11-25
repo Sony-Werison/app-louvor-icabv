@@ -16,7 +16,6 @@ import { useAuth } from '@/context/auth-context';
 
 const menuItems = [
   { href: '/schedule', label: 'Aberturas', icon: ListMusic },
-  { href: '/rehearsal', label: 'Ensaio', icon: Music },
   { href: '/monthly-schedule', label: 'Escala Mensal', icon: CalendarRange },
   { href: '/music', label: 'Músicas', icon: Library },
   { href: '/members', label: 'Membros', icon: Users },

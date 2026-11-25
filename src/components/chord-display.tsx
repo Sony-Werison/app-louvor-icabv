@@ -105,7 +105,7 @@ export function ChordDisplay({ chordsText, transposeBy = 0 }: ChordDisplayProps)
                 
                 // If the first part is lyrics, it has no preceding chord.
                 const hasPairedChord = chord !== null;
-                const transposed = hasPairedChord ? transposeChord(chord, transposeBy) : '\u00A0'; // Non-breaking space
+                const transposed = chord !== null ? transposeChord(chord, transposeBy) : '\u00A0'; // Non-breaking space
                 
                 return (
                     <div key={partIndex} className="inline-flex flex-col-reverse align-bottom">

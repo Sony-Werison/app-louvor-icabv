@@ -30,94 +30,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-const passwordFormSchema = z.object({
-  admin: z.string().min(1, { message: 'A senha de admin é obrigatória.' }),
-  abertura: z.string().min(1, { message: 'A senha de abertura é obrigatória.' }),
-});
-type PasswordFormData = z.infer<typeof passwordFormSchema>;
-
 const reminderFormSchema = z.object({
     message: z.string().min(10, { message: 'A mensagem deve ter pelo menos 10 caracteres.' }),
 });
 type ReminderFormData = z.infer<typeof reminderFormSchema>;
 
-
-function PasswordSettingsCard() {
-    const { passwords, updatePasswords } = useAuth();
-    const [isSaving, setIsSaving] = useState(false);
-    const { toast } = useToast();
-
-    const form = useForm<PasswordFormData>({
-        resolver: zodResolver(passwordFormSchema),
-        defaultValues: {
-            admin: passwords?.admin || '',
-            abertura: passwords?.abertura || '',
-        },
-    });
-
-    useEffect(() => {
-        if(passwords) {
-            form.reset({
-                admin: passwords.admin,
-                abertura: passwords.abertura,
-            });
-        }
-    }, [passwords, form]);
-
-    const onSubmit = async (values: PasswordFormData) => {
-        setIsSaving(true);
-        await updatePasswords(values);
-        setIsSaving(false);
-        toast({ title: 'Senhas atualizadas com sucesso!' });
-    };
-
-    return (
-        <Card>
-          <CardHeader>
-            <CardTitle>Gerenciamento de Senhas</CardTitle>
-            <CardDescription>
-              Altere as senhas de acesso para os diferentes perfis de usuário.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="admin"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Senha de Administrador</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="********" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="abertura"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Senha de Abertura</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="********" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" disabled={isSaving} className="w-full sm:w-auto">
-                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                   Salvar Novas Senhas
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-    )
-}
 
 function ReminderMessageCard() {
     const { reminderMessage, updateReminderMessage } = useAuth();
@@ -139,9 +56,12 @@ function ReminderMessageCard() {
 
     const onSubmit = async (values: ReminderFormData) => {
         setIsSaving(true);
-        await updateReminderMessage(values.message);
-        setIsSaving(false);
-        toast({ title: 'Mensagem de lembrete atualizada!' });
+        try {
+            await updateReminderMessage(values.message);
+            toast({ title: 'Mensagem de lembrete atualizada!' });
+        } catch (error) {
+            toast({ title: 'Não foi possível salvar', description: error instanceof Error ? error.message : 'Tente novamente.', variant: 'destructive' });
+        } finally { setIsSaving(false); }
     };
 
     return (
@@ -149,7 +69,7 @@ function ReminderMessageCard() {
           <CardHeader>
             <CardTitle>Mensagem de Lembrete (WhatsApp)</CardTitle>
             <CardDescription>
-              Edite o texto usado para lembrar os membros sobre o repertório. Use as variáveis <code>[NOME]</code>, <code>[PERIODO]</code> e <code>[SENHA]</code>.
+              Edite o texto usado para lembrar os membros sobre o repertório. Use as variáveis <code>[NOME]</code> e <code>[PERIODO]</code>.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -286,7 +206,6 @@ export default function SettingsPage() {
 
         {can('manage:settings') && (
             <>
-                <PasswordSettingsCard />
                 <ReminderMessageCard />
             </>
         )}

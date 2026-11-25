@@ -115,7 +115,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
   const { updateSchedulePlaylist } = useSchedule();
-  const { can, shareMessage } = useAuth();
+  const { can, canManagePlaylist, shareMessage } = useAuth();
   const { toast } = useToast();
 
   const [isCapturing, setIsCapturing] = useState<string | null>(null);
@@ -132,12 +132,9 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
     }
   }, []);
 
-  const handlePlaylistSave = (scheduleId: string, newPlaylist: string[]) => {
-    const updatedSchedules = schedules.map(s =>
-      s.id === scheduleId ? { ...s, playlist: newPlaylist } : s
-    );
-    setSchedules(updatedSchedules);
-    updateSchedulePlaylist(scheduleId, newPlaylist);
+  const handlePlaylistSave = async (scheduleId: string, newPlaylist: string[]) => {
+    await updateSchedulePlaylist(scheduleId, newPlaylist);
+    setSchedules(previous => previous.map(item => item.id === scheduleId ? { ...item, playlist: newPlaylist } : item));
     setIsPlaylistDialogOpen(false);
     setSelectedSchedule(null);
   };
@@ -258,7 +255,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                 
                 const isCurrentlyExporting = isCapturing === schedule.id;
                 const hasPlaylist = playlistSongs.length > 0;
-                const canManagePlaylists = can('manage:playlists');
+                const canManagePlaylists = canManagePlaylist(schedule.leaderId);
                 const canEditSchedule = can('edit:schedule');
                 const actionIcon = isMobile && canShare ? <Share2 className="w-4 h-4 mr-2" /> : <Download className="w-4 h-4 mr-2" />;
                 const actionLabel = isMobile && canShare ? 'Compartilhar' : 'Baixar PNG';

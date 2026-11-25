@@ -31,7 +31,7 @@ import { useSchedule } from '@/context/schedule-context';
 interface PlaylistDialogProps {
   schedule: Schedule;
   allSongs: Song[];
-  onSave: (scheduleId: string, newPlaylist: string[]) => void;
+  onSave: (scheduleId: string, newPlaylist: string[]) => Promise<void>;
   onOpenChange: (open: boolean) => void;
   repeatedSongIds?: Set<string>;
 }
@@ -96,9 +96,13 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
   }, [currentPlaylist]);
 
 
-  const handleSave = () => {
-    onSave(schedule.id, currentPlaylist);
-    setIsOpen(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const handleSave = async () => {
+    setIsSaving(true); setSaveError('');
+    try { await onSave(schedule.id, currentPlaylist); setIsOpen(false); }
+    catch (error) { setSaveError(error instanceof Error ? error.message : 'Não foi possível salvar.'); }
+    finally { setIsSaving(false); }
   };
 
   const handleCheckedChange = (songId: string, checked: boolean | 'indeterminate') => {
@@ -472,9 +476,10 @@ export function PlaylistDialog({ schedule, allSongs, onSave, onOpenChange, repea
             </TabsContent>
         </Tabs>
         
+        {saveError && <p role="alert" className="px-6 text-sm text-destructive">{saveError}</p>}
         <DialogFooter className="p-3 border-t shrink-0 flex-row justify-center gap-2">
           <Button variant="outline" onClick={() => { setIsOpen(false); onOpenChange(false); }} className="w-full">Cancelar</Button>
-          <Button onClick={handleSave} className="w-full">Salvar</Button>
+          <Button onClick={handleSave} disabled={isSaving} className="w-full">Salvar</Button>
         </DialogFooter>
 
         {songToPreview && (

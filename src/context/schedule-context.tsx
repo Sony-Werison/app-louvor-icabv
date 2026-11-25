@@ -1,13 +1,15 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect, useCallback, useRef } from 'react';
 import type { MonthlySchedule, Member, Song, BackupData, ImportSelections } from '@/types';
 import { subMonths } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/lib/supabase-client';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { scheduleColumns } from './initial-data';
+import { useAuth } from './auth-context';
 
 
 interface ScheduleContextType {
@@ -15,12 +17,10 @@ interface ScheduleContextType {
   members: Member[];
   songs: Song[];
   scheduleColumns: typeof scheduleColumns;
-  rehearsalPlaylist: string[];
   addSchedule: (date: Date) => Promise<void>;
   removeSchedule: (id: string) => Promise<void>;
   updateSchedule: (id: string, updates: Partial<Omit<MonthlySchedule, 'id'>>) => Promise<void>;
   updateSchedulePlaylist: (scheduleId: string, playlist: string[]) => Promise<void>;
-  updateRehearsalPlaylist: (playlist: string[]) => Promise<void>;
   saveMember: (member: Member, avatarFile?: File | null) => Promise<void>;
   removeMember: (memberId: string) => Promise<void>;
   addSong: (songData: Omit<Song, 'id'>) => Promise<void>;
@@ -44,9 +44,25 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [members, setMembers] = useState<Member[]>([]);
   const [rawSongs, setRawSongs] = useState<Song[]>([]);
   const [monthlySchedules, setMonthlySchedules] = useState<MonthlySchedule[]>([]);
-  const [rehearsalPlaylist, setRehearsalPlaylist] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const playlistChannel = useRef<RealtimeChannel | null>(null);
+
+  useEffect(() => {
+    if (!supabase) return;
+    const client = supabase;
+    const channel = client.channel('playlist-notifications', { config: { broadcast: { self: false } } });
+    playlistChannel.current = channel;
+    channel.on('broadcast', { event: 'playlist-created' }, ({ payload }) => {
+      const description = typeof payload?.description === 'string' ? payload.description : 'Um repertorio foi preparado.';
+      toast({ title: 'Novo repertorio disponivel', description });
+    }).subscribe();
+    return () => {
+      playlistChannel.current = null;
+      void client.removeChannel(channel);
+    };
+  }, [toast]);
 
   const fetchData = useCallback(async () => {
     if (!supabase) {
@@ -58,11 +74,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
     
     try {
-      const [membersRes, songsRes, schedulesRes, rehearsalRes] = await Promise.all([
+      const [membersRes, songsRes, schedulesRes] = await Promise.all([
         supabase.from('members').select('*'),
         supabase.from('songs').select('*'),
         supabase.from('monthly_schedules').select('*'),
-        supabase.from('rehearsal').select('*').eq('id', 'current').single(),
       ]);
 
       if (membersRes.error) throw membersRes.error;
@@ -81,9 +96,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       })).sort((a,b) => a.date.getTime() - b.date.getTime());
       setMonthlySchedules(parsedSchedules);
 
-      if (rehearsalRes.data) {
-          setRehearsalPlaylist(rehearsalRes.data.playlist || []);
-      }
 
     } catch (error: any) {
       console.error("Error fetching data from Supabase:", error);
@@ -96,7 +108,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setIsLoading(true);
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, user?.id]);
 
   const songs = useMemo(() => {
     const today = new Date();
@@ -169,31 +181,26 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const updateSchedulePlaylist = async (scheduleId: string, playlist: string[]) => {
-    if (!supabase) return;
+    if (!supabase) throw new Error('Serviço indisponível. O repertório não foi salvo.');
     const idParts = scheduleId.split('-');
     const type = idParts[1];
     const monthlyScheduleId = idParts.slice(2).join('-');
 
-    if (!monthlyScheduleId || (type !== 'manha' && type !== 'noite')) return;
+    if (!monthlyScheduleId || (type !== 'manha' && type !== 'noite')) throw new Error('Escala inválida.');
 
-    const fieldToUpdate = type === 'manha' ? 'playlist_manha' : 'playlist_noite';
-    const { error } = await supabase.from('monthly_schedules').update({ [fieldToUpdate]: playlist }).eq('id', monthlyScheduleId);
+    const { error } = await supabase.rpc('update_own_playlist', { p_schedule_id: monthlyScheduleId, p_period: type, p_playlist: playlist });
 
     if (error) {
-      toast({ title: 'Falha ao Atualizar Repertório', description: error.message, variant: 'destructive'});
-      return;
+      throw new Error('Não foi possível salvar o repertório. Confira sua permissão ou conexão.');
     }
-     await fetchData();
-  };
-
-  const updateRehearsalPlaylist = async (playlist: string[]) => {
-      setRehearsalPlaylist(playlist);
-      if (supabase) {
-          const { error } = await supabase.from('rehearsal').update({ playlist }).eq('id', 'current');
-          if (error) {
-              toast({ title: 'Falha ao Atualizar Ensaio', description: error.message, variant: 'destructive'});
-          }
-      }
+    const schedule = monthlySchedules.find(item => item.id === monthlyScheduleId);
+    const previous = type === 'manha' ? schedule?.playlist_manha : schedule?.playlist_noite;
+    if (playlist.length > 0 && (!previous || previous.length === 0)) {
+      const date = schedule?.date.toLocaleDateString('pt-BR') || '';
+      const description = `Repertorio de ${type === 'manha' ? 'manha' : 'noite'} ${date} disponivel.`;
+      void playlistChannel.current?.send({ type: 'broadcast', event: 'playlist-created', payload: { description } }).catch(() => undefined);
+    }
+    await fetchData();
   };
 
   const saveMember = async (member: Member, avatarFile?: File | null) => {
@@ -204,16 +211,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       const filePath = `public/${member.id}.${fileExt}`;
       const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, avatarFile, { upsert: true });
       if (uploadError) {
-        toast({ title: 'Erro no upload da imagem', description: uploadError.message, variant: 'destructive' });
-        return;
+        throw new Error('Não foi possível salvar a foto do membro.');
       }
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
       memberDataToSave.avatar = urlData.publicUrl ? `${urlData.publicUrl}?t=${new Date().getTime()}` : '';
     }
     const { error } = await supabase.from('members').upsert(memberDataToSave);
     if(error){
-        toast({ title: 'Falha ao Salvar Membro', description: error.message, variant: 'destructive'});
-        return;
+        throw new Error('Não foi possível salvar o membro. Confira sua permissão.');
     }
     await fetchData();
   }
@@ -455,12 +460,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       members, 
       songs, 
       scheduleColumns,
-      rehearsalPlaylist,
       addSchedule,
       removeSchedule,
       updateSchedule,
       updateSchedulePlaylist,
-      updateRehearsalPlaylist,
       saveMember,
       removeMember,
       addSong,

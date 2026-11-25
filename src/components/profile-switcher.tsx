@@ -27,10 +27,13 @@ export function ProfileSwitcher() {
 
   if (!user) {
     return (
+        <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">Visitante</span>
         <Button variant="outline" onClick={() => router.push('/login')}>
             <LogIn className="mr-2"/>
             Fazer Login
         </Button>
+        </div>
     )
   }
 
@@ -59,6 +62,7 @@ export function ProfileSwitcher() {
       <DropdownMenuContent className="w-48">
         <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => router.push('/alterar-senha')}>Alterar senha</DropdownMenuItem>
         <DropdownMenuItem onClick={logout}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>Sair</span>

@@ -14,6 +14,8 @@ import {
 import { useSchedule } from '@/context/schedule-context';
 import { ScheduleListItem } from './schedule-list-item';
 import { useAuth } from '@/context/auth-context';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const renderTableForExport = (
   schedules: MonthlySchedule[],
@@ -164,24 +166,46 @@ export function MonthlyScheduleView({
 
   return (
     <>
-      {/* Mobile View */}
-      <div className="space-y-3 md:hidden">
-        {sortedSchedules.map((schedule) => (
-          <ScheduleListItem 
-            key={schedule.date.toISOString()} 
-            schedule={schedule}
-            members={members}
-            columns={columns}
-            handleMemberChange={handleMemberChange}
-            handleClearAssignment={handleClearAssignment}
-            handleDateChange={handleDateChange}
-            handleNameChange={handleNameChange}
-            handleRemoveSchedule={handleRemoveSchedule}
-            handleFeatureToggle={handleFeatureToggle}
-            isReadOnly={isReadOnly}
-            isExporting={isExporting}
-          />
-        ))}
+      {/* On phones, preserve the same date-by-role grid as the full schedule. */}
+      <div className="md:hidden rounded-lg border bg-card overflow-hidden">
+        <table className="w-full table-fixed border-collapse text-[10px] leading-tight">
+          <thead>
+            <tr className="border-b bg-muted/30 text-center text-muted-foreground">
+              <th scope="col" className="w-[14%] px-1 py-2 font-semibold">Data</th>
+              {columns.map((column) => (
+                <th scope="col" key={column.id} className="px-1 py-2 align-middle text-center font-semibold break-words">
+                  {column.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sortedSchedules.map((schedule) => (
+              <tr key={schedule.id} className="border-b last:border-0 align-middle">
+                <th scope="row" className="px-1 py-3 text-center align-middle font-medium">
+                  {format(schedule.date, 'dd/MM', { locale: ptBR })}
+                </th>
+                {columns.map((column) => {
+                  const names = (schedule.assignments?.[column.id] || [])
+                    .filter(Boolean)
+                    .map((id) => members.find((member) => member.id === id)?.name || 'Membro não encontrado');
+                  return <td key={column.id} className="px-1 py-2 text-center align-middle break-words">
+                    {names.length ? names.map((name, index) => <div key={index} title={name} className={column.id === 'multimedia' ? "py-0.5 whitespace-nowrap overflow-hidden text-ellipsis" : "py-0.5 break-words"}>{name}</div>) : '-'}
+                  </td>;
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!isReadOnly && <div className="space-y-3 border-t p-3">
+          <p className="text-sm font-semibold">Editar atribuições</p>
+          {sortedSchedules.map((schedule) => <ScheduleListItem key={schedule.id}
+            schedule={schedule} members={members} columns={columns}
+            handleMemberChange={handleMemberChange} handleClearAssignment={handleClearAssignment}
+            handleDateChange={handleDateChange} handleNameChange={handleNameChange}
+            handleRemoveSchedule={handleRemoveSchedule} handleFeatureToggle={handleFeatureToggle}
+            isReadOnly={false} />)}
+        </div>}
       </div>
 
       {/* Desktop View */}

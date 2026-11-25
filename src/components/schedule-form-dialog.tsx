@@ -56,11 +56,11 @@ export function ScheduleFormDialog({ isOpen, onOpenChange, onSave, schedule, mem
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>>) => {
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
     if (schedule) {
-      onSave({ ...values, id: schedule.id });
+      onSave({ ...values, preacherId: schedule.preacherId ?? null, id: schedule.id });
     } else {
-      onSave(values);
+      onSave({ ...values, preacherId: null });
     }
   };
 

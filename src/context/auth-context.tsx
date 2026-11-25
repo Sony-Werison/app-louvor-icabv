@@ -1,263 +1,149 @@
-
 'use client';
-
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Role, PasswordSet } from '@/types';
-import { useToast } from '@/hooks/use-toast';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase-client';
-
-interface AuthContextType {
-  user: { email: string } | null;
-  role: Role;
-  isLoading: boolean;
-  passwords: PasswordSet;
-  can: (permission: Permission) => boolean;
-  login: (password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => Promise<void>;
-  updatePasswords: (newPasswords: PasswordSet) => Promise<void>;
-  shareMessage: string;
-  reminderMessage: string;
-  updateReminderMessage: (newMessage: string) => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import type { User } from '@supabase/supabase-js';
+import type { Role, MemberAccount } from '@/types';
 
 type Permission = 'edit:schedule' | 'edit:members' | 'edit:songs' | 'manage:playlists' | 'manage:settings';
-
-const rolePermissions: Record<Role, Permission[]> = {
+type Result = { success: boolean; error?: string };
+interface AuthContextType {
+  user: { id: string; email: string } | null;
+  account: MemberAccount | null;
+  role: Role;
+  isLoading: boolean;
+  can: (permission: Permission) => boolean;
+  canManagePlaylist: (leaderId: string) => boolean;
+  login: (email: string, password: string) => Promise<Result>;
+  logout: () => Promise<void>;
+  refreshAccount: () => Promise<void>;
+  changePassword: (password: string) => Promise<Result>;
+  shareMessage: string;
+  reminderMessage: string;
+  updateReminderMessage: (message: string) => Promise<void>;
+}
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const permissions: Record<Role, Permission[]> = {
   admin: ['edit:schedule', 'edit:members', 'edit:songs', 'manage:playlists', 'manage:settings'],
-  abertura: ['manage:playlists'],
-  viewer: [],
+  abertura: ['manage:playlists'], viewer: [],
 };
+const defaultReminder = 'Olá, [NOME]! Você está escalado para [PERIODO]. Entre com sua conta pessoal no aplicativo e prepare o repertório. Obrigado!';
 
-const defaultPasswords: PasswordSet = {
-  admin: 'admin123',
-  abertura: 'abertura123',
-};
-
-const defaultReminderMessage = `Olá, [NOME]! Essa é uma mensagem automática para lembrar que você está escalado para a abertura de [PERIODO].
-
-Para montar o repertório, siga estes passos:
-1. Acesse o app: https://app-louvor-icabv.vercel.app/schedule
-2. No canto superior, clique em "Visualização" e troque para o perfil "Abertura" (senha: [SENHA]).
-3. No menu aberturas, procure a sua escala da semana e clique em "Gerenciar".
-4. Após salvar sua lista, você pode clicar no botão "Compartilhar" para enviar suas músicas.
-
-Não se esqueça de mandar o quanto antes ao grupo de louvor. Obrigado!`;
-
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<{ email: string } | null>(null);
-  const [role, setRole] = useState<Role>('viewer');
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthContextType['user']>(null);
+  const [account, setAccount] = useState<MemberAccount | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [passwords, setPasswords] = useState<PasswordSet>(defaultPasswords);
-  const [reminderMessage, setReminderMessage] = useState(defaultReminderMessage);
-  const { toast } = useToast();
-  const [isSyncEnabled, setIsSyncEnabled] = useState(true);
+  const [accountError, setAccountError] = useState('');
+  const [reminderMessage, setReminderMessage] = useState(defaultReminder);
+  const version = useRef(0);
+  const router = useRouter();
+  const pathname = usePathname();
 
-  const shareMessage = "Lista dos louvores para [PERIODO].";
-
-  const fallbackToLocal = useCallback((operation: 'read' | 'write' = 'read') => {
-    if (isSyncEnabled) {
-      toast({
-          title: 'Sincronização de Configurações Falhou',
-          description: 'Não foi possível buscar senhas/mensagens do banco. As configurações serão salvas apenas neste dispositivo.',
-          variant: 'destructive',
-      });
-      setIsSyncEnabled(false);
+  const applyUser = useCallback(async (authUser: User | null) => {
+    const current = ++version.current;
+    setUser(authUser?.email ? { id: authUser.id, email: authUser.email } : null);
+    setAccount(null); setAccountError('');
+    if (!authUser || !supabase) { setIsLoading(false); return; }
+    try {
+      const { data, error } = await supabase.from('member_accounts').select('*').eq('user_id', authUser.id).maybeSingle();
+      if (current !== version.current) return;
+      if (error || !data?.active) setAccountError('Não foi possível carregar um acesso ativo. Tente novamente ou contate o administrador.');
+      else setAccount(data as MemberAccount);
+    } catch {
+      if (current === version.current) setAccountError('Falha de conexão ao verificar sua conta.');
+    } finally {
+      if (current === version.current) setIsLoading(false);
     }
-
-    if (operation === 'read') {
-        const storedPasswords = localStorage.getItem('appPasswords');
-        const storedReminderMessage = localStorage.getItem('reminderMessage');
-        setPasswords(storedPasswords ? JSON.parse(storedPasswords) : defaultPasswords);
-        setReminderMessage(storedReminderMessage || defaultReminderMessage);
-    }
-  }, [isSyncEnabled, toast]);
-
-
-  const fetchSettings = useCallback(async () => {
-    if (!supabase) {
-      setIsSyncEnabled(false);
-      const storedPasswords = localStorage.getItem('appPasswords');
-      const storedReminderMessage = localStorage.getItem('reminderMessage');
-      setPasswords(storedPasswords ? JSON.parse(storedPasswords) : defaultPasswords);
-      setReminderMessage(storedReminderMessage || defaultReminderMessage);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('app_settings')
-      .select('*')
-      .eq('id', 'settings')
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error fetching settings:', error);
-      fallbackToLocal('read');
-      return;
-    }
-
-    if (data) {
-      setPasswords(data.passwords);
-      setReminderMessage(data.reminder_message);
-      setIsSyncEnabled(true);
-    } else {
-      const { error: insertError } = await supabase
-        .from('app_settings')
-        .insert({
-          id: 'settings',
-          passwords: defaultPasswords,
-          reminder_message: defaultReminderMessage,
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Error inserting default settings:', insertError);
-        fallbackToLocal('read');
-      } else {
-        setPasswords(defaultPasswords);
-        setReminderMessage(defaultReminderMessage);
-        setIsSyncEnabled(true);
-      }
-    }
-  }, [fallbackToLocal]);
+  }, []);
 
   useEffect(() => {
-    setIsLoading(true);
-    fetchSettings();
+    if (!supabase) { setIsLoading(false); return; }
+    const client = supabase;
+    let disposed = false;
+    localStorage.removeItem('userRole'); localStorage.removeItem('user'); localStorage.removeItem('appPasswords');
+    client.auth.getSession().then(({ data }) => { if (!disposed) void applyUser(data.session?.user ?? null); })
+      .catch(() => { if (!disposed) setIsLoading(false); });
+    const { data } = client.auth.onAuthStateChange((_event, session) => {
+      setTimeout(() => { if (!disposed) void applyUser(session?.user ?? null); }, 0);
+    });
+    return () => { disposed = true; ++version.current; data.subscription.unsubscribe(); };
+  }, [applyUser]);
 
+  useEffect(() => {
+    if (!supabase) return;
+    let disposed = false;
+    supabase.rpc('get_public_reminder').then(({ data }) => {
+      if (!disposed && typeof data === 'string' && !data.includes('[SENHA]')) setReminderMessage(data);
+    });
+    return () => { disposed = true; };
+  }, []);
+
+  useEffect(() => {
+    if (account?.must_change_password && pathname !== '/alterar-senha') router.replace('/alterar-senha');
+  }, [account, pathname, router]);
+
+  const refreshAccount = useCallback(async () => {
+    if (!supabase) return;
+    const { data } = await supabase.auth.getUser();
+    await applyUser(data.user);
+  }, [applyUser]);
+
+  const login = async (email: string, password: string): Promise<Result> => {
+    if (!supabase) return { success: false, error: 'Serviço de autenticação indisponível.' };
     try {
-        const storedRole = localStorage.getItem('userRole') as Role;
-        const storedUser = localStorage.getItem('user');
-        
-        if (storedRole && storedUser && ['admin', 'abertura', 'viewer'].includes(storedRole)) {
-            setRole(storedRole);
-            setUser(JSON.parse(storedUser));
-        }
-    } catch (e) {
-        // Could be running on server or localStorage is disabled
-    } finally {
-        setIsLoading(false);
-    }
-  }, [fetchSettings]);
-
-
-  const login = async (password: string):Promise<{ success: boolean; error?: string }> => {
-    let loggedInRole: Role | null = null;
-    if (password === passwords.admin) {
-        loggedInRole = 'admin';
-    } else if (password === passwords.abertura) {
-        loggedInRole = 'abertura';
-    }
-
-    if (loggedInRole) {
-        const userObject = { email: loggedInRole };
-        setUser(userObject);
-        setRole(loggedInRole);
-        localStorage.setItem('userRole', loggedInRole);
-        localStorage.setItem('user', JSON.stringify(userObject));
-        toast({ title: 'Login bem-sucedido!'});
-        return { success: true };
-    }
-    
-    return { success: false, error: 'Senha inválida' };
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (error || !data.user) return { success: false, error: 'E-mail ou senha inválidos.' };
+      const profile = await supabase.from('member_accounts').select('active').eq('user_id', data.user.id).maybeSingle();
+      if (profile.error || !profile.data?.active) {
+        await supabase.auth.signOut();
+        return { success: false, error: 'Esta conta não possui acesso ativo. Contate o administrador.' };
+      }
+      await applyUser(data.user);
+      return { success: true };
+    } catch { return { success: false, error: 'Não foi possível conectar. Tente novamente.' }; }
   };
-  
+
   const logout = async () => {
-    setUser(null);
-    setRole('viewer');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('user');
-  }
-
-  const updatePasswords = async (newPasswords: PasswordSet) => {
-    setPasswords(newPasswords);
-
-    if (!supabase || !isSyncEnabled) {
-      localStorage.setItem('appPasswords', JSON.stringify(newPasswords));
-      toast({ title: 'Senhas salvas localmente!' });
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('app_settings')
-      .update({ passwords: newPasswords })
-      .eq('id', 'settings')
-      .select()
-      .single();
-      
-    if (error || !data) {
-        console.error('Error updating passwords:', error);
-        localStorage.setItem('appPasswords', JSON.stringify(newPasswords));
-        fallbackToLocal('write');
-    } else {
-        toast({ title: 'Senhas atualizadas com sucesso!' });
-        setPasswords(data.passwords);
-    }
-  };
-  
-  const updateReminderMessage = async (newMessage: string) => {
-    setReminderMessage(newMessage);
-
-    if (!supabase || !isSyncEnabled) {
-      localStorage.setItem('reminderMessage', newMessage);
-      toast({ title: 'Mensagem salva localmente!' });
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('app_settings')
-      .update({ reminder_message: newMessage })
-      .eq('id', 'settings')
-      .select()
-      .single();
-
-    if (error || !data) {
-        console.error('Error updating reminder message:', error);
-        localStorage.setItem('reminderMessage', newMessage);
-        fallbackToLocal('write');
-    } else {
-        toast({ title: 'Mensagem de lembrete atualizada!' });
-        setReminderMessage(data.reminder_message);
-    }
+    if (supabase) await supabase.auth.signOut();
+    ++version.current; setUser(null); setAccount(null); setAccountError('');
   };
 
-  const can = useCallback((permission: Permission) => {
-    return rolePermissions[role].includes(permission);
-  }, [role]);
-
-
-  const value: AuthContextType = {
-      user,
-      role,
-      isLoading,
-      passwords,
-      can,
-      login,
-      logout,
-      updatePasswords,
-      shareMessage,
-      reminderMessage,
-      updateReminderMessage,
+  const changePassword = async (password: string): Promise<Result> => {
+    try {
+      const { data } = await supabase!.auth.getSession();
+      if (!data.session) return { success: false, error: 'Entre novamente para alterar a senha.' };
+      const response = await fetch('/api/account/password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session.access_token}` },
+        body: JSON.stringify({ password }),
+      });
+      const result = await response.json();
+      if (!response.ok) return { success: false, error: result.error };
+      await refreshAccount();
+      return { success: true };
+    } catch { return { success: false, error: 'Não foi possível alterar a senha. Tente novamente.' }; }
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {isLoading ? (
-          <div className="flex items-center justify-center h-screen bg-background">
-              <p className="text-muted-foreground">Carregando...</p>
-          </div>
-      ) : children}
-    </AuthContext.Provider>
-  );
-};
+  const role: Role = account?.active ? account.role : 'viewer';
+  const can = useCallback((permission: Permission) => !!account?.active && !account.must_change_password && permissions[account.role].includes(permission), [account]);
+  const canManagePlaylist = useCallback((leaderId: string) => !!account?.active && !account.must_change_password &&
+    (account.role === 'admin' || (account.role === 'abertura' && account.member_id === leaderId)), [account]);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+  const updateReminderMessage = async (message: string) => {
+    if (!supabase || !can('manage:settings')) throw new Error('Sem permissão para alterar configurações.');
+    const { error } = await supabase.from('app_settings').update({ reminder_message: message }).eq('id', 'settings');
+    if (error) throw new Error('Não foi possível salvar a mensagem.');
+    setReminderMessage(message);
+  };
+
+  return <AuthContext.Provider value={{ user, account, role, isLoading, can, canManagePlaylist, login, logout, refreshAccount, changePassword,
+    shareMessage: 'Lista dos louvores para [PERIODO].', reminderMessage, updateReminderMessage }}>
+    {isLoading ? <div className="flex min-h-screen items-center justify-center"><p>Carregando...</p></div> :
+      account?.must_change_password && pathname !== '/alterar-senha' ? <p className="p-6">Defina sua senha pessoal para continuar.</p> :
+      <>{accountError && <div role="alert" className="border-b p-4 text-sm text-destructive">{accountError} <button onClick={() => void refreshAccount()} className="underline">Tentar novamente</button> · <button onClick={() => void logout()} className="underline">Sair</button></div>}{children}</>}
+  </AuthContext.Provider>;
+}
+export function useAuth() {
+  const value = useContext(AuthContext);
+  if (!value) throw new Error('useAuth must be used within AuthProvider');
+  return value;
+}

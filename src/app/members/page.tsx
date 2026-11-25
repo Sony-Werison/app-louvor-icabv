@@ -34,6 +34,7 @@ import * as htmlToImage from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
+import { MemberAccountDialog } from '@/components/member-account-dialog';
 
 type MemberSchedule = {
   date: Date;
@@ -61,6 +62,7 @@ export default function MembersPage() {
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
   const [memberToView, setMemberToView] = useState<Member | null>(null);
 
+  const [accountMember, setAccountMember] = useState<Member | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -264,14 +266,15 @@ export default function MembersPage() {
                     <p className="font-medium text-xs sm:text-sm text-center w-full break-words">{member.name}</p>
                   </div>
                   {can('edit:members') && (
-                    <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-0 right-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                         <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Opções de ${member.name}`}>
                             <MoreVertical className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => setAccountMember(member)}>Gerenciar acesso</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleEdit(member)}>
                             <Edit className="mr-2 h-4 w-4" />
                             <span>Editar</span>
@@ -292,6 +295,7 @@ export default function MembersPage() {
       </div>
 
 
+      {accountMember && <MemberAccountDialog member={accountMember} onClose={() => setAccountMember(null)} />}
       {isFormDialogOpen && (
         <MemberFormDialog
           isOpen={isFormDialogOpen}

@@ -32,11 +32,13 @@ function LiveRoomComponent() {
     const searchParams = useSearchParams();
     const scheduleId = searchParams.get('scheduleId');
 
-    const { monthlySchedules, songs, rehearsalPlaylist } = useSchedule();
-    const { user, can } = useAuth();
+    const { monthlySchedules, songs } = useSchedule();
+    const { user, canManagePlaylist } = useAuth();
     const { toast } = useToast();
 
-    const isHost = can('manage:playlists');
+    const sessionParts = scheduleId?.split('-') || [];
+    const assignedSchedule = monthlySchedules.find(item => item.id === sessionParts.slice(2).join('-'));
+    const isHost = canManagePlaylist(assignedSchedule?.assignments?.[`abertura_${sessionParts[1]}`]?.[0] || '');
     
     const { liveState, broadcastState, isConnected } = useLiveSession(scheduleId || '', isHost);
     
@@ -65,15 +67,6 @@ function LiveRoomComponent() {
     const transformedSchedule = useMemo(() => {
         if (!scheduleId) return null;
 
-        if (scheduleId === 'rehearsal') {
-            return {
-                id: 'rehearsal',
-                name: 'Ensaio do Ministério',
-                date: new Date(),
-                playlist: rehearsalPlaylist,
-            } as Partial<Schedule>;
-        }
-
         const idParts = scheduleId.split('-');
         const scheduleType = idParts[1];
         const monthlyId = idParts.slice(2).join('-');
@@ -87,7 +80,7 @@ function LiveRoomComponent() {
             date: monthlySchedule.date,
             playlist: scheduleType === 'manha' ? monthlySchedule.playlist_manha : monthlySchedule.playlist_noite,
         } as Partial<Schedule>;
-    }, [scheduleId, monthlySchedules, rehearsalPlaylist]);
+    }, [scheduleId, monthlySchedules]);
 
     const songsInPlaylist = useMemo(() => 
         (transformedSchedule?.playlist || []).map(id => songs.find(s => s.id === id)).filter((s): s is Song => !!s)
@@ -371,27 +364,27 @@ function LiveRoomComponent() {
                         {(activeTab === 'lyrics' || activeTab === 'pdfs') && (
                             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-end justify-center gap-2 rounded-full border bg-background/80 px-4 py-2 shadow-lg backdrop-blur-sm">
                                 <div className="flex items-center gap-2">
-                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={readOnly || currentState?.scroll.speed <= MIN_SPEED}><Turtle /></Button>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(-1)} disabled={readOnly || (currentState?.scroll.speed ?? MIN_SPEED) <= MIN_SPEED}><Turtle /></Button>
                                     <div className="flex flex-col items-center">
                                         <button onClick={handleToggleScrolling} disabled={readOnly} className={cn("w-10 h-10 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring", currentState?.scroll.isScrolling && "bg-primary text-primary-foreground")}>
                                             {currentState?.scroll.isScrolling ? <Pause className="fill-current w-6 h-6" /> : <Play className="fill-current w-6 h-6" />}
                                         </button>
                                         <span className="text-xs font-bold w-6 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50">{currentState?.scroll.speed}</span>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(1)} disabled={readOnly || currentState?.scroll.speed >= MAX_SPEED}><Rabbit /></Button>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeSpeed(1)} disabled={readOnly || (currentState?.scroll.speed ?? MIN_SPEED) >= MAX_SPEED}><Rabbit /></Button>
                                 </div>
                                 
                                 <Separator orientation="vertical" className="h-12"/>
 
                                 <div className="flex items-center gap-2">
-                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeMetronomeBpm(-5)} disabled={readOnly || currentState?.metronome.bpm <= MIN_BPM}><Minus /></Button>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeMetronomeBpm(-5)} disabled={readOnly || (currentState?.metronome.bpm ?? MIN_BPM) <= MIN_BPM}><Minus /></Button>
                                     <div className="flex flex-col items-center">
                                         <button onClick={handleToggleMetronome} disabled={readOnly} className={cn("w-10 h-10 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring", currentState?.metronome.isPlaying && "bg-primary text-primary-foreground")}>
                                             <Timer className="w-6 h-6" />
                                         </button>
                                         <span className="text-xs font-bold w-12 h-6 flex items-center justify-center mt-1 rounded-full bg-muted/50 tabular-nums">{currentState?.metronome.bpm}</span>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeMetronomeBpm(5)} disabled={readOnly || currentState?.metronome.bpm >= MAX_BPM}><Plus /></Button>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => changeMetronomeBpm(5)} disabled={readOnly || (currentState?.metronome.bpm ?? MIN_BPM) >= MAX_BPM}><Plus /></Button>
                                 </div>
                             </div>
                         )}
