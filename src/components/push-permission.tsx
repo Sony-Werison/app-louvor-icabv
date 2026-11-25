@@ -33,6 +33,7 @@ export function PushPermission() {
   } catch { setState('error'); }
  }, [user, account]);
  useEffect(() => { void register(false); }, [register]);
+ useEffect(() => { if (state !== 'loading' && state !== 'enabled') setDismissed(false); }, [state]);
  if (!user || !account?.active || account.must_change_password || state === 'loading' || state === 'enabled') return null;
  return <Dialog open={!dismissed} onOpenChange={open => { if (!open) setDismissed(true); }}>
   <DialogContent className="w-[calc(100%-2rem)] rounded-lg sm:max-w-md">
