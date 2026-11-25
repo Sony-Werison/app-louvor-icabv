@@ -26,7 +26,7 @@ export default function MonthlySchedulePage() {
     const [currentMonth, setCurrentMonth] = useState<Date | null>(new Date());
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const { toast } = useToast();
-    const { can } = useAuth();
+    const { can, account } = useAuth();
     
     const [isExporting, setIsExporting] = useState(false);
     const [notifying, setNotifying] = useState(false);
@@ -181,7 +181,7 @@ export default function MonthlySchedulePage() {
                     </Button>
                 </div>
                 <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
-                    <Button asChild size="sm" variant="outline" className="w-full sm:w-auto"><Link href="/trocas">Solicitar troca</Link></Button>
+                    {account?.active && account.member_id && <Button asChild size="sm" variant="outline" className="w-full sm:w-auto"><Link href="/trocas">Solicitar troca</Link></Button>}
                     {can('edit:schedule') && <Button size="sm" variant="outline" className="w-full sm:w-auto" disabled={notifying || !filteredSchedules.length} onClick={async () => {
                         if (!supabase) return;
                         setNotifying(true);

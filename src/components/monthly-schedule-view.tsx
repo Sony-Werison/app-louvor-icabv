@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const renderTableForExport = (
   schedules: MonthlySchedule[],
@@ -40,7 +41,7 @@ const renderTableForExport = (
                     <TableHead key={col.id} className="sticky top-0 z-10 bg-card text-card-foreground min-w-[180px]">
                     <div className="flex items-center gap-2">
                         {col.icon && <col.icon className="h-4 w-4 text-muted-foreground" />}
-                        {col.label}
+                    {col.id === 'multimedia' ? 'Multi.' : col.label}
                     </div>
                     </TableHead>
                 ))}
@@ -183,7 +184,7 @@ export function MonthlyScheduleView({
               <th scope="col" className="w-[14%] px-1 py-2 font-semibold">Data</th>
               {columns.map((column) => (
                 <th scope="col" key={column.id} className="px-1 py-2 align-middle text-center font-semibold break-words">
-                  {column.label}
+                  <span className={cn(column.id === 'multimedia' && 'whitespace-nowrap')}>{column.id === 'multimedia' ? 'Multi.' : column.label}</span>
                 </th>
               ))}
             </tr>
@@ -199,9 +200,11 @@ export function MonthlyScheduleView({
                   const names = (schedule.assignments?.[column.id] || [])
                     .filter(Boolean)
                     .map((id) => ({ id, name: id?.startsWith('guest:') ? id.slice(6) : members.find((member) => member.id === id)?.name || 'Membro não encontrado' }));
-                  return <td key={column.id} className="relative px-1 py-2 text-center align-middle break-words">
-                    {column.id === 'abertura_manha' && schedule.name_manha && <div className="absolute left-1/2 top-1 z-10 w-[200%] -translate-x-1/2 overflow-hidden text-ellipsis whitespace-nowrap text-center text-muted-foreground" title="Reunião da manhã">{schedule.name_manha}</div>}
-                    {column.id === 'abertura_noite' && schedule.name_noite && <div className="absolute left-1/2 top-1 z-10 w-[200%] -translate-x-1/2 overflow-hidden text-ellipsis whitespace-nowrap text-center text-muted-foreground" title="Reunião da noite">{schedule.name_noite}</div>}
+                  const meetingName = column.id === 'abertura_manha' ? schedule.name_manha : column.id === 'abertura_noite' ? schedule.name_noite : undefined;
+                  const hasMeetingName = column.id.includes('manha') ? !!schedule.name_manha : column.id.includes('noite') ? !!schedule.name_noite : false;
+                  const meetingPair = ['abertura_manha', 'pregacao_manha', 'abertura_noite', 'pregacao_noite'].includes(column.id);
+                  return <td key={column.id} className={cn('relative px-1 text-center align-middle break-words', meetingPair && hasMeetingName ? 'pt-5 pb-2' : 'py-2')}>
+                    {meetingName && <div className="absolute left-0 right-[-100%] top-1 z-10 overflow-hidden text-ellipsis whitespace-nowrap px-1 text-center text-muted-foreground" title={meetingName}>{meetingName}</div>}
                     {column.id.includes('manha') && schedule.status_manha && schedule.status_manha !== 'scheduled' ? <span title={schedule.reason_manha}>{schedule.status_manha === 'cancelled' ? 'Cancelada' : 'N/A'}{schedule.reason_manha && <span className="block">{schedule.reason_manha}</span>}</span> : column.id.includes('noite') && schedule.status_noite && schedule.status_noite !== 'scheduled' ? <span title={schedule.reason_noite}>{schedule.status_noite === 'cancelled' ? 'Cancelada' : 'N/A'}{schedule.reason_noite && <span className="block">{schedule.reason_noite}</span>}</span> : names.length ? names.map(({id,name}, index) => <div key={index} title={name} className={cn('py-0.5', column.id === 'multimedia' ? 'whitespace-nowrap overflow-hidden text-ellipsis' : 'break-words', id === account?.member_id && 'font-bold text-amber-400')}>{name}</div>) : '-'}
                   </td>;
                 })}
@@ -216,7 +219,7 @@ export function MonthlyScheduleView({
             handleMemberChange={handleMemberChange} handleClearAssignment={handleClearAssignment}
             handleDateChange={handleDateChange} handleNameChange={handleNameChange}
             handleRemoveSchedule={handleRemoveSchedule} handleFeatureToggle={handleFeatureToggle}
-            isReadOnly={false} hideMeetingNames /></div>)}
+            isReadOnly={false} hideMeetingNames allowVisitors /></div>)}
         </DialogContent></Dialog>}
 
       {/* Desktop View */}
@@ -225,40 +228,49 @@ export function MonthlyScheduleView({
         <Table className="w-full table-fixed">
           <TableHeader className="bg-background">
             <TableRow className="hover:bg-background">
-                <TableHead className="w-[110px] sticky left-0 z-20 bg-background">Data</TableHead>
+                <TableHead className="w-[110px] sticky left-0 z-20 bg-background !text-center">Data</TableHead>
               {columns.map((col) => (
-                <TableHead key={col.id} className="sticky top-0 z-10 bg-background min-w-0">
-                  <div className="flex items-center gap-2">
+                <TableHead key={col.id} className="sticky top-0 z-10 bg-background min-w-0 !text-center">
+                  <div className={cn('flex w-full items-center justify-center gap-2', col.id === 'multimedia' && 'whitespace-nowrap')}>
                     {col.icon && <col.icon className="h-4 w-4 text-muted-foreground" />}
-                    {col.label}
+                    {col.id === 'multimedia' ? 'Multi.' : col.label}
                   </div>
                 </TableHead>
               ))}
-              { !isReadOnly && (
+              { !isReadOnly && editing && (
                 <TableHead className="w-[132px] sticky right-0 z-20 bg-background">Ações</TableHead>
               )}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedSchedules.map((schedule) => (
-               <ScheduleListItem 
-                 key={schedule.date.toISOString()}
-                 schedule={schedule}
-                 isDesktop 
-                 members={members}
-                 columns={columns}
-                 handleMemberChange={handleMemberChange}
-                 handleClearAssignment={handleClearAssignment}
-                 handleDateChange={handleDateChange}
-                 handleNameChange={handleNameChange}
-                 handleRemoveSchedule={handleRemoveSchedule}
-                 handleFeatureToggle={handleFeatureToggle}
-                 isReadOnly={isReadOnly}
-                 isExporting={isExporting}
-                 onEditMeeting={() => editing ? setSelectedSchedule(schedule.id) : setEditing(true)}
-                 editing={editing}
+            {sortedSchedules.map((schedule) => editing ? (
+               <ScheduleListItem
+                 key={schedule.date.toISOString()} schedule={schedule} isDesktop members={members} columns={columns}
+                 handleMemberChange={handleMemberChange} handleClearAssignment={handleClearAssignment}
+                 handleDateChange={handleDateChange} handleNameChange={handleNameChange}
+                 handleRemoveSchedule={handleRemoveSchedule} handleFeatureToggle={handleFeatureToggle}
+                 isReadOnly={isReadOnly} isExporting={isExporting}
+                 onEditMeeting={() => setSelectedSchedule(schedule.id)} editing={editing}
                />
-            ))}
+            ) : <tr key={schedule.id} className={cn('border-b last:border-0', schedule.date.getDay() !== 0 && 'bg-muted/40')}>
+              <th scope="row" className="sticky left-0 z-10 bg-background px-3 py-3 text-center text-sm font-medium">{format(schedule.date, 'dd/MM', { locale: ptBR })}</th>
+              {columns.map((column) => {
+                const ids = (schedule.assignments?.[column.id] || []).filter((id): id is string => Boolean(id));
+                const meetingName = column.id === 'abertura_manha' ? schedule.name_manha : column.id === 'abertura_noite' ? schedule.name_noite : undefined;
+                const pair = ['abertura_manha', 'pregacao_manha', 'abertura_noite', 'pregacao_noite'].includes(column.id);
+                const period = column.id.includes('manha') ? 'manha' : column.id.includes('noite') ? 'noite' : null;
+                const status = period ? schedule[`status_${period}`] : null;
+                return <td key={column.id} className={cn('relative px-3 text-center align-middle text-sm', pair && (schedule.name_manha || schedule.name_noite) ? 'pt-7 pb-3' : 'py-3')}>
+                  {meetingName && <div className="absolute left-0 right-[-100%] top-2 z-10 overflow-hidden text-ellipsis whitespace-nowrap px-2 text-center text-xs text-muted-foreground" title={meetingName}>{meetingName}</div>}
+                  {status && status !== 'scheduled' ? <span className="text-muted-foreground">{status === 'cancelled' ? 'Cancelada' : 'N/A'}</span> : ids.length ? <div className="flex min-w-0 flex-col items-center gap-1">
+                    {ids.map((id, index) => { const guestName = id.startsWith('guest:') ? id.slice(6) : ''; const member = members.find(m => m.id === id); const name = guestName || member?.name || 'Membro n\u00e3o encontrado'; return <div key={`${id}-${index}`} title={name} className={cn('flex max-w-full min-w-0 items-center gap-2', column.id === 'multimedia' && 'whitespace-nowrap')}>
+                      {member && <Avatar className="h-7 w-7 shrink-0"><AvatarImage src={member.avatar} alt={name} /><AvatarFallback>{name.charAt(0)}</AvatarFallback></Avatar>}
+                      <span className={cn('min-w-0 truncate', column.id === 'multimedia' && 'max-w-[130px]', id === account?.member_id && 'font-bold text-amber-400')}>{name}</span>
+                    </div>; })}
+                  </div> : <span className="text-muted-foreground">-</span>}
+                </td>;
+              })}
+            </tr>)}
           </TableBody>
         </Table>
       </div>

@@ -36,7 +36,8 @@ const MemberSelector: React.FC<{
     onClear: () => void;
     isReadOnly?: boolean;
     isExporting?: boolean;
-}> = ({ assignedMemberId, allMembers, filteredMembers, onValueChange, onClear, isReadOnly, isExporting }) => {
+    allowVisitors?: boolean;
+}> = ({ assignedMemberId, allMembers, filteredMembers, onValueChange, onClear, isReadOnly, isExporting, allowVisitors = false }) => {
     const selectedMember = assignedMemberId ? allMembers.find(m => m.id === assignedMemberId) : null;
     const guestName = assignedMemberId?.startsWith('guest:') ? assignedMemberId.slice(6) : '';
     const { account } = useAuth();
@@ -81,7 +82,7 @@ const MemberSelector: React.FC<{
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__guest__">Visita</SelectItem>
+                {allowVisitors && <SelectItem value="__guest__">Visita</SelectItem>}
                 {filteredMembers.map((member) => (
                   <SelectItem key={member.id} value={member.id}>
                     <div className="flex items-center gap-2">
@@ -124,6 +125,7 @@ export function ScheduleListItem({
   isExporting = false,
   onEditMeeting,
   hideMeetingNames = false,
+  allowVisitors = false,
   editing = false,
 }: {
     schedule: MonthlySchedule;
@@ -141,6 +143,7 @@ export function ScheduleListItem({
     onEditMeeting?: () => void;
     editing?: boolean;
     hideMeetingNames?: boolean;
+    allowVisitors?: boolean;
 }) {
 
   const [nameManha, setNameManha] = useState(schedule.name_manha || '');
@@ -188,6 +191,7 @@ export function ScheduleListItem({
                     onClear={() => handleClearAssignment(schedule.id, col.id, index)}
                     isReadOnly={isReadOnly || !editing}
                     isExporting={isExporting}
+                    allowVisitors={allowVisitors}
                 />
             ))}
         </div>
@@ -329,6 +333,7 @@ export function ScheduleListItem({
                                              onClear={() => {}}
                                              isReadOnly={true}
                                              isExporting={true}
+                                             allowVisitors={allowVisitors}
                                          />
                                      ))}
                                  </div>
@@ -379,6 +384,7 @@ export function ScheduleListItem({
                                                             onValueChange={(memberId) => handleMemberChange(schedule.id, col.id, memberId, index)}
                                                             onClear={() => handleClearAssignment(schedule.id, col.id, index)}
                                                             isReadOnly={isReadOnly}
+                                                            allowVisitors={allowVisitors}
                                                         />
                                                     ))}
                                                 </div>
@@ -421,6 +427,7 @@ export function ScheduleListItem({
                                                             onValueChange={(memberId) => handleMemberChange(schedule.id, col.id, memberId, index)}
                                                             onClear={() => handleClearAssignment(schedule.id, col.id, index)}
                                                             isReadOnly={isReadOnly}
+                                                            allowVisitors={allowVisitors}
                                                         />
                                                     ))}
                                                 </div>
@@ -449,6 +456,7 @@ export function ScheduleListItem({
                                                             onValueChange={(memberId) => handleMemberChange(schedule.id, col.id, memberId, index)}
                                                             onClear={() => handleClearAssignment(schedule.id, col.id, index)}
                                                             isReadOnly={isReadOnly}
+                                                            allowVisitors={allowVisitors}
                                                         />
                                                     ))}
                                                 </div>
