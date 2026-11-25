@@ -197,7 +197,7 @@ export function ScheduleListItem({
   if (isDesktop) {
     return (
         <TableRow key={schedule.date.toISOString()} className={cn(isExporting ? 'bg-card' : '', schedule.date.getDay() !== 0 && 'bg-muted/40', schedule.isFeatured && 'bg-amber-500/10')}>
-            <TableCell className={cn("font-medium p-2 sticky left-0 z-10", isExporting ? 'bg-card text-card-foreground' : 'bg-background group-hover:bg-muted/50', schedule.isFeatured && 'bg-amber-500/10')}>
+            <TableCell className={cn("font-medium px-2 py-2 sticky left-0 z-10", isExporting ? 'bg-card text-card-foreground' : 'bg-background group-hover:bg-muted/50', schedule.isFeatured && 'bg-amber-500/10')}>
              <div className="flex items-center gap-1">
                 {!isReadOnly && editing && (
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleFeatureToggle(schedule.id)}>
@@ -205,7 +205,7 @@ export function ScheduleListItem({
                     </Button>
                 )}
                  {isReadOnly || !editing ? (
-                    <div className="text-left font-normal capitalize h-9 px-3 py-2 text-xs sm:text-sm">
+                    <div className="text-left font-normal capitalize text-xs leading-tight">
                          {format(schedule.date, 'EEEE, dd/MM', { locale: ptBR })}
                     </div>
                 ) : (
@@ -245,8 +245,8 @@ export function ScheduleListItem({
                )
             })}
             {!isReadOnly && (
-                <TableCell className={cn("p-2 sticky right-0 z-10", isExporting ? 'bg-card' : 'bg-background group-hover:bg-muted/50', schedule.isFeatured && 'bg-amber-500/10')}>
-                    <Button variant="outline" size="sm" onClick={onEditMeeting}>{editing ? "Editar reuni?o" : "Editar escala"}</Button>{editing && <AlertDialog>
+                <TableCell className={cn("w-[132px] p-2 sticky right-0 z-10", isExporting ? 'bg-card' : 'bg-background group-hover:bg-muted/50', schedule.isFeatured && 'bg-amber-500/10')}>
+                    {editing && <><Button variant="outline" size="sm" className="whitespace-nowrap" onClick={onEditMeeting}>Editar reunião</Button><AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon">
                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -264,7 +264,7 @@ export function ScheduleListItem({
                                 <AlertDialogAction onClick={() => handleRemoveSchedule(schedule.id)}>Excluir</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
-                    </AlertDialog>}
+                    </AlertDialog></>}
                 </TableCell>
             )}
         </TableRow>

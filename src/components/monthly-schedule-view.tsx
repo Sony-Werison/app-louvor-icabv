@@ -220,7 +220,7 @@ export function MonthlyScheduleView({
         </DialogContent></Dialog>}
 
       {/* Desktop View */}
-      {!isReadOnly && <div className="hidden md:flex justify-end border-b pb-2 mb-2"><Button size="sm" variant="outline" onClick={() => setEditing(!editing)}>{editing ? 'Concluir edi??o' : 'Editar escala'}</Button></div>}
+      {!isReadOnly && <div className="hidden md:flex justify-end border-b pb-2 mb-2"><Button size="sm" variant="outline" onClick={() => setEditing(!editing)}>{editing ? 'Concluir edição' : 'Editar escala'}</Button></div>}
       <div className="hidden md:block rounded-lg border overflow-x-auto" style={{maxHeight: 'calc(100vh - 12rem)'}}>
         <Table className="w-full table-fixed">
           <TableHeader className="bg-background">
@@ -235,7 +235,7 @@ export function MonthlyScheduleView({
                 </TableHead>
               ))}
               { !isReadOnly && (
-                <TableHead className="w-[50px] sticky right-0 z-20 bg-background">Ações</TableHead>
+                <TableHead className="w-[132px] sticky right-0 z-20 bg-background">Ações</TableHead>
               )}
             </TableRow>
           </TableHeader>
@@ -283,4 +283,3 @@ function MeetingEditor({ schedule, period, onSave }: { schedule: MonthlySchedule
     {status !== 'scheduled' && <div className="space-y-1"><Label htmlFor={`meeting-reason-${period}`} className="text-xs">Motivo</Label><Input className="h-9" id={`meeting-reason-${period}`} value={reason} onChange={event => setReason(event.target.value)} placeholder="Informe o motivo" /></div>}
   </div>;
 }
-
