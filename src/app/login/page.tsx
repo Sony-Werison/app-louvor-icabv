@@ -9,6 +9,7 @@ import { AppLogo } from '@/components/app-logo';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase-client';
 
 export default function LoginPage() {
   const { login, account } = useAuth();
@@ -17,6 +18,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState('');
+  async function recoverPassword() {
+    setError(''); setNotice('');
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('Informe seu e-mail de acesso para recuperar a senha.'); return;
+    }
+    if (email.trim().toLowerCase().endsWith('@acesso.icabv.app')) {
+      setError('Este acesso provisório não recebe e-mails. Solicite uma nova senha ao administrador.'); return;
+    }
+    setSaving(true);
+    try {
+      if (!supabase) throw new Error();
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/alterar-senha` });
+      if (error) { setError('Não foi possível enviar o link. Aguarde alguns minutos e tente novamente.'); return; }
+      setNotice('Se este e-mail possuir uma conta, você receberá um link para definir sua nova senha. Use somente o link mais recente.');
+    } catch { setError('Não foi possível enviar o link. Verifique sua conexão e tente novamente.'); }
+    finally { setSaving(false); }
+  }
   useEffect(() => {
     if (account?.active) router.replace(account.must_change_password ? '/alterar-senha' : '/');
   }, [account, router]);
@@ -37,6 +56,8 @@ export default function LoginPage() {
         <div className="space-y-2"><Label htmlFor="login-password">Senha</Label><Input id="login-password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></div>
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         <Button type="submit" disabled={saving} className="w-full">{saving && <Loader2 className="h-4 w-4 animate-spin" />}Entrar</Button>
+        <Button type="button" variant="link" disabled={saving} className="w-full" onClick={() => void recoverPassword()}>Esqueci minha senha</Button>
+        {notice && <p role="status" className="text-sm text-muted-foreground">{notice}</p>}
         <p className="text-sm text-muted-foreground">Primeiro acesso? Solicite ao administrador seu e-mail de acesso e senha provisória. Você definirá uma nova senha ao entrar.</p>
       </form>
         <div className="mt-6 space-y-2 border-t pt-4 text-center">
