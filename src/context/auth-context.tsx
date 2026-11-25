@@ -104,7 +104,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    if (supabase) await supabase.auth.signOut();
+    if (supabase) {
+      try {
+        const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+        const subscription = await registration?.pushManager.getSubscription();
+        const { data } = await supabase.auth.getSession();
+        if (subscription && data.session) {
+          try { await fetch('/api/push/subscribe', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session.access_token}` }, body: JSON.stringify({ endpoint: subscription.endpoint }) }); }
+          finally { await subscription.unsubscribe(); }
+        }
+      } catch { /* Logout must still be available when the push service is unavailable. */ }
+      await supabase.auth.signOut();
+    }
     ++version.current; setUser(null); setAccount(null); setAccountError('');
   };
 

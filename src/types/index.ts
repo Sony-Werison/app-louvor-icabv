@@ -69,6 +69,10 @@ export type MonthlySchedule = {
   isFeatured?: boolean;
   name_manha?: string;
   name_noite?: string;
+  status_manha?: 'scheduled' | 'cancelled' | 'not_applicable';
+  status_noite?: 'scheduled' | 'cancelled' | 'not_applicable';
+  reason_manha?: string;
+  reason_noite?: string;
 };
 
 export type LiveState = {
@@ -99,6 +103,10 @@ export type BackupMonthlySchedule = {
   isFeatured?: boolean;
   name_manha?: string;
   name_noite?: string;
+  status_manha?: 'scheduled' | 'cancelled' | 'not_applicable';
+  status_noite?: 'scheduled' | 'cancelled' | 'not_applicable';
+  reason_manha?: string;
+  reason_noite?: string;
 };
 
 

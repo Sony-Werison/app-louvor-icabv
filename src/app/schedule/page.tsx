@@ -30,7 +30,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
         const hasNoite = (assignments.abertura_noite && assignments.abertura_noite.some(id => !!id)) || ms.playlist_noite?.length;
 
         // Treat as two separate potential events: morning and night
-        if (hasManha) {
+        if (hasManha && (!ms.status_manha || ms.status_manha === 'scheduled')) {
             const dateManha = new Date(scheduleDate);
             dateManha.setHours(10, 0, 0, 0);
 
@@ -45,7 +45,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
             });
         }
         
-        if (hasNoite) {
+        if (hasNoite && (!ms.status_noite || ms.status_noite === 'scheduled')) {
             const dateNoite = new Date(scheduleDate);
             dateNoite.setHours(19, 0, 0, 0);
             
@@ -65,7 +65,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
         if (!hasManha && !hasNoite) {
              const dateShell = new Date(scheduleDate);
              dateShell.setHours(10,0,0,0);
-             schedules.push({
+             if (!ms.status_manha || ms.status_manha === 'scheduled') schedules.push({
                 id: `s-manha-${ms.id}`, 
                 name: ms.name_manha || `${getShortDay(dateShell)}. Manhã`,
                 date: dateShell,
@@ -76,7 +76,7 @@ const transformMonthlyToSchedule = (monthlySchedules: MonthlySchedule[], songs: 
             });
             const dateShellNoite = new Date(scheduleDate);
             dateShellNoite.setHours(19,0,0,0);
-            schedules.push({
+            if (!ms.status_noite || ms.status_noite === 'scheduled') schedules.push({
                 id: `s-noite-${ms.id}`, 
                 name: ms.name_noite || `${getShortDay(dateShellNoite)}. Noite`,
                 date: dateShellNoite,

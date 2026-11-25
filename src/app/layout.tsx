@@ -12,9 +12,11 @@ import { PageTitle } from '@/components/page-title';
 import { AppLogo } from '@/components/app-logo';
 import Link from 'next/link';
 import { Providers } from './providers';
+import { PushPermission } from '@/components/push-permission';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://app-louvor-icabv.vercel.app'),
+  manifest: '/manifest.webmanifest',
   title: 'Louvor ICABV',
   description: 'Gestão de escalas e repertório do ministério de louvor da ICABV.',
   icons: {
@@ -62,6 +64,7 @@ export default function RootLayout({
                 <ProfileSwitcher />
               </div>
             </Header>
+            <PushPermission />
             <main className="pb-20 md:pb-0">{children}</main>
             <BottomNav />
           </SidebarInset>

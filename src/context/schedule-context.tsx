@@ -364,6 +364,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
           isFeatured: s.isFeatured || false,
           name_manha: s.name_manha || '',
           name_noite: s.name_noite || '',
+          status_manha: s.status_manha || 'scheduled',
+          status_noite: s.status_noite || 'scheduled',
+          reason_manha: s.reason_manha || '',
+          reason_noite: s.reason_noite || '',
         }));
 
         // Batch insert schedules

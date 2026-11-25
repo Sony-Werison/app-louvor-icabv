@@ -113,6 +113,7 @@ export function ScheduleListItem({
   isDesktop = false,
   isReadOnly = false,
   isExporting = false,
+  onEditMeeting,
 }: {
     schedule: MonthlySchedule;
     members: Member[];
@@ -126,6 +127,7 @@ export function ScheduleListItem({
     isDesktop?: boolean;
     isReadOnly?: boolean;
     isExporting?: boolean;
+    onEditMeeting?: () => void;
 }) {
 
   const [nameManha, setNameManha] = useState(schedule.name_manha || '');
@@ -153,6 +155,10 @@ export function ScheduleListItem({
   };
 
   const renderDesktopAssignment = (col: ScheduleColumn) => {
+    const period = col.id.includes('manha') ? 'manha' : col.id.includes('noite') ? 'noite' : null;
+    if (period && schedule[`status_${period}`] && schedule[`status_${period}`] !== 'scheduled') {
+      return <div className="text-sm text-muted-foreground"><span>{schedule[`status_${period}`] === 'cancelled' ? 'Cancelada' : 'Não aplicável'}</span>{schedule[`reason_${period}`] && <p>{schedule[`reason_${period}`]}</p>}</div>;
+    }
     const assignedMemberIds = schedule.assignments[col.id] || [];
     const slots = col.isMulti ? [0, 1] : [0];
     const filteredMembersForColumn = getFilteredMembersForColumn(col);
@@ -177,7 +183,7 @@ export function ScheduleListItem({
   
   if (isDesktop) {
     return (
-        <TableRow key={schedule.date.toISOString()} className={cn(isExporting ? 'bg-card' : '', schedule.isFeatured && 'bg-amber-500/10')}>
+        <TableRow key={schedule.date.toISOString()} className={cn(isExporting ? 'bg-card' : '', schedule.date.getDay() !== 0 && 'bg-blue-500/10', schedule.isFeatured && 'bg-amber-500/10')}>
             <TableCell className={cn("font-medium p-2 sticky left-0 z-10", isExporting ? 'bg-card text-card-foreground' : 'bg-background group-hover:bg-muted/50', schedule.isFeatured && 'bg-amber-500/10')}>
              <div className="flex items-center gap-1">
                 {!isReadOnly && (
@@ -208,6 +214,7 @@ export function ScheduleListItem({
                     </Popover>
                 )}
              </div>
+             {(schedule.name_manha || schedule.name_noite) && <div className="px-3 text-xs text-muted-foreground">{schedule.name_manha && <div>Manhã: {schedule.name_manha}</div>}{schedule.name_noite && <div>Noite: {schedule.name_noite}</div>}</div>}
             </TableCell>
             {columns.map((col) => {
                if (col.id.includes('manha')) {
@@ -225,7 +232,7 @@ export function ScheduleListItem({
             })}
             {!isReadOnly && (
                 <TableCell className={cn("p-2 sticky right-0 z-10", isExporting ? 'bg-card' : 'bg-background group-hover:bg-muted/50', schedule.isFeatured && 'bg-amber-500/10')}>
-                    <AlertDialog>
+                    <Button variant="outline" size="sm" onClick={onEditMeeting}>Editar reunião</Button><AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon">
                                 <Trash2 className="h-4 w-4 text-destructive" />

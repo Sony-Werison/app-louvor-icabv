@@ -16,6 +16,12 @@ import { ScheduleListItem } from './schedule-list-item';
 import { useAuth } from '@/context/auth-context';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const renderTableForExport = (
   schedules: MonthlySchedule[],
@@ -80,6 +86,8 @@ export function MonthlyScheduleView({
 }) {
   const { updateSchedule, removeSchedule } = useSchedule();
   const { can } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<string | null>(null);
   const isReadOnly = !can('edit:schedule') || isExporting;
 
   const handleMemberChange = (scheduleId: string, columnId: string, memberId: string, index: number) => {
@@ -168,6 +176,7 @@ export function MonthlyScheduleView({
     <>
       {/* On phones, preserve the same date-by-role grid as the full schedule. */}
       <div className="md:hidden rounded-lg border bg-card overflow-hidden">
+        {!isReadOnly && <div className="flex justify-end border-b p-2"><Button size="sm" variant="outline" onClick={() => setEditing(!editing)}>{editing ? 'Concluir edição' : 'Editar escala'}</Button></div>}
         <table className="w-full table-fixed border-collapse text-[10px] leading-tight">
           <thead>
             <tr className="border-b bg-muted/30 text-center text-muted-foreground">
@@ -181,32 +190,34 @@ export function MonthlyScheduleView({
           </thead>
           <tbody>
             {sortedSchedules.map((schedule) => (
-              <tr key={schedule.id} className="border-b last:border-0 align-middle">
+              <tr key={schedule.id} className={cn('border-b last:border-0 align-middle', schedule.date.getDay() !== 0 && 'bg-blue-500/10')}>
                 <th scope="row" className="px-1 py-3 text-center align-middle font-medium">
                   {format(schedule.date, 'dd/MM', { locale: ptBR })}
+                  {schedule.name_manha && <span className="mt-1 block break-words" title="Reunião da manhã">{schedule.name_manha}</span>}
+                  {schedule.name_noite && <span className="mt-1 block break-words" title="Reunião da noite">{schedule.name_noite}</span>}
+                  {editing && <button type="button" className="mt-1 block w-full text-primary underline" onClick={() => setSelectedSchedule(schedule.id)} aria-label={`Editar escala de ${format(schedule.date, 'dd/MM')}`}>Editar</button>}
                 </th>
                 {columns.map((column) => {
                   const names = (schedule.assignments?.[column.id] || [])
                     .filter(Boolean)
                     .map((id) => members.find((member) => member.id === id)?.name || 'Membro não encontrado');
                   return <td key={column.id} className="px-1 py-2 text-center align-middle break-words">
-                    {names.length ? names.map((name, index) => <div key={index} title={name} className={column.id === 'multimedia' ? "py-0.5 whitespace-nowrap overflow-hidden text-ellipsis" : "py-0.5 break-words"}>{name}</div>) : '-'}
+                    {column.id.includes('manha') && schedule.status_manha && schedule.status_manha !== 'scheduled' ? <span title={schedule.reason_manha}>{schedule.status_manha === 'cancelled' ? 'Cancelada' : 'N/A'}{schedule.reason_manha && <span className="block">{schedule.reason_manha}</span>}</span> : column.id.includes('noite') && schedule.status_noite && schedule.status_noite !== 'scheduled' ? <span title={schedule.reason_noite}>{schedule.status_noite === 'cancelled' ? 'Cancelada' : 'N/A'}{schedule.reason_noite && <span className="block">{schedule.reason_noite}</span>}</span> : names.length ? names.map((name, index) => <div key={index} title={name} className={column.id === 'multimedia' ? "py-0.5 whitespace-nowrap overflow-hidden text-ellipsis" : "py-0.5 break-words"}>{name}</div>) : '-'}
                   </td>;
                 })}
               </tr>
             ))}
           </tbody>
         </table>
-        {!isReadOnly && <div className="space-y-3 border-t p-3">
-          <p className="text-sm font-semibold">Editar atribuições</p>
-          {sortedSchedules.map((schedule) => <ScheduleListItem key={schedule.id}
+      </div>
+        {!isReadOnly && <Dialog open={!!selectedSchedule} onOpenChange={open => { if (!open) setSelectedSchedule(null); }}><DialogContent className="max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>Editar escala</DialogTitle></DialogHeader>
+          {sortedSchedules.filter(schedule => schedule.id === selectedSchedule).map((schedule) => <div key={schedule.id} className="space-y-4">{(['manha', 'noite'] as const).map(period => <MeetingEditor key={period} schedule={schedule} period={period} onSave={updateSchedule} />)}<ScheduleListItem
             schedule={schedule} members={members} columns={columns}
             handleMemberChange={handleMemberChange} handleClearAssignment={handleClearAssignment}
             handleDateChange={handleDateChange} handleNameChange={handleNameChange}
             handleRemoveSchedule={handleRemoveSchedule} handleFeatureToggle={handleFeatureToggle}
-            isReadOnly={false} />)}
-        </div>}
-      </div>
+            isReadOnly={false} /></div>)}
+        </DialogContent></Dialog>}
 
       {/* Desktop View */}
       <div className="hidden md:block rounded-lg border overflow-x-auto" style={{maxHeight: 'calc(100vh - 12rem)'}}>
@@ -243,6 +254,7 @@ export function MonthlyScheduleView({
                  handleFeatureToggle={handleFeatureToggle}
                  isReadOnly={isReadOnly}
                  isExporting={isExporting}
+                 onEditMeeting={() => setSelectedSchedule(schedule.id)}
                />
             ))}
           </TableBody>
@@ -250,4 +262,17 @@ export function MonthlyScheduleView({
       </div>
     </>
   );
+}
+
+function MeetingEditor({ schedule, period, onSave }: { schedule: MonthlySchedule; period: 'manha' | 'noite'; onSave: (id: string, updates: Partial<Omit<MonthlySchedule, 'id'>>) => Promise<void> }) {
+  const [name, setName] = useState(schedule[`name_${period}`] || '');
+  const [status, setStatus] = useState(schedule[`status_${period}`] || 'scheduled');
+  const [reason, setReason] = useState(schedule[`reason_${period}`] || '');
+  const [saving, setSaving] = useState(false);
+  return <div className="space-y-2 rounded-lg border p-3"><h3 className="font-semibold">Reunião da {period === 'manha' ? 'manhã' : 'noite'}</h3>
+    <Label htmlFor={`meeting-name-${period}`}>Nome da reunião</Label><Input id={`meeting-name-${period}`} value={name} onChange={event => setName(event.target.value)} />
+    <Label htmlFor={`meeting-status-${period}`}>Situação</Label><select id={`meeting-status-${period}`} className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={status} onChange={event => setStatus(event.target.value as typeof status)}><option value="scheduled">Programada</option><option value="cancelled">Cancelada</option><option value="not_applicable">Não aplicável</option></select>
+    {status !== 'scheduled' && <><Label htmlFor={`meeting-reason-${period}`}>Motivo</Label><Input id={`meeting-reason-${period}`} value={reason} onChange={event => setReason(event.target.value)} placeholder="Informe o motivo" /></>}
+    <Button size="sm" disabled={saving} onClick={async () => { setSaving(true); try { await onSave(schedule.id, { [`name_${period}`]: name, [`status_${period}`]: status, [`reason_${period}`]: status === 'scheduled' ? '' : reason }); } finally { setSaving(false); } }}>Salvar reunião</Button>
+  </div>;
 }
