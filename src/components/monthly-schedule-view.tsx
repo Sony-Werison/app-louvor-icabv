@@ -85,7 +85,7 @@ export function MonthlyScheduleView({
     isForDialog?: boolean;
 }) {
   const { updateSchedule, removeSchedule } = useSchedule();
-  const { can } = useAuth();
+  const { can, account } = useAuth();
   const [editing, setEditing] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<string | null>(null);
   const isReadOnly = !can('edit:schedule') || isExporting;
@@ -200,9 +200,9 @@ export function MonthlyScheduleView({
                 {columns.map((column) => {
                   const names = (schedule.assignments?.[column.id] || [])
                     .filter(Boolean)
-                    .map((id) => members.find((member) => member.id === id)?.name || 'Membro não encontrado');
+                    .map((id) => ({ id, name: id?.startsWith('guest:') ? id.slice(6) : members.find((member) => member.id === id)?.name || 'Membro não encontrado' }));
                   return <td key={column.id} className="px-1 py-2 text-center align-middle break-words">
-                    {column.id.includes('manha') && schedule.status_manha && schedule.status_manha !== 'scheduled' ? <span title={schedule.reason_manha}>{schedule.status_manha === 'cancelled' ? 'Cancelada' : 'N/A'}{schedule.reason_manha && <span className="block">{schedule.reason_manha}</span>}</span> : column.id.includes('noite') && schedule.status_noite && schedule.status_noite !== 'scheduled' ? <span title={schedule.reason_noite}>{schedule.status_noite === 'cancelled' ? 'Cancelada' : 'N/A'}{schedule.reason_noite && <span className="block">{schedule.reason_noite}</span>}</span> : names.length ? names.map((name, index) => <div key={index} title={name} className={column.id === 'multimedia' ? "py-0.5 whitespace-nowrap overflow-hidden text-ellipsis" : "py-0.5 break-words"}>{name}</div>) : '-'}
+                    {column.id.includes('manha') && schedule.status_manha && schedule.status_manha !== 'scheduled' ? <span title={schedule.reason_manha}>{schedule.status_manha === 'cancelled' ? 'Cancelada' : 'N/A'}{schedule.reason_manha && <span className="block">{schedule.reason_manha}</span>}</span> : column.id.includes('noite') && schedule.status_noite && schedule.status_noite !== 'scheduled' ? <span title={schedule.reason_noite}>{schedule.status_noite === 'cancelled' ? 'Cancelada' : 'N/A'}{schedule.reason_noite && <span className="block">{schedule.reason_noite}</span>}</span> : names.length ? names.map(({id,name}, index) => <div key={index} title={name} className={cn('py-0.5', column.id === 'multimedia' ? 'whitespace-nowrap overflow-hidden text-ellipsis' : 'break-words', id === account?.member_id && 'font-bold text-amber-400')}>{name}</div>) : '-'}
                   </td>;
                 })}
               </tr>

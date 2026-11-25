@@ -36,7 +36,7 @@ export default function HistoryPage() {
       if (schedule.playlist_manha && schedule.playlist_manha.length > 0) {
         const eventSongs = schedule.playlist_manha.map(id => songMap.get(id)).filter((s): s is Song => !!s);
         const leaderId = schedule.assignments?.abertura_manha?.[0];
-        const leader = leaderId ? memberMap.get(leaderId) : undefined;
+        const leader = leaderId?.startsWith('guest:') ? { id: leaderId, name: leaderId.slice(6), roles: [] } as Member : leaderId ? memberMap.get(leaderId) : undefined;
         history.push({
           date,
           eventName: schedule.name_manha || `${dayName}. Manhã`,
@@ -47,7 +47,7 @@ export default function HistoryPage() {
       if (schedule.playlist_noite && schedule.playlist_noite.length > 0) {
         const eventSongs = schedule.playlist_noite.map(id => songMap.get(id)).filter((s): s is Song => !!s);
         const leaderId = schedule.assignments?.abertura_noite?.[0];
-        const leader = leaderId ? memberMap.get(leaderId) : undefined;
+        const leader = leaderId?.startsWith('guest:') ? { id: leaderId, name: leaderId.slice(6), roles: [] } as Member : leaderId ? memberMap.get(leaderId) : undefined;
         history.push({
           date,
           eventName: schedule.name_noite || `${dayName}. Noite`,

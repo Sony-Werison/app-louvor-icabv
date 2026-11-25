@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase-client';
+import Link from 'next/link';
 
 export default function MonthlySchedulePage() {
     const { monthlySchedules, addSchedule, members, scheduleColumns } = useSchedule();
@@ -180,6 +181,7 @@ export default function MonthlySchedulePage() {
                     </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                    <Button asChild size="sm" variant="outline"><Link href="/trocas">Solicitar troca</Link></Button>
                     {can('edit:schedule') && <Button size="sm" variant="outline" disabled={notifying || !filteredSchedules.length} onClick={async () => {
                         if (!supabase) return;
                         setNotifying(true);

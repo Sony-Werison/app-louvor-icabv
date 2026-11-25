@@ -25,6 +25,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { useAuth } from '@/context/auth-context';
 
 
 const MemberSelector: React.FC<{
@@ -37,6 +38,9 @@ const MemberSelector: React.FC<{
     isExporting?: boolean;
 }> = ({ assignedMemberId, allMembers, filteredMembers, onValueChange, onClear, isReadOnly, isExporting }) => {
     const selectedMember = assignedMemberId ? allMembers.find(m => m.id === assignedMemberId) : null;
+    const guestName = assignedMemberId?.startsWith('guest:') ? assignedMemberId.slice(6) : '';
+    const { account } = useAuth();
+    const [guest, setGuest] = useState('');
     
     if (isExporting && selectedMember) {
         return (
@@ -53,13 +57,13 @@ const MemberSelector: React.FC<{
     if (isExporting && !selectedMember) {
         return (
             <div className="flex items-center justify-center gap-2 h-9 text-xs sm:text-sm px-3 py-2 rounded-md border border-input bg-card text-card-foreground">
-                 <span className="text-muted-foreground">N/A</span>
+                 <span className="text-muted-foreground">{guestName || 'N/A'}</span>
             </div>
         )
     }
     
     return (
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 flex-col gap-1"><div className="flex items-center gap-1">
              <Select value={assignedMemberId || ''} onValueChange={onValueChange} disabled={isReadOnly}>
                 <SelectTrigger className={cn("h-9 text-xs sm:text-sm w-full", !assignedMemberId && "text-muted-foreground/60")}>
                     <div className="flex items-center gap-2 truncate">
@@ -69,9 +73,9 @@ const MemberSelector: React.FC<{
                                     <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
                                     <AvatarFallback>{selectedMember.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                <span className="truncate">{selectedMember.name}</span>
+                                <span className={cn('truncate', selectedMember.id === account?.member_id && 'font-bold text-amber-400')}>{selectedMember.name}</span>
                             </>
-                        ) : (
+                        ) : guestName ? <span className="truncate">{guestName} (visita)</span> : (
                             <SelectValue placeholder="Selecione..." />
                         )}
                     </div>
@@ -95,7 +99,7 @@ const MemberSelector: React.FC<{
                     <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
                 </Button>
             )}
-        </div>
+        </div>{!isReadOnly && <div className="flex gap-1"><Input value={guest} onChange={event => setGuest(event.target.value)} placeholder="Nome da visita" aria-label="Nome da visita" className="h-8 min-w-0 text-xs" /><Button type="button" variant="outline" size="sm" disabled={!guest.trim()} onClick={() => { onValueChange(`guest:${guest.trim().slice(0,120)}`); setGuest(''); }}>Adicionar</Button></div>}</div>
     );
 };
 

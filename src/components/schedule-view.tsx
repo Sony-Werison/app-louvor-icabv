@@ -41,7 +41,7 @@ const getScheduleIcon = (schedule: Schedule) => {
     return null;
 };
 
-const getMemberById = (members: Member[], id: string | null) => id ? members.find(m => m.id === id) : null;
+const getMemberById = (members: Member[], id: string | null) => id ? (id.startsWith('guest:') ? { id, name: id.slice(6), roles: [] } as Member : members.find(m => m.id === id)) : null;
 const getSongById = (songs: Song[], id:string) => songs.find(s => s.id === id);
 const getMemberInitial = (name: string) => name.charAt(0).toUpperCase();
 
