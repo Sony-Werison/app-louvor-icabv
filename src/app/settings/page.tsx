@@ -21,6 +21,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Loader2 } from 'lucide-react';
 import type { BackupData, ImportSelections } from '@/types';
 import { useSchedule } from '@/context/schedule-context';
+import { supabase } from '@/lib/supabase-client';
+import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 export default function SettingsPage() {
@@ -28,6 +30,31 @@ export default function SettingsPage() {
   const { can } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [notificationSettings, setNotificationSettings] = useState<Record<string, boolean>>({ schedule_changes: true, new_playlists: true, monthly_schedule: true, swap_requests: true, meeting_changes: true });
+  const [testingPush, setTestingPush] = useState(false);
+
+  useEffect(() => {
+    if (!supabase || !can('manage:settings')) return;
+    supabase.from('app_settings').select('notification_settings').eq('id', 'settings').maybeSingle().then(({ data }) => {
+      if (data?.notification_settings) setNotificationSettings({ ...notificationSettings, ...data.notification_settings });
+    });
+  }, [can]);
+
+  const updateNotificationSetting = async (key: string, value: boolean) => {
+    if (!supabase) return;
+    const next = { ...notificationSettings, [key]: value };
+    setNotificationSettings(next);
+    const { error } = await supabase.from('app_settings').update({ notification_settings: next }).eq('id', 'settings');
+    if (error) toast({ title: 'Não foi possível salvar a preferência', variant: 'destructive' });
+  };
+
+  const testPush = async () => {
+    if (!supabase) return;
+    setTestingPush(true);
+    const { error } = await supabase.rpc('send_test_notification');
+    setTestingPush(false);
+    toast(error ? { title: 'Não foi possível enviar o teste', description: 'Ative as notificações neste dispositivo.', variant: 'destructive' } : { title: 'Notificação de teste enviada', description: 'Verifique este dispositivo.' });
+  };
 
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -133,9 +160,19 @@ export default function SettingsPage() {
             <CardDescription>Configure as notificações push deste dispositivo. Você receberá avisos sobre escalas, trocas e repertórios.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" onClick={() => window.dispatchEvent(new Event('louvor:open-push-settings'))}>
-              Ativar notificações push
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => window.dispatchEvent(new Event('louvor:open-push-settings'))}>Ativar notificações push</Button>
+              <Button onClick={testPush} disabled={testingPush}>{testingPush ? 'Enviando...' : 'Testar notificação push'}</Button>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {([
+                ['schedule_changes', 'Alterações na escala'],
+                ['new_playlists', 'Novos repertórios'],
+                ['monthly_schedule', 'Nova escala mensal'],
+                ['swap_requests', 'Pedidos de troca'],
+                ['meeting_changes', 'Alterações de reuniões'],
+              ] as const).map(([key, label]) => <label key={key} className="flex items-center justify-between rounded-md border p-3 text-sm"><span>{label}</span><Switch checked={notificationSettings[key]} onCheckedChange={value => void updateNotificationSetting(key, value)} /></label>)}
+            </div>
           </CardContent>
         </Card>
 
