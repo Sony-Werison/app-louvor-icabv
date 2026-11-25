@@ -231,15 +231,15 @@ export function ScheduleListItem({
             {columns.map((col) => {
                if (col.id.includes('manha')) {
                   return (
-                        <TableCell key={col.id} className="p-2 min-w-0">
-                        {col.id === 'abertura_manha' && schedule.name_manha && <div className="mb-1 text-xs text-muted-foreground">Reunião da manhã: {schedule.name_manha}</div>}
+                        <TableCell key={col.id} className="relative p-2 min-w-0">
+                        {col.id === 'abertura_manha' && schedule.name_manha && <div className="absolute left-1/2 top-1 z-10 w-[200%] -translate-x-1/2 overflow-hidden text-ellipsis whitespace-nowrap text-center text-xs text-muted-foreground">Reunião da manhã: {schedule.name_manha}</div>}
                         {renderDesktopAssignment(col)}
                     </TableCell>
                   )
                }
                return (
-                <TableCell key={col.id} className="p-2 min-w-0">
-                    {col.id === 'abertura_noite' && schedule.name_noite && <div className="mb-1 text-xs text-muted-foreground">Reunião da noite: {schedule.name_noite}</div>}
+                <TableCell key={col.id} className="relative p-2 min-w-0">
+                    {col.id === 'abertura_noite' && schedule.name_noite && <div className="absolute left-1/2 top-1 z-10 w-[200%] -translate-x-1/2 overflow-hidden text-ellipsis whitespace-nowrap text-center text-xs text-muted-foreground">Reunião da noite: {schedule.name_noite}</div>}
                     {renderDesktopAssignment(col)}
                 </TableCell>
                )

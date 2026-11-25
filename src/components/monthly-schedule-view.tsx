@@ -199,9 +199,9 @@ export function MonthlyScheduleView({
                   const names = (schedule.assignments?.[column.id] || [])
                     .filter(Boolean)
                     .map((id) => ({ id, name: id?.startsWith('guest:') ? id.slice(6) : members.find((member) => member.id === id)?.name || 'Membro não encontrado' }));
-                  return <td key={column.id} className="px-1 py-2 text-center align-middle break-words">
-                    {column.id === 'abertura_manha' && schedule.name_manha && <div className="mb-1 break-words text-muted-foreground" title="Reunião da manhã">{schedule.name_manha}</div>}
-                    {column.id === 'abertura_noite' && schedule.name_noite && <div className="mb-1 break-words text-muted-foreground" title="Reunião da noite">{schedule.name_noite}</div>}
+                  return <td key={column.id} className="relative px-1 py-2 text-center align-middle break-words">
+                    {column.id === 'abertura_manha' && schedule.name_manha && <div className="absolute left-1/2 top-1 z-10 w-[200%] -translate-x-1/2 overflow-hidden text-ellipsis whitespace-nowrap text-center text-muted-foreground" title="Reunião da manhã">{schedule.name_manha}</div>}
+                    {column.id === 'abertura_noite' && schedule.name_noite && <div className="absolute left-1/2 top-1 z-10 w-[200%] -translate-x-1/2 overflow-hidden text-ellipsis whitespace-nowrap text-center text-muted-foreground" title="Reunião da noite">{schedule.name_noite}</div>}
                     {column.id.includes('manha') && schedule.status_manha && schedule.status_manha !== 'scheduled' ? <span title={schedule.reason_manha}>{schedule.status_manha === 'cancelled' ? 'Cancelada' : 'N/A'}{schedule.reason_manha && <span className="block">{schedule.reason_manha}</span>}</span> : column.id.includes('noite') && schedule.status_noite && schedule.status_noite !== 'scheduled' ? <span title={schedule.reason_noite}>{schedule.status_noite === 'cancelled' ? 'Cancelada' : 'N/A'}{schedule.reason_noite && <span className="block">{schedule.reason_noite}</span>}</span> : names.length ? names.map(({id,name}, index) => <div key={index} title={name} className={cn('py-0.5', column.id === 'multimedia' ? 'whitespace-nowrap overflow-hidden text-ellipsis' : 'break-words', id === account?.member_id && 'font-bold text-amber-400')}>{name}</div>) : '-'}
                   </td>;
                 })}
