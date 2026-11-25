@@ -41,6 +41,7 @@ const MemberSelector: React.FC<{
     const guestName = assignedMemberId?.startsWith('guest:') ? assignedMemberId.slice(6) : '';
     const { account } = useAuth();
     const [guest, setGuest] = useState('');
+    const [guestMode, setGuestMode] = useState(false);
     
     if (isExporting && selectedMember) {
         return (
@@ -64,6 +65,7 @@ const MemberSelector: React.FC<{
     
     return (
         <div className="flex min-w-0 flex-col gap-1"><div className="flex items-center gap-1">
+          {guestMode ? <div className="flex min-w-0 flex-1 items-center gap-1"><Input autoFocus value={guest} onChange={event => setGuest(event.target.value)} placeholder="Nome da visita" aria-label="Nome da visita" className="h-9 min-w-0 flex-1 text-xs" /><Button type="button" variant="outline" size="sm" className="h-9 px-2 text-xs" disabled={!guest.trim()} onClick={() => { onValueChange(`guest:${guest.trim().slice(0,120)}`); setGuest(''); setGuestMode(false); }}>Usar</Button><Button type="button" variant="ghost" size="sm" className="h-9 px-1 text-xs" onClick={() => { setGuestMode(false); setGuest(''); }}>×</Button></div> : <>
              <Select value={assignedMemberId || ''} onValueChange={onValueChange} disabled={isReadOnly}>
                 <SelectTrigger className={cn("h-9 text-xs sm:text-sm w-full", !assignedMemberId && "text-muted-foreground/60")}>
                     <div className="flex items-center gap-2 truncate">
@@ -99,7 +101,8 @@ const MemberSelector: React.FC<{
                     <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
                 </Button>
             )}
-        </div>{!isReadOnly && <div className="flex gap-1"><Input value={guest} onChange={event => setGuest(event.target.value)} placeholder="Nome da visita" aria-label="Nome da visita" className="h-8 min-w-0 text-xs" /><Button type="button" variant="outline" size="sm" disabled={!guest.trim()} onClick={() => { onValueChange(`guest:${guest.trim().slice(0,120)}`); setGuest(''); }}>Adicionar</Button></div>}</div>
+            {!isReadOnly && <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 px-1 text-[10px] text-muted-foreground" onClick={() => setGuestMode(true)}>Visita</Button>}
+          </>}</div></div>
     );
 };
 
@@ -224,14 +227,14 @@ export function ScheduleListItem({
             {columns.map((col) => {
                if (col.id.includes('manha')) {
                   return (
-                     <TableCell key={col.id} className="p-2 min-w-44">
+                        <TableCell key={col.id} className="p-2 min-w-0">
                         {col.id === 'abertura_manha' && schedule.name_manha && <div className="mb-1 text-xs text-muted-foreground">Reunião da manhã: {schedule.name_manha}</div>}
                         {renderDesktopAssignment(col)}
                     </TableCell>
                   )
                }
                return (
-                <TableCell key={col.id} className="p-2 min-w-44">
+                <TableCell key={col.id} className="p-2 min-w-0">
                     {col.id === 'abertura_noite' && schedule.name_noite && <div className="mb-1 text-xs text-muted-foreground">Reunião da noite: {schedule.name_noite}</div>}
                     {renderDesktopAssignment(col)}
                 </TableCell>

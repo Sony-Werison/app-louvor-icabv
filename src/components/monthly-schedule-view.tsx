@@ -221,12 +221,12 @@ export function MonthlyScheduleView({
 
       {/* Desktop View */}
       <div className="hidden md:block rounded-lg border overflow-x-auto" style={{maxHeight: 'calc(100vh - 12rem)'}}>
-        <Table className="min-w-max">
+        <Table className="w-full table-fixed">
           <TableHeader className="bg-background">
             <TableRow className="hover:bg-background">
-              <TableHead className="w-[180px] sticky left-0 z-20 bg-background">Data</TableHead>
+                <TableHead className="w-[110px] sticky left-0 z-20 bg-background">Data</TableHead>
               {columns.map((col) => (
-                <TableHead key={col.id} className="sticky top-0 z-10 bg-background min-w-[180px]">
+                <TableHead key={col.id} className="sticky top-0 z-10 bg-background min-w-0">
                   <div className="flex items-center gap-2">
                     {col.icon && <col.icon className="h-4 w-4 text-muted-foreground" />}
                     {col.label}
