@@ -44,7 +44,7 @@ export function PushPermission() {
    </DialogHeader>
    <DialogFooter className="gap-2 sm:gap-2">
     <Button variant="outline" onClick={() => setDismissed(true)}>Agora não</Button>
-    {state === 'blocked' ? <Button onClick={() => void register(false)}>Verificar novamente</Button> : (state === 'prompt' || state === 'error') && <Button onClick={() => void register(true)}>Ativar notificações</Button>}
+    {state === 'blocked' ? <Button onClick={() => void register(true)}>Ativar notificações</Button> : (state === 'prompt' || state === 'error') && <Button onClick={() => void register(true)}>Ativar notificações</Button>}
    </DialogFooter>
   </DialogContent>
  </Dialog>;
