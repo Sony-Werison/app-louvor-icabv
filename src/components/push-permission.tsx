@@ -21,7 +21,7 @@ export function PushPermission() {
   window.addEventListener('louvor:open-push-settings', open);
   return () => window.removeEventListener('louvor:open-push-settings', open);
  }, [user?.id]);
- const [state, setState] = useState<'loading'|'enabled'|'prompt'|'blocked'|'unsupported'|'error'>('loading');
+ const [state, setState] = useState<'loading'|'enabled'|'prompt'|'blocked'|'unsupported'|'error'|'disabled'>('loading');
  const register = useCallback(async (prompt: boolean) => {
   if (!user || !account?.active || account.must_change_password) return;
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window) || !key) { setState('unsupported'); return; }
@@ -51,6 +51,19 @@ export function PushPermission() {
    if (prompt) toast({ title: 'Não foi possível ativar', description: error instanceof Error ? error.message : 'Confira a permissão do navegador e tente novamente.', variant: 'destructive' });
   }
  }, [user, account, toast]);
+ const disable = useCallback(async () => {
+  setActivating(true);
+  try {
+   const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+   const subscription = await registration?.pushManager.getSubscription();
+   const { data } = await supabase!.auth.getSession();
+   if (subscription && data.session) await fetch('/api/push/subscribe', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session.access_token}` }, body: JSON.stringify({ endpoint: subscription.endpoint }) });
+   await subscription?.unsubscribe();
+   setState('disabled');
+   toast({ title: 'Notificações desativadas' });
+  } catch { toast({ title: 'Não foi possível desativar as notificações', variant: 'destructive' }); }
+  finally { setActivating(false); }
+ }, [toast]);
  useEffect(() => { void register(false); }, [register]);
  if (!user || !account?.active || account.must_change_password || state === 'loading') return null;
  const shouldShowPrompt = state !== 'enabled' && !dismissed;
@@ -65,8 +78,8 @@ export function PushPermission() {
    </DialogHeader>
    <DialogFooter className="gap-2 sm:gap-2">
     <Button variant="outline" onClick={() => { setManualOpen(false); setDismissed(true); }}>{state === 'enabled' ? 'Fechar' : 'Agora não'}</Button>
-    {state === 'enabled' && manualOpen && <Button disabled={activating} onClick={async () => { setActivating(true); const { error } = await supabase!.rpc('send_test_notification'); setActivating(false); toast(error ? { title: 'Não foi possível enviar o teste', variant: 'destructive' } : { title: 'Notificação de teste enviada', description: 'Confira as notificações deste dispositivo.' }); }}>{activating ? 'Enviando...' : 'Testar notificação'}</Button>}
-    {(state === 'blocked' || state === 'prompt' || state === 'error') && <Button disabled={activating} onClick={async () => { setActivating(true); await register(true); setActivating(false); }}>{activating ? 'Ativando...' : 'Ativar notificações'}</Button>}
+    {state === 'enabled' && manualOpen && <><Button variant="destructive" disabled={activating} onClick={() => void disable()}>{activating ? 'Desativando...' : 'Desativar notificações'}</Button><Button disabled={activating} onClick={async () => { setActivating(true); const { error } = await supabase!.rpc('send_test_notification'); setActivating(false); toast(error ? { title: 'Não foi possível enviar o teste', variant: 'destructive' } : { title: 'Notificação de teste enviada', description: 'Confira as notificações deste dispositivo.' }); }}>{activating ? 'Enviando...' : 'Testar notificação'}</Button></>}
+    {(state === 'blocked' || state === 'prompt' || state === 'error' || state === 'disabled') && <Button disabled={activating} onClick={async () => { setActivating(true); await register(true); setActivating(false); }}>{activating ? 'Ativando...' : 'Ativar notificações'}</Button>}
    </DialogFooter>
   </DialogContent>
  </Dialog>;

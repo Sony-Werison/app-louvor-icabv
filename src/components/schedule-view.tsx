@@ -115,7 +115,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
   const { updateSchedulePlaylist } = useSchedule();
-  const { can, canManagePlaylist, shareMessage } = useAuth();
+  const { can, canManagePlaylist, shareMessage, account } = useAuth();
   const { toast } = useToast();
 
   const [isCapturing, setIsCapturing] = useState<string | null>(null);
@@ -256,6 +256,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                 const isCurrentlyExporting = isCapturing === schedule.id;
                 const hasPlaylist = playlistSongs.length > 0;
                 const canManagePlaylists = canManagePlaylist(schedule.leaderId);
+                const isMySchedule = !!account?.member_id && account.member_id === schedule.leaderId;
                 const canEditSchedule = can('edit:schedule');
                 const actionIcon = isMobile && canShare ? <Share2 className="w-4 h-4 mr-2" /> : <Download className="w-4 h-4 mr-2" />;
                 const actionLabel = isMobile && canShare ? 'Compartilhar' : 'Baixar PNG';
@@ -347,10 +348,10 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                     <CardFooter className="p-2 schedule-card-footer">
                         <div className="flex flex-col gap-2 w-full">
                             <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className={cn("h-8 text-xs", canManagePlaylists ? "w-1/2" : "w-full")}>
+                                {hasPlaylist && <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className={cn("h-8 text-xs", canManagePlaylists ? "w-1/2" : "w-full")}>
                                     <Eye className="w-4 h-4 mr-2" />
                                     Ver
-                                </Button>
+                                </Button>}
                                 {canManagePlaylists && (
                                      <Button 
                                         variant="outline"
@@ -368,6 +369,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                                     Gerenciar Repertório
                                 </Button>
                             )}
+                            {isMySchedule && <Button variant="outline" onClick={() => router.push('/trocas')} className="w-full h-8 text-xs">Pedir substituição</Button>}
                         </div>
                     </CardFooter>
                 </Card>

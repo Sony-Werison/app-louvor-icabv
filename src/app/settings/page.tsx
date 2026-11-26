@@ -164,14 +164,16 @@ export default function SettingsPage() {
               <Button variant="outline" onClick={() => window.dispatchEvent(new Event('louvor:open-push-settings'))}>Ativar notificações push</Button>
               <Button onClick={testPush} disabled={testingPush}>{testingPush ? 'Enviando...' : 'Testar notificação push'}</Button>
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <p className="mt-4 text-sm text-muted-foreground">Estas preferências são globais e controlam quais avisos o aplicativo envia para os membros:</p>
+            <div className="space-y-1 text-xs text-muted-foreground"><p><strong>Alterações na escala:</strong> mudanças em uma escala existente.</p><p><strong>Novos repertórios:</strong> repertórios publicados ou atualizados.</p><p><strong>Nova escala mensal:</strong> publicação da escala do mês.</p><p><strong>Pedidos de troca:</strong> solicitações e respostas de substituição.</p><p><strong>Alterações de reuniões:</strong> mudanças em reuniões ou cultos.</p></div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {([
                 ['schedule_changes', 'Alterações na escala'],
                 ['new_playlists', 'Novos repertórios'],
                 ['monthly_schedule', 'Nova escala mensal'],
                 ['swap_requests', 'Pedidos de troca'],
                 ['meeting_changes', 'Alterações de reuniões'],
-              ] as const).map(([key, label]) => <label key={key} className="flex items-center justify-between rounded-md border p-3 text-sm"><span>{label}</span><Switch checked={notificationSettings[key]} onCheckedChange={value => void updateNotificationSetting(key, value)} /></label>)}
+              ] as const).map(([key, label]) => { const descriptions = { schedule_changes: 'Mudanças em uma escala existente.', new_playlists: 'Repertórios publicados ou atualizados.', monthly_schedule: 'Publicação da escala do mês.', swap_requests: 'Solicitações e respostas de substituição.', meeting_changes: 'Mudanças em reuniões ou cultos.' } as const; return <label key={key} className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm"><span><span className="block">{label}</span><span className="mt-1 block text-xs text-muted-foreground">{descriptions[key]}</span></span><Switch checked={notificationSettings[key]} onCheckedChange={value => void updateNotificationSetting(key, value)} /></label>; })}
             </div>
           </CardContent>
         </Card>
