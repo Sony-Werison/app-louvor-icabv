@@ -53,7 +53,7 @@ begin
       end if;
     end loop;
   end if;
-end $;
+end $$;
 revoke all on function private.send_weekly_schedule_reminders() from public, anon, authenticated;
 
 
