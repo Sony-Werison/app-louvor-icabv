@@ -138,7 +138,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto">
+      <DialogContent className="w-[calc(100%-2rem)] max-h-[90dvh] overflow-y-auto overflow-x-hidden [&>*]:min-w-0">
         <DialogHeader>
           <DialogTitle>{member ? 'Editar Membro' : 'Novo Membro'}</DialogTitle>
           <DialogDescription>
@@ -146,7 +146,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="min-w-0 space-y-4">
             <div className='flex items-center gap-4'>
               <Avatar className="w-20 h-20">
                 <AvatarImage src={avatarPreview || undefined} alt={form.getValues('name')} />
@@ -154,7 +154,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
                   {form.getValues('name') ? form.getValues('name').charAt(0) : <User />}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid w-full max-w-sm items-center gap-1.5">
+              <div className="grid min-w-0 flex-1 max-w-sm items-center gap-1.5">
                 <Label htmlFor="avatar">Foto de Perfil</Label>
                 <Input id="avatar" type="file" className="sr-only" accept="image/*" onChange={handleAvatarChange} />
                 <Label htmlFor="avatar" className="inline-flex cursor-pointer items-center justify-center rounded-md border px-3 py-2 text-sm">{avatarPreview ? 'Alterar foto' : 'Escolher foto'}</Label>

@@ -61,3 +61,26 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ email: account.login_email, temporaryPassword: password }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) { return accountErrorResponse(error); }
 }
+
+// Change the login identifier without resetting the member's password.
+export async function PUT(request: Request) {
+  try {
+    const { admin } = await requireAccount(request, true);
+    const parsed = inputSchema.extend({ email: z.string().trim().email().max(254) }).safeParse(await request.json().catch(() => null));
+    if (!parsed.success) throw new AuthError('Informe um e-mail de acesso válido.', 400);
+    const email = parsed.data.email.toLowerCase();
+    const { data: account, error } = await admin.from('member_accounts').select('user_id,login_email').eq('member_id', parsed.data.memberId).maybeSingle();
+    if (error || !account) throw new AuthError('Conta não encontrada.', 404);
+    if (email !== account.login_email) {
+      const { error: authError } = await admin.auth.admin.updateUserById(account.user_id, { email, email_confirm: true });
+      if (authError) throw new AuthError('O e-mail já está em uso ou não pôde ser atualizado.', 409);
+      const { error: linkError } = await admin.from('member_accounts').update({ login_email: email }).eq('user_id', account.user_id);
+      if (linkError) {
+        const { error: rollbackError } = await admin.auth.admin.updateUserById(account.user_id, { email: account.login_email, email_confirm: true });
+        if (rollbackError) throw new AuthError('O login foi alterado, mas o vínculo não foi atualizado. Contate o administrador antes de tentar novamente.', 503);
+        throw new AuthError('Não foi possível salvar o e-mail. O login anterior foi mantido.', 503);
+      }
+    }
+    return NextResponse.json({ email }, { headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) { return accountErrorResponse(error); }
+}
