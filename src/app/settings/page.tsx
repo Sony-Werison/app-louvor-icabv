@@ -32,7 +32,7 @@ export default function SettingsPage() {
   const { can } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [notificationSettings, setNotificationSettings] = useState<Record<string, boolean>>({ schedule_changes: true, new_playlists: true, monthly_schedule: true, swap_requests: true, meeting_changes: true, playlist_reminders: true, preaching_reminders: true });
+  const [notificationSettings, setNotificationSettings] = useState<Record<string, boolean>>({ schedule_changes: true, new_playlists: true, monthly_schedule: true, swap_requests: true, meeting_changes: true, playlist_reminders: true, preaching_reminders: true, multimedia_reminders: true });
   const [testingPush, setTestingPush] = useState(false);
 
   useEffect(() => {
@@ -175,8 +175,9 @@ export default function SettingsPage() {
                 ['swap_requests', 'Pedidos de troca'],
                 ['playlist_reminders', 'Repertório pendente'],
                 ['preaching_reminders', 'Responsabilidade pela pregação'],
+                ['multimedia_reminders', 'Responsabilidade pela multimídia'],
                 ['meeting_changes', 'Alterações de reuniões'],
-              ] as const).map(([key, label]) => { const descriptions = { schedule_changes: 'Mudanças em uma escala existente.', new_playlists: 'Repertórios publicados ou atualizados.', monthly_schedule: 'Publicação da escala do mês.', swap_requests: 'Solicitações e respostas de substituição.', meeting_changes: 'Mudanças em reuniões ou cultos.', playlist_reminders: 'Todos os dias às 9h, na semana da abertura e até o dia da reunião, enquanto o repertório estiver vazio.', preaching_reminders: 'Uma vez por reunião, na semana da pregação, às 9h, para o responsável escalado.' } as const; return <label key={key} className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm"><span><span className="block">{label}</span><span className="mt-1 block text-xs text-muted-foreground">{descriptions[key]}</span></span><Switch checked={notificationSettings[key]} onCheckedChange={value => void updateNotificationSetting(key, value)} /></label>; })}
+              ] as const).map(([key, label]) => { const descriptions = { multimedia_reminders: 'Uma vez por data de escala, na semana correspondente, às 9h, para cada responsável pela multimídia.', schedule_changes: 'Mudanças em uma escala existente.', new_playlists: 'Repertórios publicados ou atualizados.', monthly_schedule: 'Publicação da escala do mês.', swap_requests: 'Solicitações e respostas de substituição.', meeting_changes: 'Mudanças em reuniões ou cultos.', playlist_reminders: 'Todos os dias às 9h, na semana da abertura e até o dia da reunião, enquanto o repertório estiver vazio.', preaching_reminders: 'Uma vez por reunião, na semana da pregação, às 9h, para o responsável escalado.' } as const; return <label key={key} className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm"><span><span className="block">{label}</span><span className="mt-1 block text-xs text-muted-foreground">{descriptions[key]}</span></span><Switch checked={notificationSettings[key]} onCheckedChange={value => void updateNotificationSetting(key, value)} /></label>; })}
             </div>
           </CardContent>
         </Card>

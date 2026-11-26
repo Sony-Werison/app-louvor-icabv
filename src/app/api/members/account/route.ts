@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomInt } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { accountErrorResponse, AuthError, requireAccount } from '@/lib/server-auth';
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     if (existing) throw new AuthError('Este membro já possui uma conta. O acesso existente foi preservado.', 409);
     const loginEmail = (email || member.email || `${member.id.toLowerCase().replace(/[^a-z0-9-]/g, '')}@acesso.icabv.app`).toLowerCase();
     if (!z.string().email().safeParse(loginEmail).success) throw new AuthError('Informe um e-mail válido.', 400);
-    const password = randomBytes(18).toString('base64url');
+    const password = `louvor${randomInt(10000, 100000)}`;
     const { data: created, error: createError } = await admin.auth.admin.createUser({
       email: loginEmail, password, email_confirm: true, user_metadata: { name: member.name },
     });
@@ -53,7 +53,7 @@ export async function PATCH(request: Request) {
     const { data: account, error } = await admin.from('member_accounts').select('*').eq('member_id', parsed.data.memberId).maybeSingle();
     if (error || !account) throw new AuthError('Conta não encontrada.', 404);
     if (account.role === 'admin') throw new AuthError('A senha administrativa deve ser alterada pela própria conta.', 403);
-    const password = randomBytes(18).toString('base64url');
+    const password = `louvor${randomInt(10000, 100000)}`;
     const { error: lockError } = await admin.from('member_accounts').update({ must_change_password: true }).eq('user_id', account.user_id);
     if (lockError) throw new AuthError('Não foi possível preparar a redefinição.', 503);
     const { error: resetError } = await admin.auth.admin.updateUserById(account.user_id, { password });

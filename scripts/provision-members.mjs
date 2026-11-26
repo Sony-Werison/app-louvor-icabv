@@ -2,7 +2,7 @@
 // Existing accounts/passwords are preserved. Credentials are written only to an ignored local file.
 import { createClient } from '@supabase/supabase-js';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
-import { randomBytes } from 'node:crypto';
+import { randomInt } from 'node:crypto';
 const client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
   { auth: { persistSession: false, autoRefreshToken: false } });
 const { data: members, error } = await client.from('members').select('id,name,email,roles').order('name');
@@ -25,7 +25,7 @@ for (const member of members) {
   if (accounts.some(account => account.member_id === member.id)) { console.log('Conta existente preservada: ' + member.name); continue; }
   if (member.id.startsWith('account-test-') || member.id.startsWith('ui-account-test-')) continue;
   const email = (member.email || `${member.id.toLowerCase().replace(/[^a-z0-9-]/g, '')}@acesso.icabv.app`).toLowerCase();
-  const password = randomBytes(18).toString('base64url');
+  const password = `louvor${randomInt(10000, 100000)}`;
   const { data: created, error: createError } = await client.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name: member.name } });
   if (createError) throw Error(`Não foi possível criar a conta de ${member.name}. Contas anteriores foram preservadas; consulte o arquivo privado.`);
   const { error: linkError } = await client.from('member_accounts').insert({ user_id: created.user.id, member_id: member.id,
