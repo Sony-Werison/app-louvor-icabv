@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
-import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase-client';
 
 
 interface ScheduleViewProps {
@@ -109,11 +109,11 @@ const EditableTitle = ({ schedule, canEdit, onUpdate }: { schedule: Schedule, ca
 
 
 export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds, onScheduleUpdate }: ScheduleViewProps) {
-  const router = useRouter();
   const [schedules, setSchedules] = useState(initialSchedules);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
+  const [requestingSwap, setRequestingSwap] = useState<string | null>(null);
   const { updateSchedulePlaylist } = useSchedule();
   const { can, canManagePlaylist, shareMessage, account } = useAuth();
   const { toast } = useToast();
@@ -369,7 +369,17 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                                     Gerenciar Repertório
                                 </Button>
                             )}
-                            {isMySchedule && <Button variant="outline" onClick={() => router.push('/trocas')} className="w-full h-8 text-xs">Pedir substituição</Button>}
+                            {isMySchedule && <Button variant="outline" disabled={requestingSwap === schedule.id} onClick={async () => {
+                                if (!supabase) return;
+                                setRequestingSwap(schedule.id);
+                                try {
+                                    const [, period, ...id] = schedule.id.split('-');
+                                    const { error } = await supabase.rpc('request_schedule_swap', { p_schedule_id: id.join('-'), p_column: `abertura_${period}`, p_slot: 0 });
+                                    if (error) throw error;
+                                    toast({ title: 'Pedido de substituição enviado', description: `${schedule.name} — ${format(schedule.date, 'dd/MM/yyyy')}` });
+                                } catch { toast({ title: 'Não foi possível pedir substituição', description: 'Confira se já existe um pedido aberto para esta atribuição.', variant: 'destructive' }); }
+                                finally { setRequestingSwap(null); }
+                            }} className="w-full h-8 text-xs">{requestingSwap === schedule.id ? 'Enviando...' : 'Pedir substituição'}</Button>}
                         </div>
                     </CardFooter>
                 </Card>

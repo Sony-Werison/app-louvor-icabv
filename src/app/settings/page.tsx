@@ -30,7 +30,7 @@ export default function SettingsPage() {
   const { can } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [notificationSettings, setNotificationSettings] = useState<Record<string, boolean>>({ schedule_changes: true, new_playlists: true, monthly_schedule: true, swap_requests: true, meeting_changes: true });
+  const [notificationSettings, setNotificationSettings] = useState<Record<string, boolean>>({ schedule_changes: true, new_playlists: true, monthly_schedule: true, swap_requests: true, meeting_changes: true, playlist_reminders: true, preaching_reminders: true });
   const [testingPush, setTestingPush] = useState(false);
 
   useEffect(() => {
@@ -165,15 +165,16 @@ export default function SettingsPage() {
               <Button onClick={testPush} disabled={testingPush}>{testingPush ? 'Enviando...' : 'Testar notificação push'}</Button>
             </div>
             <p className="mt-4 text-sm text-muted-foreground">Estas preferências são globais e controlam quais avisos o aplicativo envia para os membros:</p>
-            <div className="space-y-1 text-xs text-muted-foreground"><p><strong>Alterações na escala:</strong> mudanças em uma escala existente.</p><p><strong>Novos repertórios:</strong> repertórios publicados ou atualizados.</p><p><strong>Nova escala mensal:</strong> publicação da escala do mês.</p><p><strong>Pedidos de troca:</strong> solicitações e respostas de substituição.</p><p><strong>Alterações de reuniões:</strong> mudanças em reuniões ou cultos.</p></div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {([
                 ['schedule_changes', 'Alterações na escala'],
                 ['new_playlists', 'Novos repertórios'],
                 ['monthly_schedule', 'Nova escala mensal'],
                 ['swap_requests', 'Pedidos de troca'],
+                ['playlist_reminders', 'Repertório pendente'],
+                ['preaching_reminders', 'Responsabilidade pela pregação'],
                 ['meeting_changes', 'Alterações de reuniões'],
-              ] as const).map(([key, label]) => { const descriptions = { schedule_changes: 'Mudanças em uma escala existente.', new_playlists: 'Repertórios publicados ou atualizados.', monthly_schedule: 'Publicação da escala do mês.', swap_requests: 'Solicitações e respostas de substituição.', meeting_changes: 'Mudanças em reuniões ou cultos.' } as const; return <label key={key} className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm"><span><span className="block">{label}</span><span className="mt-1 block text-xs text-muted-foreground">{descriptions[key]}</span></span><Switch checked={notificationSettings[key]} onCheckedChange={value => void updateNotificationSetting(key, value)} /></label>; })}
+              ] as const).map(([key, label]) => { const descriptions = { schedule_changes: 'Mudanças em uma escala existente.', new_playlists: 'Repertórios publicados ou atualizados.', monthly_schedule: 'Publicação da escala do mês.', swap_requests: 'Solicitações e respostas de substituição.', meeting_changes: 'Mudanças em reuniões ou cultos.', playlist_reminders: 'Todos os dias às 9h, na semana da abertura e até o dia da reunião, enquanto o repertório estiver vazio.', preaching_reminders: 'Uma vez por reunião, na semana da pregação, às 9h, para o responsável escalado.' } as const; return <label key={key} className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm"><span><span className="block">{label}</span><span className="mt-1 block text-xs text-muted-foreground">{descriptions[key]}</span></span><Switch checked={notificationSettings[key]} onCheckedChange={value => void updateNotificationSetting(key, value)} /></label>; })}
             </div>
           </CardContent>
         </Card>
