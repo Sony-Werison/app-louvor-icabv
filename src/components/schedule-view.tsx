@@ -19,6 +19,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { supabase } from '@/lib/supabase-client';
+import { ArrangedSwaps } from './arranged-swaps';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 
 
 interface ScheduleViewProps {
@@ -112,6 +114,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false);
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
   const [requestingSwap, setRequestingSwap] = useState<string | null>(null);
+  const [arrangedSource, setArrangedSource] = useState<Schedule | null>(null);
   const { updateSchedulePlaylist } = useSchedule();
   const { can, canManagePlaylist, account } = useAuth();
   const { toast } = useToast();
@@ -276,6 +279,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                                     Gerenciar Repertório
                                 </Button>
                             )}
+                            {isMySchedule && <Button variant="outline" className="w-full h-8 text-xs" onClick={() => setArrangedSource(schedule)}>Combinar troca de reunião</Button>}
                             {isMySchedule && <Button variant="outline" disabled={requestingSwap === schedule.id} onClick={async () => {
                                 if (!supabase) return;
                                 setRequestingSwap(schedule.id);
@@ -297,6 +301,7 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
         </TooltipProvider>
     </div>
 
+    <Dialog open={!!arrangedSource} onOpenChange={open => { if (!open) setArrangedSource(null); }}><DialogContent className="max-h-[90dvh] overflow-y-auto overflow-x-hidden"><DialogHeader><DialogTitle>Combinar troca</DialogTitle><DialogDescription>Escolha a reunião para propor uma troca com confirmação.</DialogDescription></DialogHeader>{arrangedSource && <ArrangedSwaps key={arrangedSource.id} source={{scheduleId:arrangedSource.id.split('-').slice(2).join('-'),column:`abertura_${arrangedSource.id.split('-')[1]}`,slot:0}} />}</DialogContent></Dialog>
     {isPlaylistDialogOpen && selectedSchedule && (
         <PlaylistDialog 
             schedule={selectedSchedule}
