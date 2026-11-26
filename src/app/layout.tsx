@@ -64,8 +64,7 @@ export default function RootLayout({
                 <ProfileSwitcher />
               </div>
             </Header>
-            <PushPermission />
-            <main className="pb-20 md:pb-0">{children}</main>
+            <PushPermission><main className="pb-20 md:pb-0">{children}</main></PushPermission>
             <BottomNav />
           </SidebarInset>
         </Providers>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Schedule, Member, Song } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,9 +15,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
-import * as htmlToImage from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { supabase } from '@/lib/supabase-client';
@@ -115,22 +113,14 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
   const [isPlaylistViewerOpen, setIsPlaylistViewerOpen] = useState(false);
   const [requestingSwap, setRequestingSwap] = useState<string | null>(null);
   const { updateSchedulePlaylist } = useSchedule();
-  const { can, canManagePlaylist, shareMessage, account } = useAuth();
+  const { can, canManagePlaylist, account } = useAuth();
   const { toast } = useToast();
 
-  const [isCapturing, setIsCapturing] = useState<string | null>(null);
-  const isMobile = useIsMobile();
-  const [canShare, setCanShare] = useState(false);
   
   useEffect(() => {
     setSchedules(initialSchedules);
   }, [initialSchedules]);
 
-  useEffect(() => {
-    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
-        setCanShare(true);
-    }
-  }, []);
 
   const handlePlaylistSave = async (scheduleId: string, newPlaylist: string[]) => {
     await updateSchedulePlaylist(scheduleId, newPlaylist);
@@ -162,75 +152,6 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
     onScheduleUpdate(scheduleId, updates);
   }
 
-  const captureAndAct = useCallback(async (scheduleId: string, action: 'download' | 'share') => {
-    setIsCapturing(scheduleId);
-    
-    const scheduleCard = document.getElementById(`schedule-card-${scheduleId}`);
-
-    if (!scheduleCard) {
-      toast({ title: "Erro", description: "Não foi possível encontrar o elemento para exportar.", variant: "destructive" });
-      setIsCapturing(null);
-      return;
-    }
-
-    try {
-      // Temporarily add a class to hide the footer
-      scheduleCard.classList.add('capturing');
-
-      const dataUrl = await htmlToImage.toPng(scheduleCard, {
-        quality: 1,
-        pixelRatio: 2,
-        backgroundColor: '#121212',
-        skipFonts: true, // Crucial para evitar erro de 'cssRules' com stylesheets externos
-        fetchRequestInit: {
-            mode: 'cors',
-            cache: 'no-cache',
-        },
-      });
-      
-      // Remove the class after capturing
-      scheduleCard.classList.remove('capturing');
-      
-      const schedule = schedules.find(s => s.id === scheduleId);
-      if (!schedule) return;
-
-      const messageText = shareMessage
-        .replace(/\[PERIODO\]/g, schedule.name)
-        .replace(/\[DATA\]/g, format(schedule.date, "dd/MM/yyyy"));
-
-      if (action === 'share' && canShare) {
-          const blob = await (await fetch(dataUrl)).blob();
-          const file = new File([blob], `repertorio.png`, { type: blob.type });
-          
-          await navigator.share({
-              files: [file],
-              title: `Repertório - ${schedule.name}`,
-              text: messageText,
-          }).catch((error) => {
-              if (error.name !== 'AbortError') {
-                  throw error;
-              }
-          });
-
-      } else { // download action
-        const link = document.createElement('a');
-        const fileName = `repertorio_${schedule.name.replace(/\s+/g, '_').toLowerCase()}.png`;
-        link.download = fileName;
-        link.href = dataUrl;
-        link.click();
-        toast({ title: 'Baixado!', description: 'A imagem foi baixada.' });
-      }
-      
-    } catch (error: any) {
-        if (scheduleCard) scheduleCard.classList.remove('capturing');
-        if (error.name !== 'AbortError') { 
-            console.error(`Action failed:`, error);
-            toast({ title: `Falha na Ação`, description: 'Não foi possível processar a imagem por restrições de segurança do navegador.', variant: 'destructive' });
-        }
-    } finally {
-      setIsCapturing(null);
-    }
-  }, [toast, canShare, shareMessage, schedules]);
 
 
   return (
@@ -253,14 +174,10 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                 .map(id => getMemberById(members, id))
                 .filter((m): m is Member => !!m);
                 
-                const isCurrentlyExporting = isCapturing === schedule.id;
                 const hasPlaylist = playlistSongs.length > 0;
                 const canManagePlaylists = canManagePlaylist(schedule.leaderId);
                 const isMySchedule = !!account?.member_id && account.member_id === schedule.leaderId;
                 const canEditSchedule = can('edit:schedule');
-                const actionIcon = isMobile && canShare ? <Share2 className="w-4 h-4 mr-2" /> : <Download className="w-4 h-4 mr-2" />;
-                const actionLabel = isMobile && canShare ? 'Compartilhar' : 'Baixar PNG';
-                const actionType = isMobile && canShare ? 'share' : 'download';
 
                 return (
                 <Card key={schedule.id} id={`schedule-card-${schedule.id}`} className="flex flex-col relative bg-card text-card-foreground">
@@ -348,20 +265,10 @@ export function ScheduleView({ initialSchedules, members, songs, repeatedSongIds
                     <CardFooter className="p-2 schedule-card-footer">
                         <div className="flex flex-col gap-2 w-full">
                             <div className="flex gap-2">
-                                {hasPlaylist && <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className={cn("h-8 text-xs", canManagePlaylists ? "w-1/2" : "w-full")}>
+                                {hasPlaylist && <Button variant="outline" onClick={() => handleOpenViewer(schedule)} className="h-8 text-xs w-full">
                                     <Eye className="w-4 h-4 mr-2" />
                                     Ver
                                 </Button>}
-                                {canManagePlaylists && (
-                                     <Button 
-                                        variant="outline"
-                                        onClick={() => captureAndAct(schedule.id, actionType)} 
-                                        className="h-8 text-xs w-1/2" 
-                                        disabled={isCurrentlyExporting || !hasPlaylist}>
-                                        {isCurrentlyExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : actionIcon}
-                                        {actionLabel}
-                                    </Button>
-                                )}
                             </div>
                             {canManagePlaylists && (
                                 <Button onClick={() => handleOpenPlaylist(schedule)} className="w-full h-8 text-xs">

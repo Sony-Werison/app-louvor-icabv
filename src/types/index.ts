@@ -9,7 +9,7 @@ export type MemberAccount = {
   active: boolean;
 };
 
-export type MemberRole = 'Abertura' | 'Pregação' | 'Multimídia' | 'Convidado';
+export type MemberRole = 'Abertura' | 'Pregação' | 'Multimídia' | 'Louvor' | 'Convidado';
 export type SongCategory = 'Hino' | 'Louvor' | 'Infantil';
 
 export type PdfLink = {

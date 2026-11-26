@@ -31,6 +31,7 @@ import { useSchedule } from '@/context/schedule-context';
 import { v4 as uuidv4 } from 'uuid';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Label } from './ui/label';
+import { MemberAccountDialog } from './member-account-dialog';
 
 interface MemberFormDialogProps {
   isOpen: boolean;
@@ -38,7 +39,7 @@ interface MemberFormDialogProps {
   member: Member | null;
 }
 
-const memberRoles: MemberRole[] = ['Abertura', 'Pregação', 'Multimídia', 'Convidado'];
+const memberRoles: MemberRole[] = ['Abertura', 'Pregação', 'Multimídia', 'Louvor'];
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
@@ -53,6 +54,7 @@ type MemberFormData = z.infer<typeof formSchema>;
 export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDialogProps) {
   const { saveMember } = useSchedule();
   const [isSaving, setIsSaving] = useState(false);
+  const [newMemberId, setNewMemberId] = useState(() => uuidv4());
   const { toast } = useToast();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(member?.avatar || null);
@@ -72,13 +74,15 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
         form.reset({
           name: member.name || '',
           email: member.email || '',
-          roles: member.roles || [],
+          roles: Array.from(new Set((member.roles || []).map(role => role === 'Convidado' ? 'Louvor' : role))),
         });
         setAvatarPreview(member.avatar || null);
       } else {
+        const id = uuidv4();
+        setNewMemberId(id);
         form.reset({
           name: '',
-          email: '',
+          email: `${id}@acesso.icabv.app`,
           roles: [],
         });
         setAvatarPreview(null);
@@ -102,7 +106,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
   const onSubmit = async (values: MemberFormData) => {
     setIsSaving(true);
     try {
-      const memberId = member?.id ?? uuidv4();
+      const memberId = member?.id ?? newMemberId;
       const memberData: Member = {
         id: memberId,
         name: values.name,
@@ -134,7 +138,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{member ? 'Editar Membro' : 'Novo Membro'}</DialogTitle>
           <DialogDescription>
@@ -152,7 +156,9 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
               </Avatar>
               <div className="grid w-full max-w-sm items-center gap-1.5">
                 <Label htmlFor="avatar">Foto de Perfil</Label>
-                <Input id="avatar" type="file" accept="image/*" onChange={handleAvatarChange} />
+                <Input id="avatar" type="file" className="sr-only" accept="image/*" onChange={handleAvatarChange} />
+                <Label htmlFor="avatar" className="inline-flex cursor-pointer items-center justify-center rounded-md border px-3 py-2 text-sm">{avatarPreview ? 'Alterar foto' : 'Escolher foto'}</Label>
+                <p className="text-xs text-muted-foreground">{avatarFile ? avatarFile.name : member?.avatar ? 'Foto atual cadastrada. Será mantida se não escolher outra.' : 'Nenhuma foto cadastrada.'}</p>
               </div>
             </div>
 
@@ -169,19 +175,20 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
                 </FormItem>
               )}
             />
-             <FormField
+             {!member && <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>E-mail de acesso</FormLabel>
                   <FormControl>
-                    <Input placeholder="email@example.com" {...field} />
+                    <Input type="email" placeholder="email@example.com" {...field} />
                   </FormControl>
                   <FormMessage />
+                  <p className="text-xs text-muted-foreground">Use um e-mail real ou mantenha a identificação provisória sugerida. Depois de salvar, crie o acesso em Editar membro.</p>
                 </FormItem>
               )}
-            />
+            />}
             <FormField
               control={form.control}
               name="roles"
@@ -228,6 +235,7 @@ export function MemberFormDialog({ isOpen, onOpenChange, member }: MemberFormDia
               )}
             />
 
+            {member && <section className="space-y-3 border-t pt-4"><h3 className="font-semibold">Gerenciar acesso</h3><MemberAccountDialog member={member} embedded onClose={() => {}} /></section>}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
                 Cancelar

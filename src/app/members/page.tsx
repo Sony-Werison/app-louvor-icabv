@@ -34,7 +34,6 @@ import * as htmlToImage from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
-import { MemberAccountDialog } from '@/components/member-account-dialog';
 
 type MemberSchedule = {
   date: Date;
@@ -48,6 +47,7 @@ const roleColorMap: Record<string, string> = {
     'Pregação Noite': 'text-red-500',
     'Multimídia': 'text-green-400',
     'Convidado': 'text-purple-400',
+    'Louvor': 'text-purple-400',
 };
 
 
@@ -62,7 +62,6 @@ export default function MembersPage() {
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
   const [memberToView, setMemberToView] = useState<Member | null>(null);
 
-  const [accountMember, setAccountMember] = useState<Member | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -140,7 +139,8 @@ export default function MembersPage() {
 
 
   const groupedMembers = members.reduce((acc, member) => {
-    member.roles.forEach(role => {
+    member.roles.forEach(originalRole => {
+        const role = originalRole === 'Convidado' ? 'Louvor' : originalRole;
         if (!acc[role]) {
             acc[role] = [];
         }
@@ -151,7 +151,7 @@ export default function MembersPage() {
     return acc;
   }, {} as Record<MemberRole, Member[]>);
 
-  const roleOrder: MemberRole[] = ['Abertura', 'Pregação', 'Multimídia', 'Convidado'];
+  const roleOrder: MemberRole[] = ['Abertura', 'Pregação', 'Multimídia', 'Louvor'];
   const sortedRoles = Object.keys(groupedMembers).sort((a,b) => {
     const aIndex = roleOrder.indexOf(a as any);
     const bIndex = roleOrder.indexOf(b as any);
@@ -274,7 +274,6 @@ export default function MembersPage() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => setAccountMember(member)}>Gerenciar acesso</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleEdit(member)}>
                             <Edit className="mr-2 h-4 w-4" />
                             <span>Editar</span>
@@ -295,7 +294,6 @@ export default function MembersPage() {
       </div>
 
 
-      {accountMember && <MemberAccountDialog member={accountMember} onClose={() => setAccountMember(null)} />}
       {isFormDialogOpen && (
         <MemberFormDialog
           isOpen={isFormDialogOpen}

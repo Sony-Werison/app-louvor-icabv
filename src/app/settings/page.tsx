@@ -1,5 +1,6 @@
 
 'use client';
+import { usePushNotifications } from '@/components/push-permission';
 
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -26,6 +27,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 export default function SettingsPage() {
+  const { enabled: pushEnabled, busy: pushBusy, toggle: togglePush } = usePushNotifications();
   const { exportData, importData, clearAllData } = useSchedule();
   const { can } = useAuth();
   const router = useRouter();
@@ -161,7 +163,7 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => window.dispatchEvent(new Event('louvor:open-push-settings'))}>Ativar notificações push</Button>
+              <Button variant="outline" disabled={pushBusy} onClick={() => void togglePush()}>{pushEnabled ? 'Desativar notificações push' : 'Ativar notificações push'}</Button>
               <Button onClick={testPush} disabled={testingPush}>{testingPush ? 'Enviando...' : 'Testar notificação push'}</Button>
             </div>
             <p className="mt-4 text-sm text-muted-foreground">Estas preferências são globais e controlam quais avisos o aplicativo envia para os membros:</p>
