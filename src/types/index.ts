@@ -5,6 +5,7 @@ export type MemberAccount = {
   member_id: string;
   login_email: string;
   role: Role;
+  is_master?: boolean;
   must_change_password: boolean;
   active: boolean;
 };

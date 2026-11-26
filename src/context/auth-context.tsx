@@ -137,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const role: Role = account?.active ? account.role : 'viewer';
   const can = useCallback((permission: Permission) => !!account?.active && !account.must_change_password && permissions[account.role].includes(permission), [account]);
   const canManagePlaylist = useCallback((leaderId: string) => !!account?.active && !account.must_change_password &&
-    account.member_id === leaderId, [account]);
+    (!!account.is_master || account.member_id === leaderId), [account]);
 
   const updateReminderMessage = async (message: string) => {
     if (!supabase || !can('manage:settings')) throw new Error('Sem permissão para alterar configurações.');

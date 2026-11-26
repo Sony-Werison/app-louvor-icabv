@@ -48,10 +48,15 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const { admin } = await requireAccount(request, true);
-    const parsed = inputSchema.safeParse(await request.json().catch(() => null));
+    const parsed = inputSchema.extend({ isMaster: z.boolean().optional() }).safeParse(await request.json().catch(() => null));
     if (!parsed.success) throw new AuthError('Informe um membro válido.', 400);
     const { data: account, error } = await admin.from('member_accounts').select('*').eq('member_id', parsed.data.memberId).maybeSingle();
     if (error || !account) throw new AuthError('Conta não encontrada.', 404);
+    if (typeof parsed.data.isMaster === 'boolean') {
+      const { error: updateError } = await admin.from('member_accounts').update({ is_master: parsed.data.isMaster }).eq('user_id', account.user_id);
+      if (updateError) throw new AuthError('Não foi possível atualizar a permissão master.', 503);
+      return NextResponse.json({ isMaster: parsed.data.isMaster }, { headers: { 'Cache-Control': 'no-store' } });
+    }
     if (account.role === 'admin') throw new AuthError('A senha administrativa deve ser alterada pela própria conta.', 403);
     const password = `louvor${randomInt(10000, 100000)}`;
     const { error: lockError } = await admin.from('member_accounts').update({ must_change_password: true }).eq('user_id', account.user_id);
