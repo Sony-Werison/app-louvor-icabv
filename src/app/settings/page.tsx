@@ -29,7 +29,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 export default function SettingsPage() {
   const { enabled: pushEnabled, busy: pushBusy, toggle: togglePush } = usePushNotifications();
   const { exportData, importData, clearAllData } = useSchedule();
-  const { can } = useAuth();
+  const { can, user, account } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [notificationSettings, setNotificationSettings] = useState<Record<string, boolean>>({ schedule_changes: true, new_playlists: true, monthly_schedule: true, swap_requests: true, meeting_changes: true, playlist_reminders: true, preaching_reminders: true, multimedia_reminders: true });
@@ -43,7 +43,7 @@ export default function SettingsPage() {
   }, [can]);
 
   const updateNotificationSetting = async (key: string, value: boolean) => {
-    if (!supabase) return;
+    if (!supabase || !can('manage:settings')) return;
     const next = { ...notificationSettings, [key]: value };
     setNotificationSettings(next);
     const { error } = await supabase.from('app_settings').update({ notification_settings: next }).eq('id', 'settings');
@@ -74,10 +74,10 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    if (!can('manage:settings')) {
+    if (!user || !account?.active) {
       router.push('/');
     }
-  }, [can, router]);
+  }, [user, account, router]);
   
   const handleExport = async () => {
     setIsExporting(true);
@@ -144,9 +144,11 @@ export default function SettingsPage() {
       setBackupFileToImport(null);
   }
   
-  if (!can('manage:settings')) {
+  if (!user || !account?.active || account.must_change_password) {
     return null;
   }
+
+  if (!can('manage:settings')) return <div className="p-4 md:p-6"><div className="mx-auto max-w-2xl space-y-6"><h1 className="text-2xl font-bold">Configurações</h1><Card><CardHeader><CardTitle>Notificações deste dispositivo</CardTitle><CardDescription>Ative ou desative os avisos push da sua conta neste navegador.</CardDescription></CardHeader><CardContent className="flex flex-wrap gap-2"><Button variant="outline" disabled={pushBusy} onClick={() => void togglePush()}>{pushEnabled ? 'Desativar notificações push' : 'Ativar notificações push'}</Button><Button disabled={testingPush || !pushEnabled} onClick={testPush}>{testingPush ? 'Enviando...' : 'Testar notificação push'}</Button></CardContent></Card></div></div>;
 
   const isImportSelectionValid = importSelections.members || importSelections.songs || importSelections.monthlySchedules;
 

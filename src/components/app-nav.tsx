@@ -29,11 +29,11 @@ const adminNavItems = [
 export function AppNav() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
-  const { can } = useAuth();
+  const { can, account } = useAuth();
   
   const allNavItems = [
       ...navItems,
-      ...adminNavItems.filter(item => can(item.permission as any))
+      ...adminNavItems.filter(item => item.href === '/settings' ? !!account?.active && !account.must_change_password : can(item.permission as any))
   ];
 
   return (

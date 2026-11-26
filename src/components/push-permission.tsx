@@ -3,6 +3,8 @@ import { createContext, useContext, useCallback, useEffect, useState, type React
 import { useAuth } from '@/context/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 function keyBytes(base64: string) { const raw = atob((base64 + '='.repeat((4 - base64.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(raw, c => c.charCodeAt(0)); }
@@ -11,6 +13,8 @@ export const usePushNotifications = () => useContext(PushContext);
 export function PushPermission({ children }: { children: ReactNode }) {
  const { user, account } = useAuth();
  const [activating, setActivating] = useState(false);
+ const [dismissed, setDismissed] = useState(false);
+ useEffect(() => { setDismissed(false); }, [user?.id]);
  const { toast } = useToast();
  const [state, setState] = useState<'loading'|'enabled'|'prompt'|'blocked'|'unsupported'|'error'|'disabled'>('loading');
  const register = useCallback(async (prompt: boolean) => {
@@ -57,6 +61,7 @@ export function PushPermission({ children }: { children: ReactNode }) {
    }
    if (subscription && !await subscription.unsubscribe()) throw Error('Falha ao desativar');
    setState('disabled');
+   setDismissed(true);
    toast({ title: 'Notificações desativadas' });
   } catch { toast({ title: 'Não foi possível desativar as notificações', variant: 'destructive' }); }
   finally { setActivating(false); }
@@ -68,5 +73,13 @@ export function PushPermission({ children }: { children: ReactNode }) {
   if (state === 'enabled') await disable();
   else { setActivating(true); try { await register(true); } finally { setActivating(false); } }
  };
- return <PushContext.Provider value={{ enabled: state === 'enabled', busy: activating || state === 'loading', toggle }}>{children}</PushContext.Provider>;
+ const showPrompt = !!user && !!account?.active && !account.must_change_password && state !== 'loading' && state !== 'enabled' && !dismissed;
+ return <PushContext.Provider value={{ enabled: state === 'enabled', busy: activating || state === 'loading', toggle }}>{children}
+  <Dialog open={showPrompt} onOpenChange={open => { if (!open) setDismissed(true); }}>
+   <DialogContent className="w-[calc(100%-2rem)] rounded-lg sm:max-w-md">
+    <DialogHeader><DialogTitle>Ative as notificações</DialogTitle><DialogDescription>{state === 'blocked' ? 'As notificações estão bloqueadas. Permita notificações nas configurações deste site no navegador e tente novamente.' : state === 'unsupported' ? 'Este navegador não oferece notificações push. No iPhone, adicione o aplicativo à Tela de Início e abra-o por lá.' : 'As notificações deste dispositivo estão desativadas. Ative para receber avisos de escala, repertório, pregação e multimídia. Você pode ativar ou desativar depois em Configurações.'}</DialogDescription></DialogHeader>
+    <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setDismissed(true)}>Agora não</Button>{state !== 'unsupported' && <Button disabled={activating} onClick={() => void toggle()}>{activating ? 'Ativando...' : 'Ativar notificações push'}</Button>}</DialogFooter>
+   </DialogContent>
+  </Dialog>
+ </PushContext.Provider>;
 }

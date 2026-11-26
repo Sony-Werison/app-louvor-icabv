@@ -23,7 +23,7 @@ const adminNavItems = [
 export function BottomNav() {
   const pathname = usePathname();
   const isMobile = useIsMobile();
-  const { can } = useAuth();
+  const { can, account } = useAuth();
 
   if (!isMobile) {
     return null;
@@ -31,7 +31,7 @@ export function BottomNav() {
 
   const allNavItems = [
     ...navItems,
-    ...adminNavItems.filter(item => can(item.permission as any))
+    ...adminNavItems.filter(item => item.href === '/settings' ? !!account?.active && !account.must_change_password : can(item.permission as any))
   ].slice(0, 6); // Max 6 items for bottom nav
   
   const gridColsClass = allNavItems.length === 6 ? 'grid-cols-6' : 'grid-cols-5';
